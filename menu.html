@@ -49,63 +49,55 @@ nav{
 
 .menu-container{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-    gap:30px;
-    padding:40px;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:25px;
+    padding:30px;
 }
-
 /* CARD */
 
 .food-card{
     background:white;
     border-radius:25px;
     overflow:hidden;
-    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+    box-shadow:0 5px 15px rgba(0,0,0,0.08);
     transition:0.3s;
+    max-width:280px;
+    margin:auto;
 }
-
+    
 .food-card:hover{
-    transform:translateY(-10px);
+    transform:translateY(-5px);
 }
 
 .food-card img{
     width:100%;
-    height:220px;
+    height:200px;
     object-fit:contain;
     background:#fafafa;
+    padding:15px;
 }
-
 .food-info{
-    padding:20px;
+    padding:18px;
 }
 
 .food-info h3{
-    font-size:28px;
+    font-size:20px;
     margin-bottom:15px;
-}
+    color:#222;
 
 .price-row{
     display:flex;
-    justify-content:space-between;
     align-items:center;
 }
 
 .price-row span{
     color:#f39c12;
-    font-size:25px;
+    font-size:28px;
     font-weight:bold;
 }
 
 .price-row button{
-    width:55px;
-    height:55px;
-    border:none;
-    border-radius:50%;
-    background:#f39c12;
-    color:white;
-    font-size:30px;
-    cursor:pointer;
-    transition:0.3s;
+    display:none;
 }
 
 .price-row button:hover{
