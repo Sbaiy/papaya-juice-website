@@ -44,7 +44,6 @@
 
     let editId = null; let imageData = "";
 
-    // تحميل التصويرة ومعالجتها
     document.getElementById('imageInput').addEventListener('change', (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -53,6 +52,7 @@
                 const canvas = document.createElement('canvas');
                 canvas.width = 300; canvas.height = 300;
                 const ctx = canvas.getContext('2d');
+                ctx.clearRect(0,0,300,300);
                 ctx.drawImage(img, 0, 0, 300, 300);
                 imageData = canvas.toDataURL('image/png');
                 document.getElementById('preview').src = imageData;
@@ -66,6 +66,7 @@
     async function loadCategories() {
         let { data } = await _supabase.from('categories').select('*');
         const select = document.getElementById('categorySelect');
+        select.innerHTML = '<option value="">Select Category</option>';
         data.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
     }
 
@@ -73,7 +74,8 @@
         const name = document.getElementById('newCategory').value;
         if(!name) return;
         await _supabase.from('categories').insert([{ name }]);
-        location.reload();
+        document.getElementById('newCategory').value = '';
+        loadCategories();
     }
 
     async function saveProduct() {
