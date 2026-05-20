@@ -151,9 +151,11 @@ const products = JSON.parse(localStorage.getItem('products')) || [];
 
 products.forEach(product => {
 
-    menuContainer.innerHTML += `
+    const card = document.createElement('div');
 
-    <div class="food-card">
+    card.className = "food-card";
+
+    card.innerHTML = `
 
         <img src="${product.image}">
 
@@ -171,9 +173,9 @@ products.forEach(product => {
 
         </div>
 
-    </div>
-
     `;
+
+    menuContainer.appendChild(card);
 
 });
 
