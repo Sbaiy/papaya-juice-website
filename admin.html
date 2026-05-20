@@ -235,7 +235,6 @@ function logout(){
 }
 
 function showLogin(){
-    // Reset background back to animated gradient
     document.body.style.setProperty('background', 'linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f)', 'important');
     document.body.style.setProperty('background-size', '400% 400%', 'important');
     document.body.style.setProperty('animation', 'gradientAnimation 12s ease infinite', 'important');
@@ -245,7 +244,6 @@ function showLogin(){
 }
 
 function showDashboard(){
-    // Change background to clean setup for dashboard
     document.body.style.setProperty('background', '#f5f5f5', 'important');
     document.body.style.setProperty('animation', 'none', 'important');
     
@@ -282,8 +280,8 @@ function addProduct(){
     }
 
     const product = {
-        title,
-        price,
+        title: title,
+        price: price,
         image: imageData
     };
 
@@ -291,6 +289,7 @@ function addProduct(){
     products.push(product);
     localStorage.setItem('products', JSON.stringify(products));
 
+    // Reset Inputs
     document.getElementById('title').value = '';
     document.getElementById('price').value = '';
     document.getElementById('imageInput').value = '';
