@@ -4,20 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Our Menu</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-/* --- 1. Base Reset & Smooth Slow Background Animation --- */
 body {
     margin: 0 !important;
     padding: 0 !important;
     min-height: 100vh !important;
-    font-family: 'Poppins', sans-serif; /* تغيير الخط لـ Poppins الاحترافي */
+    font-family: 'Poppins', sans-serif;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    padding-top: 50px !important;
+    padding-top: 40px !important;
     padding-bottom: 50px !important;
     box-sizing: border-box;
     background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
@@ -31,18 +29,45 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* --- 2. Menu Header --- */
 h1.menu-title {
     font-size: 42px;
     color: white;
-    margin-bottom: 50px;
+    margin-bottom: 20px;
     text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     font-weight: 700;
-    text-align: center;
-    letter-spacing: 1px;
 }
 
-/* --- 3. Products Grid Layout --- */
+/* --- أزرار الأقسام بنظام الزجاج الفخم --- */
+.categories-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 90%;
+}
+
+.category-btn {
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category-btn:hover, .category-btn.active {
+    background: white !important;
+    color: #e67e22;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -52,7 +77,6 @@ h1.menu-title {
     margin: 0 auto;
 }
 
-/* --- 4. Glassmorphic Product Card --- */
 .product-card {
     background: rgba(255, 255, 255, 0.75) !important;
     backdrop-filter: blur(15px) !important;
@@ -60,7 +84,7 @@ h1.menu-title {
     border: 1px solid rgba(255, 255, 255, 0.35) !important;
     border-radius: 24px;
     padding: 25px;
-    text-align: center; /* رد هنا كولشي فـ الوسط كيعطي منظر متوازن وهائل */
+    text-align: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
     display: flex;
@@ -70,48 +94,24 @@ h1.menu-title {
 }
 
 .product-card:hover {
-    transform: translateY(-8px); /* تحريك الكارت بنعومة للفوق */
+    transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    background: rgba(255, 255, 255, 0.85) !important; /* كتزيد تضوا شوية فـ الهوفر */
+    background: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* --- 5. Product Image Support --- */
 .product-card img {
-    width: 150px;
-    height: 150px;
+    width: 140px;
+    height: 140px;
     object-fit: contain;
     margin-bottom: 15px;
     background: transparent !important;
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); /* زيادة عمق الظل باش تبان الأكلة حقيقية فوق الزجاج */
-    transition: transform 0.3s ease;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18));
 }
 
-.product-card:hover img {
-    transform: scale(1.05); /* زوم خفيف للتصويرة ملي يدوز عليها الكليان الماوس */
-}
-
-/* --- 6. Product Info --- */
-.product-info {
-    width: 100%;
-}
-
-.product-card h3 {
-    margin: 12px 0 8px 0;
-    font-size: 19px;
-    color: #1a1a1a;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
+.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #1a1a1a; font-weight: 600; text-transform: capitalize; }
 .product-card p {
-    margin: 5px auto 0 auto;
-    font-size: 18px;
-    color: #e67e22; 
-    font-weight: 700;
-    background: rgba(230, 126, 34, 0.1); /* خلفية برتقالية خفيفة وراء الثمن */
-    padding: 4px 15px;
-    border-radius: 50px;
-    display: inline-block; /* باش تاخد حجم النص وماتسرحش كاملة */
+    margin: 5px auto 0 auto; font-size: 18px; color: #e67e22; font-weight: 700;
+    background: rgba(230, 126, 34, 0.1); padding: 4px 15px; border-radius: 50px; display: inline-block;
 }
 </style>
 </head>
@@ -119,22 +119,36 @@ h1.menu-title {
 
     <h1 class="menu-title">Our Menu</h1>
 
+    <div class="categories-container">
+        <button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>
+        <button class="category-btn" onclick="filterMenu('mojito', this)">Mojitos</button>
+        <button class="category-btn" onclick="filterMenu('juice', this)">Fresh Juices</button>
+        <button class="category-btn" onclick="filterMenu('crepe', this)">Crêpes</button>
+        <button class="category-btn" onclick="filterMenu('toast', this)">Toasts</button>
+    </div>
+
     <div class="menu-grid" id="menuGrid"></div>
 
 <script>
-function displayMenu() {
+// دالة عرض المنتجات مع نظام الفلتر الذكي
+function displayMenu(filterCategory = 'all') {
     const menuGrid = document.getElementById('menuGrid');
     menuGrid.innerHTML = "";
     
-    // جلب المنتجات من localStorage
     let products = JSON.parse(localStorage.getItem('products')) || [];
 
-    if(products.length === 0) {
-        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 20px; font-weight: 600;">No products available at the moment.</p>`;
+    // تصفية المنتجات حسب الزر المبروك عليه
+    let filteredProducts = products;
+    if (filterCategory !== 'all') {
+        filteredProducts = products.filter(p => p.category === filterCategory);
+    }
+
+    if(filteredProducts.length === 0) {
+        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px; font-weight: 600;">No items found in this category.</p>`;
         return;
     }
 
-    products.forEach((product) => {
+    filteredProducts.forEach((product) => {
         menuGrid.innerHTML += `
         <div class="product-card">
             <img src="${product.image}" alt="${product.title}">
@@ -142,13 +156,24 @@ function displayMenu() {
                 <h3>${product.title}</h3>
                 <p>${product.price} DH</p>
             </div>
-        </div>
-        `;
+        </div>`;
     });
 }
 
-// تشغيل الدالة تلقائياً عند فتح الصفحة
-window.onload = displayMenu;
+// دالة التحكم فـ كلاس الزر النشط وتغيير العرض
+function filterMenu(category, buttonElement) {
+    // مسح الـ active من كاع الأزرار
+    const buttons = document.querySelectorAll('.category-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    // إضافة active للزر الحالي
+    buttonElement.classList.add('active');
+    
+    // تشغيل العرض المصفى
+    displayMenu(category);
+}
+
+window.onload = () => displayMenu('all');
 </script>
 
 </body>
