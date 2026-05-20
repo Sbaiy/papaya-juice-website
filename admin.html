@@ -7,7 +7,28 @@
 <title>Admin Dashboard</title>
 
 <style>
+.product-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#fafafa;
+    padding:15px;
+    border-radius:15px;
+    margin-top:20px;
+}
 
+.product-item img{
+    width:80px;
+    height:80px;
+    object-fit:cover;
+    border-radius:10px;
+}
+
+.product-item button{
+    width:auto;
+    padding:10px 15px;
+    background:red;
+}
 body{
     margin:0;
     font-family:Arial;
@@ -63,7 +84,7 @@ button{
 <body>
 
 <div class="container">
-
+<div id="productsList"></div>
 <h1>Add Product</h1>
 
 <input type="file" id="imageInput">
@@ -122,11 +143,60 @@ function addProduct(){
 
     localStorage.setItem('products', JSON.stringify(products));
 
-    alert("Product Added 🔥");
+    loadProducts();
 
 }
 
-</script>
+function deleteProduct(index){
 
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+
+    products.splice(index,1);
+
+    localStorage.setItem('products', JSON.stringify(products));
+
+    loadProducts();
+
+}
+
+function loadProducts(){
+
+    const productsList = document.getElementById('productsList');
+
+    productsList.innerHTML = "";
+
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+
+    products.forEach((product,index)=>{
+
+        productsList.innerHTML += `
+
+        <div class="product-item">
+
+            <img src="${product.image}">
+
+            <div>
+
+                <h3>${product.title}</h3>
+
+                <p>${product.price} DH</p>
+
+            </div>
+
+            <button onclick="deleteProduct(${index})">
+            Delete
+            </button>
+
+        </div>
+
+        `;
+
+    });
+
+}
+
+loadProducts();
+
+</script>
 </body>
 </html>
