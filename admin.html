@@ -6,8 +6,6 @@
 <title>Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 body {
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
@@ -22,27 +20,28 @@ body {
 .logo-container { text-align: center; margin-bottom: 15px; }
 .admin-logo { width: 100px; height: auto; border-radius: 50%; }
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-h1 { text-align: center; margin-bottom: 30px; color: #222; }
-input, select { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.15); background: rgba(255, 255, 255, 0.8); font-size: 16px; box-sizing: border-box; color: #333; font-family: 'Poppins', sans-serif; }
-button { width: 100%; padding: 15px; border: none; background: #e67e22; color: white; border-radius: 10px; font-size: 18px; cursor: pointer; transition: background 0.3s ease; }
+h1 { text-align: center; margin-bottom: 30px; color: #222; font-size: 24px; font-weight: 700; }
+input, select, textarea { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.15); background: rgba(255, 255, 255, 0.8); font-size: 16px; box-sizing: border-box; color: #333; font-family: 'Poppins', sans-serif; }
+button { width: 100%; padding: 15px; border: none; background: #e67e22; color: white; border-radius: 10px; font-size: 18px; cursor: pointer; transition: background 0.3s ease; font-weight: 600; }
 button:hover { background: #d35400; }
-.logout-btn { background: #d32f2f; width: auto; padding: 10px 20px; font-size: 16px; }
+.logout-btn { background: #d32f2f; width: auto; padding: 10px 20px; font-size: 14px; margin-bottom: 0; }
 .logout-btn:hover { background: #b71c1c; }
+.sync-box { background: rgba(255, 255, 255, 0.6); padding: 15px; border-radius: 15px; margin-bottom: 25px; border: 1px dashed #e67e22; }
 .product-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 15px; margin-bottom: 20px; }
 .product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: transparent !important; }
 .product-item div { flex: 1; margin-left: 15px; }
 .product-item h3 { margin: 0 0 5px 0; color: #222; font-size: 16px; }
 .product-item p { margin: 0; color: #e67e22; font-weight: bold; font-size: 14px; }
-.product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; }
+.product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; text-transform: capitalize; }
 .product-item button { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
-.preview { width: 100%; height: 200px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent !important; }
+.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent !important; }
 </style>
 </head>
 <body>
 
 <div id="loginSection" class="login-section">
     <div class="container">
-        <div class="logo-container"><img src="logo.png" class="admin-logo"></div>
+        <div class="logo-container"><img src="logo.png" class="admin-logo" onerror="this.style.display='none'"></div>
         <h1>Admin Login</h1>
         <div id="errorMessage" style="color:red; display:none; text-align:center; margin-bottom:15px; font-weight:bold;"></div>
         <input type="text" id="username" placeholder="Username">
@@ -57,10 +56,17 @@ button:hover { background: #d35400; }
             <h1>Dashboard</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
+
+        <div class="sync-box">
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #333;">📱 Sync Between Phone & PC</h3>
+            <button style="background: #27ae60; font-size: 14px; padding: 10px; margin-bottom: 10px;" onclick="exportData()">1. Copy Data Code From Here</button>
+            <textarea id="syncDataArea" rows="2" placeholder="Paste data code here on the other device..."></textarea>
+            <button style="background: #2980b9; font-size: 14px; padding: 10px;" onclick="importData()">2. Import Data Code To This Device</button>
+        </div>
         
-        <div id="productsList">Loading Products from Cloud...</div>
+        <div id="productsList"></div>
         
-        <h1>Add Product</h1>
+        <h1>Add New Product</h1>
         <input type="file" id="imageInput" accept="image/*">
         <img id="preview" class="preview">
         
@@ -78,11 +84,6 @@ button:hover { background: #d35400; }
 </div>
 
 <script>
-// ⚠️ حط الـ Keys ديال مشروعك فـ Supabase هنا باش يخدم السيت أونلاين
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_KEY = "YOUR_ANON_KEY";
-const supabase = typeof supabase !== 'undefined' ? supabase : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const ADMIN_USERNAME = "sbaiy";
 const ADMIN_PASSWORD = "2030";
 
@@ -124,7 +125,7 @@ imageInput.addEventListener('change', function(){
             img.src = e.target.result;
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                let width = img.width, height = img.height, maxSize = 120; // صغرناها لـ 120px باش تكون سريعة وطايرة فـ الـ Database
+                let width = img.width, height = img.height, maxSize = 150; // حجم مثالي للحفاظ على مساحة التخزين
                 if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
                 else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
                 canvas.width = width; canvas.height = height;
@@ -139,42 +140,40 @@ imageInput.addEventListener('change', function(){
     }
 });
 
-async function addProduct(){
+function addProduct(){
     const title = document.getElementById('title').value;
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
 
     if(!title || !price || !imageData){ alert('Please fill all fields!'); return; }
 
-    // الرفع المباشر لـ قاعدة البيانات السحابية
-    const { data, error } = await supabase.from('products').insert([{ title, price, image: imageData, category }]);
+    const product = { title: title, price: price, image: imageData, category: category };
 
-    if (error) {
-        alert('Error adding product: ' + error.message);
-    } else {
+    try {
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        products.push(product);
+        localStorage.setItem('products', JSON.stringify(products));
         document.getElementById('title').value = '';
         document.getElementById('price').value = '';
         preview.style.display = 'none';
+        imageData = "";
         loadProducts();
-    }
+    } catch (e) { alert('Storage is full! Please delete some items or use a smaller image.'); }
 }
 
-async function deleteProduct(id){
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) { alert('Error deleting product'); } else { loadProducts(); }
+function deleteProduct(index){
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+    products.splice(index, 1);
+    localStorage.setItem('products', JSON.stringify(products));
+    loadProducts();
 }
 
-async function loadProducts(){
+function loadProducts(){
     const list = document.getElementById('productsList');
-    list.innerHTML = "Fetching updates...";
-    
-    // جلب البيانات لايف من الـ Database
-    const { data: products, error } = await supabase.from('products').select('*').order('id', { ascending: false });
-
-    if(error) { list.innerHTML = "Error loading products"; return; }
-
     list.innerHTML = "";
-    products.forEach((product)=>{
+    let products = JSON.parse(localStorage.getItem('products')) || [];
+    if(products.length === 0) { list.innerHTML = "<p style='text-align:center; color:#666;'>No products added yet.</p>"; return; }
+    products.forEach((product, index)=>{
         list.innerHTML += `
         <div class="product-item">
             <img src="${product.image}">
@@ -183,10 +182,30 @@ async function loadProducts(){
                 <p>${product.price} DH</p>
                 <span class="badge">${product.category || 'mojito'}</span>
             </div>
-            <button onclick="deleteProduct(${product.id})">Delete</button>
+            <button onclick="deleteProduct(${index})">Delete</button>
         </div>`;
     });
 }
+
+// دالتين لتصدير واستيراد المنيو بالكامل
+function exportData() {
+    let products = localStorage.getItem('products') || "[]";
+    navigator.clipboard.writeText(products);
+    document.getElementById('syncDataArea').value = products;
+    alert('Menu data copied successfully! Send it to your other device.');
+}
+
+function importData() {
+    const dataInput = document.getElementById('syncDataArea').value.trim();
+    if(!dataInput) { alert('Please paste the data code first!'); return; }
+    try {
+        JSON.parse(dataInput); // التأكد من صحة الكود
+        localStorage.setItem('products', dataInput);
+        alert('Menu imported successfully! Both devices are now matching.');
+        loadProducts();
+    } catch(e) { alert('Invalid data code!'); }
+}
+
 checkLogin();
 </script>
 </body>
