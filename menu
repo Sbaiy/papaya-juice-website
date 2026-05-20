@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Papaya Juice Menu</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f5f5f5;
+}
+
+/* NAVBAR */
+
+nav{
+    background:white;
+    padding:20px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    position:sticky;
+    top:0;
+}
+
+.logo{
+    font-size:35px;
+    font-weight:bold;
+    color:#e08b2c;
+}
+
+/* TITLE */
+
+.title{
+    text-align:center;
+    margin:50px 0;
+}
+
+.title h1{
+    font-size:55px;
+    color:#222;
+}
+
+/* MENU GRID */
+
+.menu-container{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:25px;
+    padding:30px;
+    max-width:1400px;
+    margin:0 auto;
+}
+
+/* CARD */
+
+.food-card{
+    background:white;
+    border-radius:25px;
+    overflow:hidden;
+    box-shadow:0 5px 15px rgba(0,0,0,0.08);
+    transition:0.3s;
+    width:100%;
+}
+    
+.food-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.12);
+}
+
+.food-card img{
+    width:100%;
+    height:200px;
+    object-fit:contain;
+    background:#fafafa;
+    padding:15px;
+}
+
+.food-info{
+    padding:18px;
+}
+
+.food-info h3{
+    font-size:20px;
+    margin:0 0 15px 0;
+    color:#222;
+}
+
+.price-row{
+    display:flex;
+    align-items:center;
+}
+
+.price-row span{
+    color:#f39c12;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.price-row button{
+    display:none;
+}
+
+.price-row button:hover{
+    transform:scale(1.1);
+}
+
+/* RESPONSIVE */
+
+/* Tablet - 2 columns */
+@media(max-width:1024px){
+    .menu-container{
+        grid-template-columns:repeat(2, 1fr);
+    }
+    
+    .title h1{
+        font-size:45px;
+    }
+}
+
+/* Mobile - 2 columns on phones */
+@media(max-width:768px){
+    .menu-container{
+        grid-template-columns:repeat(2, 1fr);
+        gap:15px;
+        padding:15px;
+    }
+    
+    .title h1{
+        font-size:40px;
+    }
+
+    .logo{
+        font-size:25px;
+    }
+}
+
+/* Small phones - 1 column */
+@media(max-width:480px){
+    .menu-container{
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>
+<div class="logo">
+    <a href="index.html" style="text-decoration: none; color: inherit;">Papaya Juice</a>
+</div></nav>
+
+<div class="title">
+    <h1>Our Menu</h1>
+</div>
+
+<div class="menu-container" id="menuContainer"></div>
+
+<script>
+
+const menuContainer = document.getElementById('menuContainer');
+
+const products = JSON.parse(localStorage.getItem('products')) || [];
+
+products.forEach(product => {
+
+    const card = document.createElement('div');
+
+    card.className = "food-card";
+
+    card.innerHTML = `
+
+        <img src="${product.image}">
+
+        <div class="food-info">
+
+            <h3>${product.title}</h3>
+
+            <div class="price-row">
+
+                <span>${product.price} DH</span>
+
+                <button>+</button>
+
+            </div>
+
+        </div>
+
+    `;
+
+    menuContainer.appendChild(card);
+
+});
+
+</script>
+
+</body>
+</html>
