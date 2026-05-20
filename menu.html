@@ -3,201 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Menu</title>
 
-<title>Papaya Juice Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-
-body{
-    margin:0;
-    font-family:Arial;
-    background:#f5f5f5;
+/* --- 1. Base Reset & Smooth Slow Background Animation --- */
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    font-family: 'Poppins', sans-serif; /* تغيير الخط لـ Poppins الاحترافي */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding-top: 50px !important;
+    padding-bottom: 50px !important;
+    box-sizing: border-box;
+    background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
+    background-size: 400% 400% !important;
+    animation: gradientAnimation 20s ease infinite !important;
 }
 
-/* NAVBAR */
-
-nav{
-    background:white;
-    padding:20px 40px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-    position:sticky;
-    top:0;
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-.logo{
-    font-size:35px;
-    font-weight:bold;
-    color:#e08b2c;
+/* --- 2. Menu Header --- */
+h1.menu-title {
+    font-size: 42px;
+    color: white;
+    margin-bottom: 50px;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 1px;
 }
 
-/* TITLE */
-
-.title{
-    text-align:center;
-    margin:50px 0;
+/* --- 3. Products Grid Layout --- */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    width: 90%;
+    margin: 0 auto;
 }
 
-.title h1{
-    font-size:55px;
-    color:#222;
+/* --- 4. Glassmorphic Product Card --- */
+.product-card {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 24px;
+    padding: 25px;
+    text-align: center; /* رد هنا كولشي فـ الوسط كيعطي منظر متوازن وهائل */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
 }
 
-/* MENU GRID */
-
-.menu-container{
-    display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:25px;
-    padding:30px;
-    max-width:1400px;
-    margin:0 auto;
+.product-card:hover {
+    transform: translateY(-8px); /* تحريك الكارت بنعومة للفوق */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.85) !important; /* كتزيد تضوا شوية فـ الهوفر */
 }
 
-/* CARD */
-
-.food-card{
-    background:white;
-    border-radius:25px;
-    overflow:hidden;
-    box-shadow:0 5px 15px rgba(0,0,0,0.08);
-    transition:0.3s;
-    width:100%;
-}
-    
-.food-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 8px 20px rgba(0,0,0,0.12);
+/* --- 5. Product Image Support --- */
+.product-card img {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    margin-bottom: 15px;
+    background: transparent !important;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); /* زيادة عمق الظل باش تبان الأكلة حقيقية فوق الزجاج */
+    transition: transform 0.3s ease;
 }
 
-.food-card img{
-    width:100%;
-    height:200px;
-    object-fit:contain;
-    background:#fafafa;
-    padding:15px;
+.product-card:hover img {
+    transform: scale(1.05); /* زوم خفيف للتصويرة ملي يدوز عليها الكليان الماوس */
 }
 
-.food-info{
-    padding:18px;
+/* --- 6. Product Info --- */
+.product-info {
+    width: 100%;
 }
 
-.food-info h3{
-    font-size:20px;
-    margin:0 0 15px 0;
-    color:#222;
+.product-card h3 {
+    margin: 12px 0 8px 0;
+    font-size: 19px;
+    color: #1a1a1a;
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
-.price-row{
-    display:flex;
-    align-items:center;
+.product-card p {
+    margin: 5px auto 0 auto;
+    font-size: 18px;
+    color: #e67e22; 
+    font-weight: 700;
+    background: rgba(230, 126, 34, 0.1); /* خلفية برتقالية خفيفة وراء الثمن */
+    padding: 4px 15px;
+    border-radius: 50px;
+    display: inline-block; /* باش تاخد حجم النص وماتسرحش كاملة */
 }
-
-.price-row span{
-    color:#f39c12;
-    font-size:28px;
-    font-weight:bold;
-}
-
-.price-row button{
-    display:none;
-}
-
-.price-row button:hover{
-    transform:scale(1.1);
-}
-
-/* RESPONSIVE */
-
-/* Tablet - 2 columns */
-@media(max-width:1024px){
-    .menu-container{
-        grid-template-columns:repeat(2, 1fr);
-    }
-    
-    .title h1{
-        font-size:45px;
-    }
-}
-
-/* Mobile - 2 columns on phones */
-@media(max-width:768px){
-    .menu-container{
-        grid-template-columns:repeat(2, 1fr);
-        gap:15px;
-        padding:15px;
-    }
-    
-    .title h1{
-        font-size:40px;
-    }
-
-    .logo{
-        font-size:25px;
-    }
-}
-
-/* Small phones - 1 column */
-@media(max-width:480px){
-    .menu-container{
-        grid-template-columns:1fr;
-    }
-}
-
 </style>
 </head>
-
 <body>
 
-<nav>
-<div class="logo">
-    <a href="index.html" style="text-decoration: none; color: inherit;">Papaya Juice</a>
-</div></nav>
+    <h1 class="menu-title">Our Menu</h1>
 
-<div class="title">
-    <h1>Our Menu</h1>
-</div>
-
-<div class="menu-container" id="menuContainer"></div>
+    <div class="menu-grid" id="menuGrid"></div>
 
 <script>
+function displayMenu() {
+    const menuGrid = document.getElementById('menuGrid');
+    menuGrid.innerHTML = "";
+    
+    // جلب المنتجات من localStorage
+    let products = JSON.parse(localStorage.getItem('products')) || [];
 
-const menuContainer = document.getElementById('menuContainer');
+    if(products.length === 0) {
+        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 20px; font-weight: 600;">No products available at the moment.</p>`;
+        return;
+    }
 
-const products = JSON.parse(localStorage.getItem('products')) || [];
-
-products.forEach(product => {
-
-    const card = document.createElement('div');
-
-    card.className = "food-card";
-
-    card.innerHTML = `
-
-        <img src="${product.image}">
-
-        <div class="food-info">
-
-            <h3>${product.title}</h3>
-
-            <div class="price-row">
-
-                <span>${product.price} DH</span>
-
-                <button>+</button>
-
+    products.forEach((product) => {
+        menuGrid.innerHTML += `
+        <div class="product-card">
+            <img src="${product.image}" alt="${product.title}">
+            <div class="product-info">
+                <h3>${product.title}</h3>
+                <p>${product.price} DH</p>
             </div>
-
         </div>
+        `;
+    });
+}
 
-    `;
-
-    menuContainer.appendChild(card);
-
-});
-
+// تشغيل الدالة تلقائياً عند فتح الصفحة
+window.onload = displayMenu;
 </script>
 
 </body>
