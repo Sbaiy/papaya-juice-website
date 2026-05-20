@@ -1,66 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-    body { margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c); background-size: 400% 400%; animation: gradientAnimation 20s ease infinite; min-height: 100vh; display: flex; justify-content: center; }
-    .container { max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
-    h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
-    .product-item { display: flex; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #eee; }
-    .product-item img { width: 60px; height: 60px; object-fit: contain; margin-right: 15px; border-radius: 12px; background: transparent; }
-    input, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-    button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; color: white; font-weight: 600; }
-    .btn-group { display: flex; gap: 5px; }
-</style>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+        input, select { width: 100%; margin-bottom: 10px; padding: 10px; }
+    </style>
 </head>
 <body>
 <div class="container">
-    <h1>Dashboard</h1>
-    <div id="productsList">Loading...</div>
-    <hr>
-    <h3>Add/Edit Product</h3>
-    <input type="file" id="imageInput" accept="image/*">
-    <img id="preview" style="width:100px; display:none; margin-bottom:10px;">
+    <h2>Admin Panel</h2>
+    <input type="file" id="imageInput">
     <input type="text" id="title" placeholder="Product Name">
     <input type="text" id="price" placeholder="Price">
-    
     <select id="categorySelect">
-        <option value="Mojito">Mojito</option>
-        <option value="Fresh Juice">Fresh Juice</option>
-        <option value="Crepe">Crepe</option>
-        <option value="Toast">Toast</option>
+        <option value="mojito">Mojito</option>
+        <option value="juice">Fresh Juice</option>
+        <option value="crepe">Crepe</option>
+        <option value="toast">Toast</option>
     </select>
-    
-    <button onclick="saveProduct()" style="background:#27ae60; width:100%; margin-top:10px;">Save Product</button>
+    <button onclick="saveProduct()" style="width:100%; padding:10px; background:green; color:white; border:none;">Save Product</button>
 </div>
 
 <script>
-    const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
-    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let editId = null; let imageData = "";
+    const _supabase = window.supabase.createClient("https://rlwshuurruvtnqwgbjkl.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw");
+    let imageData = "";
 
     document.getElementById('imageInput').addEventListener('change', (e) => {
         const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 300; canvas.height = 300;
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0,0,300,300);
-                ctx.drawImage(img, 0, 0, 300, 300);
-                imageData = canvas.toDataURL('image/png');
-                document.getElementById('preview').src = imageData;
-                document.getElementById('preview').style.display = 'block';
-            };
-            img.src = event.target.result;
-        };
+        reader.onload = (event) => { imageData = event.target.result; };
         reader.readAsDataURL(e.target.files[0]);
     });
 
@@ -71,36 +42,10 @@
             category: document.getElementById('categorySelect').value,
             image: imageData 
         };
-        if(editId) await _supabase.from('products').update(product).eq('id', editId);
-        else await _supabase.from('products').insert([product]);
+        await _supabase.from('products').insert([product]);
+        alert("Added!");
         location.reload();
     }
-
-    async function loadProducts() {
-        let { data } = await _supabase.from('products').select('*');
-        const list = document.getElementById('productsList');
-        list.innerHTML = "";
-        data.forEach(p => {
-            list.innerHTML += `<div class="product-item">
-                <img src="${p.image}">
-                <div style="flex:1;">${p.title} - ${p.price} DH</div>
-                <div class="btn-group">
-                    <button onclick="editProduct(${p.id}, '${p.title}', '${p.price}', '${p.category}', '${p.image}')" style="background:orange">Edit</button>
-                    <button onclick="deleteProduct(${p.id})" style="background:red">Del</button>
-                </div>
-            </div>`;
-        });
-    }
-
-    function editProduct(id, t, p, c, img) {
-        editId = id; document.getElementById('title').value = t;
-        document.getElementById('price').value = p; document.getElementById('categorySelect').value = c;
-        imageData = img; document.getElementById('preview').src = img; document.getElementById('preview').style.display = 'block';
-    }
-
-    async function deleteProduct(id) { await _supabase.from('products').delete().eq('id', id); location.reload(); }
-    
-    loadProducts();
 </script>
 </body>
 </html>
