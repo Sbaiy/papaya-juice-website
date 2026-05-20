@@ -3,134 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Admin Dashboard</title>
 
 <style>
-.product-item{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:#fafafa;
-    padding:15px;
-    border-radius:15px;
-    margin-top:20px;
-}
-
-.product-item img{
-    width:80px;
-    height:80px;
-    object-fit:cover;
-    border-radius:10px;
-}
-
-.product-item button{
-    width:auto;
-    padding:10px 15px;
-    background:red;
-}
-body{
-    margin:0;
-    font-family:Arial;
-    background:#f5f5f5;
-    padding:30px;
-}
-
-.container{
-    max-width:500px;
-    margin:auto;
-    background:white;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 5px 20px rgba(0,0,0,0.1);
-}
-
-h1{
-    text-align:center;
-    margin-bottom:30px;
-}
-
-input{
-    width:100%;
-    padding:15px;
-    margin-bottom:20px;
-    border-radius:10px;
-    border:1px solid #ccc;
-    font-size:16px;
-    box-sizing: border-box;
-}
-
-button{
-    width:100%;
-    padding:15px;
-    border:none;
-    background:#f39c12;
-    color:white;
-    border-radius:10px;
-    font-size:18px;
-    cursor:pointer;
-}
-
-.preview{
-    width:100%;
-    height:250px;
-    object-fit:contain;
-    margin-bottom:20px;
-    display:none;
-}
-
-.login-section {
-    background: transparent !important;
-    width: 100% !important;
-    height: 100vh !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-    
-.dashboard-section {
-    width: 100%;
-    min-height: 100vh;
-    background: #ffffff;
-    padding: 20px;
-}
-
-.error-message{
-    color:red;
-    margin-bottom:15px;
-    text-align:center;
-    font-weight:bold;
-}
-
-.logout-btn{
-    background:#d32f2f;
-    margin-bottom:20px;
-    width:auto;
-    padding:10px 20px;
-    float:right;
-}
-
-.admin-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:30px;
-}
-    .logo-container {
-    text-align: center;
-    margin-bottom: 15px; 
-}
-
-.admin-logo {
-    width: 100px;
-    height: auto;
-    border-radius: 50%; 
-}
-
+/* --- 1. Base Reset & Animations --- */
 body {
     margin: 0 !important;
     padding: 0 !important;
     min-height: 100vh !important;
+    font-family: Arial, sans-serif;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -145,31 +26,152 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-document.querySelector('.login-section button, input[type="submit"]').addEventListener('click', function(e) {
-    // Prevent page reload for now to see the effect
-    e.preventDefault(); 
+/* --- 2. Layout Sections --- */
+.login-section {
+    background: transparent !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
     
-    // Hide Login Section
-    document.getElementById('loginSection').style.display = 'none';
-    
-    // Show Dashboard Section
-    document.getElementById('dashboardSection').style.display = 'block';
-    
-    // Reset body background so animation stops inside dashboard (Optional)
-    document.body.style.background = '#ffffff';
-    document.body.style.animation = 'none';
-});
+.dashboard-section {
+    width: 100% !important;
+    min-height: 100vh !important;
+    display: none;
+    box-sizing: border-box;
+    padding: 30px;
+}
+
+.container {
+    max-width: 500px;
+    width: 100%;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+/* --- 3. Components Styling --- */
+.logo-container {
+    text-align: center;
+    margin-bottom: 15px; 
+}
+
+.admin-logo {
+    width: 100px;
+    height: auto;
+    border-radius: 50%; 
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    background: #f39c12;
+    color: white;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.logout-btn {
+    background: #d32f2f;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.error-message {
+    color: red;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* --- 4. Products List Layout --- */
+.product-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafafa;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.product-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.product-item div {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.product-item h3 {
+    margin: 0 0 5px 0;
+}
+
+.product-item p {
+    margin: 0;
+    color: #e67e22;
+    font-weight: bold;
+}
+
+.product-item button {
+    width: auto;
+    padding: 10px 15px;
+    background: #d32f2f;
+    font-size: 14px;
+}
+
+.preview {
+    width: 100%;
+    height: 250px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    display: none;
+}
 </style>
 </head>
 
 <body>
 
-<!-- Login Section -->
-<div id="loginSection" class="login-section" style="display:flex;">
+<div id="loginSection" class="login-section">
     <div class="container">
-   <div class="logo-container">
-    <img src="logo.png" alt="Papaya Juice Logo" class="admin-logo">
-</div>
+        <div class="logo-container">
+            <img src="logo.png" alt="Papaya Juice Logo" class="admin-logo">
+        </div>
         <h1>Admin Login</h1>
         <div id="errorMessage" class="error-message" style="display:none;"></div>
         <input type="text" id="username" placeholder="Username">
@@ -178,31 +180,26 @@ document.querySelector('.login-section button, input[type="submit"]').addEventLi
     </div>
 </div>
 
-<!-- Admin Dashboard Section -->
-<div id="dashboardSection" style="display:none;">
+<div id="dashboardSection" class="dashboard-section">
     <div class="container">
         <div class="admin-header">
-            <h1>Admin Dashboard</h1>
+            <h1>Dashboard</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
+        
         <div id="productsList"></div>
+        
         <h1>Add Product</h1>
-
         <input type="file" id="imageInput">
-
         <img id="preview" class="preview">
-
         <input type="text" id="title" placeholder="Product Name">
-
         <input type="text" id="price" placeholder="Price">
-
         <button onclick="addProduct()">Add Product</button>
     </div>
 </div>
 
 <script>
-
-// Login Credentials (You can change these)
+// Login Credentials
 const ADMIN_USERNAME = "sbaiy";
 const ADMIN_PASSWORD = "2030";
 
@@ -238,44 +235,44 @@ function logout(){
 }
 
 function showLogin(){
-    document.getElementById('loginSection').style.display = 'flex';
-    document.getElementById('dashboardSection').style.display = 'none';
+    // Reset background back to animated gradient
+    document.body.style.setProperty('background', 'linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f)', 'important');
+    document.body.style.setProperty('background-size', '400% 400%', 'important');
+    document.body.style.setProperty('animation', 'gradientAnimation 12s ease infinite', 'important');
+    
+    document.getElementById('loginSection').style.setProperty('display', 'flex', 'important');
+    document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important');
 }
 
 function showDashboard(){
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('dashboardSection').style.display = 'block';
+    // Change background to clean setup for dashboard
+    document.body.style.setProperty('background', '#f5f5f5', 'important');
+    document.body.style.setProperty('animation', 'none', 'important');
+    
+    document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
+    document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important');
     loadProducts();
 }
 
-// Original Product Management Code
+// Product Management Code
 const imageInput = document.getElementById('imageInput');
 const preview = document.getElementById('preview');
-
 let imageData = "";
 
 imageInput.addEventListener('change', function(){
-
     const file = this.files[0];
-
-    const reader = new FileReader();
-
-    reader.onload = function(e){
-
-        imageData = e.target.result;
-
-        preview.src = imageData;
-
-        preview.style.display = 'block';
-
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = function(e){
+            imageData = e.target.result;
+            preview.src = imageData;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
     }
-
-    reader.readAsDataURL(file);
-
 });
 
 function addProduct(){
-
     const title = document.getElementById('title').value;
     const price = document.getElementById('price').value;
 
@@ -287,75 +284,51 @@ function addProduct(){
     const product = {
         title,
         price,
-        image:imageData
+        image: imageData
     };
 
     let products = JSON.parse(localStorage.getItem('products')) || [];
-
     products.push(product);
-
     localStorage.setItem('products', JSON.stringify(products));
 
     document.getElementById('title').value = '';
     document.getElementById('price').value = '';
+    document.getElementById('imageInput').value = '';
     imageData = "";
     preview.style.display = 'none';
 
     loadProducts();
-
 }
 
 function deleteProduct(index){
-
     let products = JSON.parse(localStorage.getItem('products')) || [];
-
-    products.splice(index,1);
-
+    products.splice(index, 1);
     localStorage.setItem('products', JSON.stringify(products));
-
     loadProducts();
-
 }
 
 function loadProducts(){
-
     const productsList = document.getElementById('productsList');
-
     productsList.innerHTML = "";
-
     let products = JSON.parse(localStorage.getItem('products')) || [];
 
-    products.forEach((product,index)=>{
-
+    products.forEach((product, index)=>{
         productsList.innerHTML += `
-
         <div class="product-item">
-
             <img src="${product.image}">
-
             <div>
-
                 <h3>${product.title}</h3>
-
                 <p>${product.price} DH</p>
-
             </div>
-
-            <button onclick="deleteProduct(${index})">
-            Delete
-            </button>
-
+            <button onclick="deleteProduct(${index})">Delete</button>
         </div>
-
         `;
-
     });
-
 }
 
-// Check login status when page loads
+// Start app
 checkLogin();
-
 </script>
+
 </body>
 </html>
