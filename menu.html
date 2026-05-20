@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Our Menu</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        img { width: 100px; height: 100px; object-fit: contain; }
+    </style>
+</head>
+<body>
+
+    <h1>Our Menu</h1>
+    <div class="grid" id="menuGrid">Loading...</div>
+
+<script>
+    // حط هنا معلومات المشروع ديالك
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_KEY = "YOUR_SUPABASE_KEY";
+    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadMenu() {
+        const grid = document.getElementById('menuGrid');
+        let { data, error } = await _supabase.from('products').select('*');
+        
+        if (error) { grid.innerHTML = "Error loading data"; return; }
+        
+        grid.innerHTML = "";
+        data.forEach(p => {
+            grid.innerHTML += `
+            <div class="card">
+                <img src="${p.image}">
+                <h3>${p.title}</h3>
+                <p>${p.price} DH</p>
+            </div>`;
+        });
+    }
+
+    loadMenu();
+</script>
+</body>
+</html>
