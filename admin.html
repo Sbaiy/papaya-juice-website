@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-/* --- 1. Base Reset & Soft Smooth Animations --- */
 body {
     margin: 0 !important;
     padding: 0 !important;
     min-height: 100vh !important;
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -26,7 +26,6 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* --- 2. Layout Sections --- */
 .login-section {
     background: transparent !important;
     width: 100% !important;
@@ -43,9 +42,8 @@ body {
     padding: 30px;
 }
 
-/* --- Glassmorphism Container --- */
 .container {
-    max-width: 500px;
+    max-width: 550px;
     width: 100%;
     margin: auto;
     background: rgba(255, 255, 255, 0.75) !important;
@@ -58,32 +56,12 @@ body {
     box-sizing: border-box;
 }
 
-/* --- 3. Components Styling --- */
-.logo-container {
-    text-align: center;
-    margin-bottom: 15px; 
-}
+.logo-container { text-align: center; margin-bottom: 15px; }
+.admin-logo { width: 100px; height: auto; border-radius: 50%; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+h1 { text-align: center; margin-bottom: 30px; color: #222; }
 
-.admin-logo {
-    width: 100px;
-    height: auto;
-    border-radius: 50%; 
-}
-
-.admin-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #222;
-}
-
-input {
+input, select {
     width: 100%;
     padding: 15px;
     margin-bottom: 20px;
@@ -93,6 +71,7 @@ input {
     font-size: 16px;
     box-sizing: border-box;
     color: #333;
+    font-family: 'Poppins', sans-serif;
 }
 
 button {
@@ -107,29 +86,11 @@ button {
     transition: background 0.3s ease;
 }
 
-button:hover {
-    background: #d35400;
-}
+button:hover { background: #d35400; }
+.logout-btn { background: #d32f2f; width: auto; padding: 10px 20px; font-size: 16px; }
+.logout-btn:hover { background: #b71c1c; }
+.error-message { color: red; margin-bottom: 15px; text-align: center; font-weight: bold; }
 
-.logout-btn {
-    background: #d32f2f;
-    width: auto;
-    padding: 10px 20px;
-    font-size: 16px;
-}
-
-.logout-btn:hover {
-    background: #b71c1c;
-}
-
-.error-message {
-    color: red;
-    margin-bottom: 15px;
-    text-align: center;
-    font-weight: bold;
-}
-
-/* --- 4. Products List Layout --- */
 .product-item {
     display: flex;
     align-items: center;
@@ -139,62 +100,23 @@ button:hover {
     padding: 15px;
     border-radius: 15px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
-.product-item img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 10px;
-    background: transparent !important;
-}
+.product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: transparent !important; }
+.product-item div { flex: 1; margin-left: 15px; }
+.product-item h3 { margin: 0 0 5px 0; color: #222; font-size: 16px; }
+.product-item p { margin: 0; color: #e67e22; font-weight: bold; font-size: 14px; }
+.product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; }
+.product-item button { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
 
-.product-item div {
-    flex: 1;
-    margin-left: 15px;
-}
-
-.product-item h3 {
-    margin: 0 0 5px 0;
-    color: #222;
-}
-
-.product-item p {
-    margin: 0;
-    color: #d35400;
-    font-weight: bold;
-}
-
-.product-item button {
-    width: auto;
-    padding: 10px 15px;
-    background: #d32f2f;
-    font-size: 14px;
-}
-
-.product-item button:hover {
-    background: #b71c1c;
-}
-
-.preview {
-    width: 100%;
-    height: 250px;
-    object-fit: contain;
-    margin-bottom: 20px;
-    display: none;
-    background: transparent !important;
-}
+.preview { width: 100%; height: 200px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent !important; }
 </style>
 </head>
-
 <body>
 
 <div id="loginSection" class="login-section">
     <div class="container">
-        <div class="logo-container">
-            <img src="logo.png" alt="Papaya Juice Logo" class="admin-logo">
-        </div>
+        <div class="logo-container"><img src="logo.png" class="admin-logo"></div>
         <h1>Admin Login</h1>
         <div id="errorMessage" class="error-message" style="display:none;"></div>
         <input type="text" id="username" placeholder="Username">
@@ -215,6 +137,14 @@ button:hover {
         <h1>Add Product</h1>
         <input type="file" id="imageInput" accept="image/*">
         <img id="preview" class="preview">
+        
+        <select id="categorySelect">
+            <option value="mojito">Mojito</option>
+            <option value="juice">Fresh Juice</option>
+            <option value="crepe">Crêpe</option>
+            <option value="toast">Toast</option>
+        </select>
+        
         <input type="text" id="title" placeholder="Product Name">
         <input type="text" id="price" placeholder="Price">
         <button onclick="addProduct()">Add Product</button>
@@ -222,60 +152,34 @@ button:hover {
 </div>
 
 <script>
-// Login Credentials
 const ADMIN_USERNAME = "sbaiy";
 const ADMIN_PASSWORD = "2030";
 
 function checkLogin(){
-    const isLoggedIn = localStorage.getItem('adminLoggedIn');
-    if(isLoggedIn === 'true'){
-        showDashboard();
-    } else {
-        showLogin();
-    }
+    if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); } else { showLogin(); }
 }
-
 function login(){
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('errorMessage');
-
-    if(username === ADMIN_USERNAME && password === ADMIN_PASSWORD){
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    if(u === ADMIN_USERNAME && p === ADMIN_PASSWORD){
         localStorage.setItem('adminLoggedIn', 'true');
         showDashboard();
     } else {
-        errorMessage.textContent = 'Username or Password is incorrect!';
-        errorMessage.style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'Incorrect Credentials!';
+        document.getElementById('errorMessage').style.display = 'block';
     }
 }
-
-function logout(){
-    localStorage.removeItem('adminLoggedIn');
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    showLogin();
-}
-
+function logout(){ localStorage.removeItem('adminLoggedIn'); showLogin(); }
 function showLogin(){
-    document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
-    document.body.style.setProperty('background-size', '400% 400%', 'important');
-    document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
-    
     document.getElementById('loginSection').style.setProperty('display', 'flex', 'important');
     document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important');
 }
-
 function showDashboard(){
-    document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
-    document.body.style.setProperty('background-size', '400% 400%', 'important');
-    document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
-    
     document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
     document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important');
     loadProducts();
 }
 
-// Ultra-optimized PNG Compression (Max 180px for ultimate lightness)
 const imageInput = document.getElementById('imageInput');
 const preview = document.getElementById('preview');
 let imageData = "";
@@ -289,32 +193,15 @@ imageInput.addEventListener('change', function(){
             img.src = e.target.result;
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const maxSize = 180; // رجعناها 180px باش تكون خفيفة بزاف فـ الـ Storage
-
-                if (width > height) {
-                    if (width > maxSize) {
-                        height *= maxSize / width;
-                        width = maxSize;
-                    }
-                } else {
-                    if (height > maxSize) {
-                        width *= maxSize / height;
-                        height = maxSize;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
+                let width = img.width, height = img.height, maxSize = 180;
+                if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
+                else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
-
                 imageData = canvas.toDataURL('image/png');
-                preview.src = imageData;
-                preview.style.display = 'block';
+                preview.src = imageData; preview.style.display = 'block';
             }
         }
         reader.readAsDataURL(file);
@@ -324,34 +211,23 @@ imageInput.addEventListener('change', function(){
 function addProduct(){
     const title = document.getElementById('title').value;
     const price = document.getElementById('price').value;
+    const category = document.getElementById('categorySelect').value;
 
     if(!title || !price || !imageData){
-        alert('Please fill all fields and select an image!');
-        return;
+        alert('Please fill all fields!'); return;
     }
 
-    const product = {
-        title: title,
-        price: price,
-        image: imageData
-    };
+    const product = { title: title, price: price, image: imageData, category: category };
 
     try {
         let products = JSON.parse(localStorage.getItem('products')) || [];
         products.push(product);
         localStorage.setItem('products', JSON.stringify(products));
-
-        // Reset Inputs
         document.getElementById('title').value = '';
         document.getElementById('price').value = '';
-        document.getElementById('imageInput').value = '';
-        imageData = "";
         preview.style.display = 'none';
-
         loadProducts();
-    } catch (error) {
-        alert('Storage is full! Please delete some old products first.');
-    }
+    } catch (e) { alert('Storage is full!'); }
 }
 
 function deleteProduct(index){
@@ -362,26 +238,23 @@ function deleteProduct(index){
 }
 
 function loadProducts(){
-    const productsList = document.getElementById('productsList');
-    productsList.innerHTML = "";
+    const list = document.getElementById('productsList');
+    list.innerHTML = "";
     let products = JSON.parse(localStorage.getItem('products')) || [];
-
     products.forEach((product, index)=>{
-        productsList.innerHTML += `
+        list.innerHTML += `
         <div class="product-item">
             <img src="${product.image}">
             <div>
                 <h3>${product.title}</h3>
                 <p>${product.price} DH</p>
+                <span class="badge">${product.category || 'mojito'}</span>
             </div>
             <button onclick="deleteProduct(${index})">Delete</button>
-        </div>
-        `;
+        </div>`;
     });
 }
-
 checkLogin();
 </script>
-
 </body>
 </html>
