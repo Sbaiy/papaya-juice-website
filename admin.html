@@ -145,6 +145,20 @@ body {
     100% { background-position: 0% 50%; }
 }
 
+document.querySelector('.login-section button, input[type="submit"]').addEventListener('click', function(e) {
+    // Prevent page reload for now to see the effect
+    e.preventDefault(); 
+    
+    // Hide Login Section
+    document.getElementById('loginSection').style.display = 'none';
+    
+    // Show Dashboard Section
+    document.getElementById('dashboardSection').style.display = 'block';
+    
+    // Reset body background so animation stops inside dashboard (Optional)
+    document.body.style.background = '#ffffff';
+    document.body.style.animation = 'none';
+});
 </style>
 </head>
 
