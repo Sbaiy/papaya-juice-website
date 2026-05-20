@@ -8,12 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-    margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
-    display: flex !important; justify-content: center !important; align-items: center !important;
-    background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
-    background-size: 400% 400% !important; animation: gradientAnimation 20s ease infinite !important;
-}
+body { margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; display: flex !important; justify-content: center !important; align-items: center !important; background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important; background-size: 400% 400% !important; animation: gradientAnimation 20s ease infinite !important; }
 @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 .login-section { background: transparent !important; width: 100% !important; display: flex !important; justify-content: center !important; align-items: center !important; }
 .dashboard-section { width: 100% !important; min-height: 100vh !important; display: none; box-sizing: border-box; padding: 30px; }
@@ -25,13 +20,13 @@ button { width: 100%; padding: 15px; border: none; background: #e67e22; color: w
 button:hover { background: #d35400; }
 .logout-btn { background: #d32f2f; width: auto; padding: 10px 20px; font-size: 14px; }
 .product-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.2); padding: 15px; border-radius: 15px; margin-bottom: 20px; }
-.product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; }
+.product-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 10px; background: transparent; }
 .product-item div { flex: 1; margin-left: 15px; }
 .product-item h3 { margin: 0 0 5px 0; color: #222; font-size: 16px; }
 .product-item p { margin: 0; color: #e67e22; font-weight: bold; }
 .product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; }
 .product-item button { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
-.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; }
+.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent; }
 </style>
 </head>
 <body>
@@ -52,20 +47,16 @@ button:hover { background: #d35400; }
             <h1>Dashboard</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
-        
         <div id="productsList">Loading...</div>
-        
         <h1>Add Product</h1>
         <input type="file" id="imageInput" accept="image/*">
         <img id="preview" class="preview">
-        
         <select id="categorySelect">
             <option value="mojito">Mojito</option>
             <option value="juice">Fresh Juice</option>
             <option value="crepe">Crêpe</option>
             <option value="toast">Toast</option>
         </select>
-        
         <input type="text" id="title" placeholder="Product Name">
         <input type="text" id="price" placeholder="Price">
         <button onclick="addProduct()">Add Product</button>
@@ -73,7 +64,6 @@ button:hover { background: #d35400; }
 </div>
 
 <script>
-// ⚠️ حط معلومات السيرفر ديالك هنا كيفما العادة
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -81,17 +71,12 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_USERNAME = "sbaiy"; const ADMIN_PASSWORD = "2030";
 
 function checkLogin(){ if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); } else { showLogin(); } }
-function login(){
-    if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){
-        localStorage.setItem('adminLoggedIn', 'true'); showDashboard();
-    } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; }
-}
+function login(){ if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ localStorage.setItem('adminLoggedIn', 'true'); showDashboard(); } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; } }
 function logout(){ localStorage.removeItem('adminLoggedIn'); showLogin(); }
 function showLogin(){ document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); }
 function showDashboard(){ document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); loadProducts(); }
 
 const imageInput = document.getElementById('imageInput'); const preview = document.getElementById('preview'); let imageData = "";
-
 imageInput.addEventListener('change', function(){
     const file = this.files[0];
     if(file) {
@@ -100,18 +85,14 @@ imageInput.addEventListener('change', function(){
             const img = new Image(); img.src = e.target.result;
             img.onload = function() {
                 const canvas = document.createElement('canvas'); 
-                
-                // 🚀 زِدنا الـ الحجم هنا لـ 800 بيكسل باش تحافظ التصويرة على الجودة والـ HD
                 let width = img.width, height = img.height, maxSize = 800; 
-                
                 if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
                 else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
-                
                 canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
-                
-                // 🚀 زِدنا الجودة هنا لـ 0.95 (يعني جودة 95% صافية ونقية بزاف)
-                imageData = canvas.toDataURL('image/jpeg', 0.95); 
+                ctx.clearRect(0, 0, width, height); 
+                ctx.drawImage(img, 0, 0, width, height);
+                // التعديل هنا: PNG باش تبقى الشفافية
+                imageData = canvas.toDataURL('image/png'); 
                 preview.src = imageData; preview.style.display = 'block';
             }
         }
@@ -119,37 +100,9 @@ imageInput.addEventListener('change', function(){
     }
 });
 
-async function addProduct(){
-    const title = document.getElementById('title').value; const price = document.getElementById('price').value; const category = document.getElementById('categorySelect').value;
-    if(!title || !price || !imageData){ alert('Fill all fields!'); return; }
-    
-    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]);
-    if(error) { alert('Error saving data'); } else { document.getElementById('title').value = ''; document.getElementById('price').value = ''; preview.style.display = 'none'; loadProducts(); }
-}
-
-async function deleteProduct(id){
-    const { error } = await _supabase.from('products').delete().eq('id', id);
-    if(!error) loadProducts();
-}
-
-async function loadProducts(){
-    const list = document.getElementById('productsList'); list.innerHTML = "Loading database...";
-    let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false });
-    if(error) { list.innerHTML = "Error loading from database"; return; }
-    list.innerHTML = "";
-    products.forEach((product)=>{
-        list.innerHTML += `
-        <div class="product-item">
-            <img src="${product.image}">
-            <div>
-                <h3>${product.title}</h3>
-                <p>${product.price} DH</p>
-                <span class="badge">${product.category}</span>
-            </div>
-            <button onclick="deleteProduct(${product.id})">Delete</button>
-        </div>`;
-    });
-}
+async function addProduct(){ const title = document.getElementById('title').value; const price = document.getElementById('price').value; const category = document.getElementById('categorySelect').value; if(!title || !price || !imageData){ alert('Fill all fields!'); return; } const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]); if(error) { alert('Error saving data'); } else { document.getElementById('title').value = ''; document.getElementById('price').value = ''; preview.style.display = 'none'; loadProducts(); } }
+async function deleteProduct(id){ const { error } = await _supabase.from('products').delete().eq('id', id); if(!error) loadProducts(); }
+async function loadProducts(){ const list = document.getElementById('productsList'); list.innerHTML = "Loading..."; let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); if(error) { list.innerHTML = "Error"; return; } list.innerHTML = ""; products.forEach((product)=>{ list.innerHTML += `<div class="product-item"><img src="${product.image}"><div><h3>${product.title}</h3><p>${product.price} DH</p><span class="badge">${product.category}</span></div><button onclick="deleteProduct(${product.id})">Delete</button></div>`; }); }
 checkLogin();
 </script>
 </body>
