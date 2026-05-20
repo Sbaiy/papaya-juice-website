@@ -110,47 +110,38 @@ button{
 }
     .logo-container {
     text-align: center;
-    margin-bottom: 15px; /* باش يخلي اتساع بينو وبين Admin Login */
+    margin-bottom: 15px; 
 }
 
 .admin-logo {
-    width: 100px;        /* كتحكم فالعرض ديال اللوغو */
-    height: auto;        /* كيحافظ على أبعاد التصويرة */
-    border-radius: 50%;  /* يلا بغيتي اللوغو يجي داير (إختياري) */
+    width: 100px;
+    height: auto;
+    border-radius: 50%; 
 }
+
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f) !important;
+    background-size: 400% 400% !important;
+    animation: gradientAnimation 12s ease infinite !important;
+}
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 </style>
 </head>
 
 <body>
-body {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    font-family: Arial, sans-serif;
-    
-    /* الألوان اللي غيتحركوا: درت ليك تدرج بين الليموني، الخوخي والوردي الخفيف باش يواتيو عصير البابايا */
-    background: linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f);
-    background-size: 400% 400%;
-    
-    /* هادي هي الحركة اللي غتخليهم يتبدلو بشوية */
-    animation: gradientAnimation 12s ease infinite;
-}
 
-/* هاد الكود هو اللي كيحرك الألوان من قنت لقنت */
-@keyframes gradientAnimation {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
 <!-- Login Section -->
 <div id="loginSection" class="login-section" style="display:flex;">
     <div class="container">
