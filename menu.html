@@ -141,97 +141,42 @@ nav{
 <h1>Our Menu</h1>
 </div>
 
-<div class="menu-container">
+<div class="menu-container" id="menuContainer">
 
-<!-- CARD 1 -->
+<script>
 
-<div class="food-card">
+const menuContainer = document.getElementById('menuContainer');
 
-<img src="espresso.png">
+const products = JSON.parse(localStorage.getItem('products')) || [];
 
-<div class="food-info">
+products.forEach(product => {
 
-<h3>Espresso</h3>
+    menuContainer.innerHTML += `
 
-<div class="price-row">
+    <div class="food-card">
 
-<span>10 DH</span>
+        <img src="${product.image}">
 
-<button>+</button>
+        <div class="food-info">
 
-</div>
+            <h3>${product.title}</h3>
 
-</div>
+            <div class="price-row">
 
-</div>
+                <span>${product.price} DH</span>
 
-<!-- CARD 2 -->
+                <button>+</button>
 
-<div class="food-card">
+            </div>
 
-<img src="latte.png">
+        </div>
 
-<div class="food-info">
+    </div>
 
-<h3>Latte</h3>
+    `;
 
-<div class="price-row">
+});
 
-<span>15 DH</span>
-
-<button>+</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- CARD 3 -->
-
-<div class="food-card">
-
-<img src="juice.png">
-
-<div class="food-info">
-
-<h3>Mango Juice</h3>
-
-<div class="price-row">
-
-<span>20 DH</span>
-
-<button>+</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- CARD 4 -->
-
-<div class="food-card">
-
-<img src="burger.png">
-
-<div class="food-info">
-
-<h3>Chicken Burger</h3>
-
-<div class="price-row">
-
-<span>35 DH</span>
-
-<button>+</button>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
+</script>
 </body>
 </html>
