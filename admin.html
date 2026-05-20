@@ -57,6 +57,7 @@ input{
     border-radius:10px;
     border:1px solid #ccc;
     font-size:16px;
+    box-sizing: border-box;
 }
 
 button{
@@ -78,29 +79,122 @@ button{
     display:none;
 }
 
+.login-section{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    background:#f5f5f5;
+}
+
+.error-message{
+    color:red;
+    margin-bottom:15px;
+    text-align:center;
+    font-weight:bold;
+}
+
+.logout-btn{
+    background:#d32f2f;
+    margin-bottom:20px;
+    width:auto;
+    padding:10px 20px;
+    float:right;
+}
+
+.admin-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-<div id="productsList"></div>
-<h1>Add Product</h1>
+<!-- Login Section -->
+<div id="loginSection" class="login-section" style="display:flex;">
+    <div class="container">
+        <h1>Admin Login</h1>
+        <div id="errorMessage" class="error-message" style="display:none;"></div>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+</div>
 
-<input type="file" id="imageInput">
+<!-- Admin Dashboard Section -->
+<div id="dashboardSection" style="display:none;">
+    <div class="container">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+        <div id="productsList"></div>
+        <h1>Add Product</h1>
 
-<img id="preview" class="preview">
+        <input type="file" id="imageInput">
 
-<input type="text" id="title" placeholder="Product Name">
+        <img id="preview" class="preview">
 
-<input type="text" id="price" placeholder="Price">
+        <input type="text" id="title" placeholder="Product Name">
 
-<button onclick="addProduct()">Add Product</button>
+        <input type="text" id="price" placeholder="Price">
 
+        <button onclick="addProduct()">Add Product</button>
+    </div>
 </div>
 
 <script>
 
+// Login Credentials (You can change these)
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "1234";
+
+// Check if user is already logged in
+function checkLogin(){
+    const isLoggedIn = localStorage.getItem('adminLoggedIn');
+    if(isLoggedIn === 'true'){
+        showDashboard();
+    } else {
+        showLogin();
+    }
+}
+
+function login(){
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('errorMessage');
+
+    if(username === ADMIN_USERNAME && password === ADMIN_PASSWORD){
+        localStorage.setItem('adminLoggedIn', 'true');
+        showDashboard();
+    } else {
+        errorMessage.textContent = 'Username or Password is incorrect!';
+        errorMessage.style.display = 'block';
+    }
+}
+
+function logout(){
+    localStorage.removeItem('adminLoggedIn');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    showLogin();
+}
+
+function showLogin(){
+    document.getElementById('loginSection').style.display = 'flex';
+    document.getElementById('dashboardSection').style.display = 'none';
+}
+
+function showDashboard(){
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('dashboardSection').style.display = 'block';
+    loadProducts();
+}
+
+// Original Product Management Code
 const imageInput = document.getElementById('imageInput');
 const preview = document.getElementById('preview');
 
@@ -131,6 +225,11 @@ function addProduct(){
     const title = document.getElementById('title').value;
     const price = document.getElementById('price').value;
 
+    if(!title || !price || !imageData){
+        alert('Please fill all fields and select an image!');
+        return;
+    }
+
     const product = {
         title,
         price,
@@ -142,6 +241,11 @@ function addProduct(){
     products.push(product);
 
     localStorage.setItem('products', JSON.stringify(products));
+
+    document.getElementById('title').value = '';
+    document.getElementById('price').value = '';
+    imageData = "";
+    preview.style.display = 'none';
 
     loadProducts();
 
@@ -195,7 +299,8 @@ function loadProducts(){
 
 }
 
-loadProducts();
+// Check login status when page loads
+checkLogin();
 
 </script>
 </body>
