@@ -304,6 +304,16 @@ nav {
         transform: translateY(0);
     }
 }
+        .hidden{
+    opacity:0;
+    transform:translateY(50px);
+    transition:all 1s ease;
+}
+
+.show{
+    opacity:1;
+    transform:translateY(0);
+}
     </style>
 </head>
 <body>
@@ -324,7 +334,7 @@ nav {
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero" id="home">
+    <section class="hero hidden" id="home">
         <div class="hero-content">
             <h1>Papaya Juice</h1>
             <p>Fresh. Natural. Moroccan Sunshine in Every Sip.<br>Located in the heart of Mohammedia</p>
@@ -334,7 +344,7 @@ nav {
     </section>
 
     <!-- About Section -->
-    <section class="about" id="about">
+    <section class="about hidden" id="about">
         <div class="about-img">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-51.jpg?w=719&h=964&rect=0%2C73%2C719%2C964">
         </div>
@@ -356,7 +366,7 @@ nav {
     margin: 0 auto 15px;
 }
 </style>
-    <section class="menu" id="menu">
+    <section class="menu hidden" id="menu">
         <h2 class="section-title">Our <span>Menu</span></h2>
         <div class="menu-grid">
         <div class="menu-card">
@@ -393,7 +403,7 @@ nav {
     </section>
 
     <!-- Location Section -->
-    <section class="location" id="location">
+    <section class="location hidden" id="location">
         <h2 class="section-title">Find <span>Us</span></h2>
         <div class="location-info">
             <div class="info-box">
@@ -465,6 +475,23 @@ mobileMenu.onclick = function () {
     }
 
 }
+        const hiddenElements = document.querySelectorAll('.hidden');
+
+window.addEventListener('scroll', () => {
+
+    hiddenElements.forEach(el => {
+
+        const position = el.getBoundingClientRect().top;
+
+        if(position < window.innerHeight - 100){
+
+            el.classList.add('show');
+
+        }
+
+    });
+
+});
     </script>
 </body>
 </html>
