@@ -6,6 +6,8 @@
 <title>Our Menu</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 body {
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
@@ -16,12 +18,9 @@ body {
 }
 @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); font-weight: 700; text-align: center; }
-
-/* أزرار الأقسام بنظام الزجاج الفخم */
 .categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
 .category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
 .category-btn:hover, .category-btn.active { background: white !important; color: #e67e22; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transform: translateY(-2px); }
-
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1200px; width: 90%; margin: 0 auto; }
 .product-card { background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(15px) !important; -webkit-backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; border-radius: 24px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
 .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.85) !important; }
@@ -42,35 +41,39 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
         <button class="category-btn" onclick="filterMenu('toast', this)">Toasts</button>
     </div>
 
-    <div class="menu-grid" id="menuGrid"></div>
+    <div class="menu-grid" id="menuGrid">Loading Menu...</div>
 
 <script>
-function displayMenu(filterCategory = 'all') {
+// ⚠️ حط المعلومات ديالك هنا من خانة Data API
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co/rest/v1/"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function displayMenu(filterCategory = 'all') {
     const menuGrid = document.getElementById('menuGrid');
-    menuGrid.innerHTML = "";
-    
-    let products = JSON.parse(localStorage.getItem('products')) || [];
+    try {
+        let { data: products, error } = await _supabase.from('products').select('*');
+        if(error) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; return; }
+        
+        menuGrid.innerHTML = "";
+        let filteredProducts = filterCategory === 'all' ? products : products.filter(p => p.category === filterCategory);
 
-    let filteredProducts = products;
-    if (filterCategory !== 'all') {
-        filteredProducts = products.filter(p => p.category === filterCategory);
-    }
+        if(!filteredProducts || filteredProducts.length === 0) {
+            menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px;">No items found.</p>`;
+            return;
+        }
 
-    if(filteredProducts.length === 0) {
-        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px; font-weight: 600;">No items found in this category.</p>`;
-        return;
-    }
-
-    filteredProducts.forEach((product) => {
-        menuGrid.innerHTML += `
-        <div class="product-card">
-            <img src="${product.image}" alt="${product.title}">
-            <div class="product-info">
-                <h3>${product.title}</h3>
-                <p>${product.price} DH</p>
-            </div>
-        </div>`;
-    });
+        filteredProducts.forEach((product) => {
+            menuGrid.innerHTML += `
+            <div class="product-card">
+                <img src="${product.image}" alt="${product.title}">
+                <div class="product-info">
+                    <h3>${product.title}</h3>
+                    <p>${product.price} DH</p>
+                </div>
+            </div>`;
+        });
+    } catch (err) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Connection error.</p>`; }
 }
 
 function filterMenu(category, buttonElement) {
@@ -79,9 +82,7 @@ function filterMenu(category, buttonElement) {
     buttonElement.classList.add('active');
     displayMenu(category);
 }
-
 window.onload = () => displayMenu('all');
 </script>
-
 </body>
 </html>
