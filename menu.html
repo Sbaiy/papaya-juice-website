@@ -1,88 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Our Menu</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-body {
-    margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
-    display: flex !important; flex-direction: column !important; align-items: center !important;
-    padding-top: 40px !important; padding-bottom: 50px !important; box-sizing: border-box;
-    background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
-    background-size: 400% 400% !important; animation: gradientAnimation 20s ease infinite !important;
-}
-@keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); font-weight: 700; text-align: center; }
-.categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-.category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
-.category-btn:hover, .category-btn.active { background: white !important; color: #e67e22; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transform: translateY(-2px); }
-.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1200px; width: 90%; margin: 0 auto; }
-.product-card { background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(15px) !important; -webkit-backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; border-radius: 24px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-.product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.85) !important; }
-.product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); }
-.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #1a1a1a; font-weight: 600; text-transform: capitalize; }
-.product-card p { margin: 5px auto 0 auto; font-size: 18px; color: #e67e22; font-weight: 700; background: rgba(230, 126, 34, 0.1); padding: 4px 15px; border-radius: 50px; display: inline-block; }
-</style>
+    <meta charset="UTF-8">
+    <title>Our Menu</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <h1 class="menu-title">Our Menu</h1>
+    <button onclick="displayMenu('all')">All</button>
+    <button onclick="displayMenu('mojito')">Mojito</button>
+    <button onclick="displayMenu('juice')">Fresh Juice</button>
+    <button onclick="displayMenu('crepe')">Crepe</button>
+    <button onclick="displayMenu('toast')">Toast</button>
 
-    <div class="categories-container">
-        <button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>
-        <button class="category-btn" onclick="filterMenu('mojito', this)">Mojitos</button>
-        <button class="category-btn" onclick="filterMenu('juice', this)">Fresh Juices</button>
-        <button class="category-btn" onclick="filterMenu('crepe', this)">Crêpes</button>
-        <button class="category-btn" onclick="filterMenu('toast', this)">Toasts</button>
-    </div>
-
-    <div class="menu-grid" id="menuGrid">Loading Menu...</div>
+    <div id="menuGrid"></div>
 
 <script>
-// ⚠️ حط المعلومات ديالك هنا من خانة Data API
-const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
-const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _supabase = window.supabase.createClient("https://rlwshuurruvtnqwgbjkl.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw");
 
-async function displayMenu(filterCategory = 'all') {
-    const menuGrid = document.getElementById('menuGrid');
-    try {
-        let { data: products, error } = await _supabase.from('products').select('*');
-        if(error) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; return; }
+    async function displayMenu(filter = 'all') {
+        let { data: products } = await _supabase.from('products').select('*');
+        const grid = document.getElementById('menuGrid');
+        grid.innerHTML = "";
         
-        menuGrid.innerHTML = "";
-        let filteredProducts = filterCategory === 'all' ? products : products.filter(p => p.category === filterCategory);
+        let filtered = filter === 'all' 
+            ? products 
+            : products.filter(p => p.category.toLowerCase() === filter.toLowerCase());
 
-        if(!filteredProducts || filteredProducts.length === 0) {
-            menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px;">No items found.</p>`;
-            return;
-        }
-
-        filteredProducts.forEach((product) => {
-            menuGrid.innerHTML += `
-            <div class="product-card">
-                <img src="${product.image}" alt="${product.title}">
-                <div class="product-info">
-                    <h3>${product.title}</h3>
-                    <p>${product.price} DH</p>
-                </div>
-            </div>`;
+        filtered.forEach(p => {
+            grid.innerHTML += `<div><img src="${p.image}" width="100"><h3>${p.title}</h3><p>${p.price} DH</p></div>`;
         });
-    } catch (err) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Connection error.</p>`; }
-}
+    }
 
-function filterMenu(category, buttonElement) {
-    const buttons = document.querySelectorAll('.category-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    buttonElement.classList.add('active');
-    displayMenu(category);
-}
-window.onload = () => displayMenu('all');
+    displayMenu('all');
 </script>
 </body>
 </html>
