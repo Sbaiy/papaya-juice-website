@@ -27,12 +27,13 @@
     <img id="preview" style="width:100px; display:none; margin-bottom:10px;">
     <input type="text" id="title" placeholder="Product Name">
     <input type="text" id="price" placeholder="Price">
-    <select id="categorySelect"><option value="">Select Category</option></select>
     
-    <div style="display:flex; gap:5px;">
-        <input type="text" id="newCategory" placeholder="New Category Name">
-        <button onclick="addCategory()" style="background:#3498db;">Add Category</button>
-    </div>
+    <select id="categorySelect">
+        <option value="Mojito">Mojito</option>
+        <option value="Fresh Juice">Fresh Juice</option>
+        <option value="Crepe">Crepe</option>
+        <option value="Toast">Toast</option>
+    </select>
     
     <button onclick="saveProduct()" style="background:#27ae60; width:100%; margin-top:10px;">Save Product</button>
 </div>
@@ -62,21 +63,6 @@
         };
         reader.readAsDataURL(e.target.files[0]);
     });
-
-    async function loadCategories() {
-        let { data } = await _supabase.from('categories').select('*');
-        const select = document.getElementById('categorySelect');
-        select.innerHTML = '<option value="">Select Category</option>';
-        data.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-    }
-
-    async function addCategory() {
-        const name = document.getElementById('newCategory').value;
-        if(!name) return;
-        await _supabase.from('categories').insert([{ name }]);
-        document.getElementById('newCategory').value = '';
-        loadCategories();
-    }
 
     async function saveProduct() {
         const product = { 
@@ -114,7 +100,6 @@
 
     async function deleteProduct(id) { await _supabase.from('products').delete().eq('id', id); location.reload(); }
     
-    loadCategories();
     loadProducts();
 </script>
 </body>
