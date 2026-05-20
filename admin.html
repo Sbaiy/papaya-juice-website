@@ -131,6 +131,7 @@ button {
     height: 80px;
     object-fit: cover;
     border-radius: 10px;
+    background: transparent !important; /* ضمان بقاء خلفية الصورة شفافة */
 }
 
 .product-item div {
@@ -161,6 +162,7 @@ button {
     object-fit: contain;
     margin-bottom: 20px;
     display: none;
+    background: transparent !important;
 }
 </style>
 </head>
@@ -251,7 +253,7 @@ function showDashboard(){
     loadProducts();
 }
 
-// Fixed Product Management with White Background Compression
+// Fixed Product Management with PNG Transparency Support
 const imageInput = document.getElementById('imageInput');
 const preview = document.getElementById('preview');
 let imageData = "";
@@ -285,14 +287,13 @@ imageInput.addEventListener('change', function(){
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 
-                // هنا عطينا لون أبيض للمساحة الشفافة باش ما تبقاش كحلة
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, width, height);
+                // مسحنا أي خلفيات ثابتة باش تحافظ الـ canvas على الشفافية
+                ctx.clearRect(0, 0, width, height);
                 
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Compress to JPEG with 0.7 quality
-                imageData = canvas.toDataURL('image/jpeg', 0.7);
+                // حولناها لـ image/png باش تحافظ على الشفافية مية فالمية
+                imageData = canvas.toDataURL('image/png');
                 preview.src = imageData;
                 preview.style.display = 'block';
             }
