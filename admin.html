@@ -15,10 +15,9 @@ body {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    /* ألوان هادئة كتلعب بشوية بين الليموني والأخضر الغامق */
     background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
     background-size: 400% 400% !important;
-    animation: gradientAnimation 20s ease infinite !important; /* رجعناها 20 ثانية باش الحركة تكون ثقيلة وخفيفة */
+    animation: gradientAnimation 20s ease infinite !important;
 }
 
 @keyframes gradientAnimation {
@@ -44,14 +43,18 @@ body {
     padding: 30px;
 }
 
+/* --- تأثير الزجاج الشفاف الضبابي (Glassmorphism) --- */
 .container {
     max-width: 500px;
     width: 100%;
     margin: auto;
-    background: white;
+    background: rgba(255, 255, 255, 0.75) !important; /* شفافية خفيفة */
+    backdrop-filter: blur(12px) !important; /* تأثير ضباب الزجاج */
+    -webkit-backdrop-filter: blur(12px) !important; /* دعم متصفحات Safari */
+    border: 1px solid rgba(255, 255, 255, 0.25) !important; /* إطار أبيض خفيف بحال حافة الزجاج */
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     box-sizing: border-box;
 }
 
@@ -77,17 +80,20 @@ body {
 h1 {
     text-align: center;
     margin-bottom: 30px;
-    color: #333;
+    color: #222;
 }
 
+/* تحسين شكل الخانات باش يتواتاو مع الزجاج */
 input {
     width: 100%;
     padding: 15px;
     margin-bottom: 20px;
     border-radius: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.8);
     font-size: 16px;
     box-sizing: border-box;
+    color: #333;
 }
 
 button {
@@ -125,15 +131,17 @@ button:hover {
 }
 
 /* --- 4. Products List Layout --- */
+/* رجعنا حتى الكارطات ديال المنتجات لداخل شفافين باش يجي الديزاين متناسق كامل */
 .product-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #fafafa;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 15px;
     border-radius: 15px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
 .product-item img {
@@ -151,12 +159,12 @@ button:hover {
 
 .product-item h3 {
     margin: 0 0 5px 0;
-    color: #333;
+    color: #222;
 }
 
 .product-item p {
     margin: 0;
-    color: #e67e22;
+    color: #d35400;
     font-weight: bold;
 }
 
@@ -251,7 +259,6 @@ function logout(){
 }
 
 function showLogin(){
-    // الحفاظ على الأنيميشن الهادئة فـ اللوغين
     document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
     document.body.style.setProperty('background-size', '400% 400%', 'important');
     document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
@@ -261,7 +268,6 @@ function showLogin(){
 }
 
 function showDashboard(){
-    // دابا حتى الداشبورد غتبقى شادة نفس الأنيميشن الهادئة الليمونية والخضراء وماترجعش بيضاء
     document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
     document.body.style.setProperty('background-size', '400% 400%', 'important');
     document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
