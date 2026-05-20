@@ -8,52 +8,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
     body { margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c); background-size: 400% 400%; animation: gradientAnimation 20s ease infinite; min-height: 100vh; display: flex; justify-content: center; }
-    .container { max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.85); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); }
-    .product-item { display: flex; align-items: center; background: white; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
-    .product-item img { width: 50px; height: 50px; object-fit: contain; margin-right: 10px; }
-    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; }
-
-    body { margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c); background-size: 400% 400%; animation: gradientAnimation 20s ease infinite; min-height: 100vh; display: flex; justify-content: center; }
     .container { max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
-    
     h1 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
-    
-    .product-item { display: flex; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #eee; transition: 0.3s; }
-    .product-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-    .product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 12px; margin-right: 15px; border: 1px solid #ddd; }
-    
-    input, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-    
-    .btn-group { display: flex; gap: 10px; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; color: white; font-weight: 600; font-size: 14px; transition: 0.3s; }
-    button:hover { opacity: 0.9; }
-    
-    #saveBtn { background: #27ae60; width: 100%; font-size: 16px; margin-top: 10px; }
-    .edit-btn { background: #f39c12; }
-    .del-btn { background: #e74c3c; }
+    .product-item { display: flex; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+    .product-item img { width: 60px; height: 60px; object-fit: contain; margin-right: 15px; border-radius: 12px; background: transparent; }
+    input, select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+    button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; color: white; font-weight: 600; }
+    .btn-group { display: flex; gap: 5px; }
 </style>
 </head>
 <body>
-<div class="container" id="adminApp">
+<div class="container">
     <h1>Dashboard</h1>
-    <div id="productsList"></div>
+    <div id="productsList">Loading...</div>
     <hr>
     <h3>Add/Edit Product</h3>
     <input type="file" id="imageInput" accept="image/*">
-    <img id="preview" style="width:100px; display:none;">
-    <input type="text" id="title" placeholder="Name">
+    <img id="preview" style="width:100px; display:none; margin-bottom:10px;">
+    <input type="text" id="title" placeholder="Product Name">
     <input type="text" id="price" placeholder="Price">
-    <select id="categorySelect">
-        <option value="mojito">Mojito</option>
-        <option value="juice">Fresh Juice</option>
-        <option value="crepe">Crêpe</option>
-        <option value="toast">Toast</option>
-    </select>
-    <button onclick="saveProduct()" style="background:#27ae60;">Save Product</button>
-<div style="display:flex; gap:5px; margin-top:10px;">
-    <input type="text" id="newCategory" placeholder="New Category Name">
-    <button onclick="addCategory()" style="background:#3498db; width:auto;">Add</button>
+    <select id="categorySelect"><option value="">Select Category</option></select>
+    
+    <div style="display:flex; gap:5px;">
+        <input type="text" id="newCategory" placeholder="New Category Name">
+        <button onclick="addCategory()" style="background:#3498db;">Add Category</button>
+    </div>
+    
+    <button onclick="saveProduct()" style="background:#27ae60; width:100%; margin-top:10px;">Save Product</button>
 </div>
 
 <script>
@@ -63,7 +44,8 @@
 
     let editId = null; let imageData = "";
 
-    imageInput.addEventListener('change', (e) => {
+    // تحميل التصويرة ومعالجتها
+    document.getElementById('imageInput').addEventListener('change', (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
@@ -81,6 +63,19 @@
         reader.readAsDataURL(e.target.files[0]);
     });
 
+    async function loadCategories() {
+        let { data } = await _supabase.from('categories').select('*');
+        const select = document.getElementById('categorySelect');
+        data.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+    }
+
+    async function addCategory() {
+        const name = document.getElementById('newCategory').value;
+        if(!name) return;
+        await _supabase.from('categories').insert([{ name }]);
+        location.reload();
+    }
+
     async function saveProduct() {
         const product = { 
             title: document.getElementById('title').value, 
@@ -88,23 +83,23 @@
             category: document.getElementById('categorySelect').value,
             image: imageData 
         };
-        if(editId) {
-            await _supabase.from('products').update(product).eq('id', editId);
-        } else {
-            await _supabase.from('products').insert([product]);
-        }
+        if(editId) await _supabase.from('products').update(product).eq('id', editId);
+        else await _supabase.from('products').insert([product]);
         location.reload();
     }
 
     async function loadProducts() {
         let { data } = await _supabase.from('products').select('*');
         const list = document.getElementById('productsList');
+        list.innerHTML = "";
         data.forEach(p => {
             list.innerHTML += `<div class="product-item">
                 <img src="${p.image}">
-                <div>${p.title} - ${p.price} DH</div>
-                <button onclick="editProduct(${p.id}, '${p.title}', '${p.price}', '${p.category}', '${p.image}')" style="background:orange">Edit</button>
-                <button onclick="deleteProduct(${p.id})" style="background:red">Del</button>
+                <div style="flex:1;">${p.title} - ${p.price} DH</div>
+                <div class="btn-group">
+                    <button onclick="editProduct(${p.id}, '${p.title}', '${p.price}', '${p.category}', '${p.image}')" style="background:orange">Edit</button>
+                    <button onclick="deleteProduct(${p.id})" style="background:red">Del</button>
+                </div>
             </div>`;
         });
     }
@@ -116,6 +111,8 @@
     }
 
     async function deleteProduct(id) { await _supabase.from('products').delete().eq('id', id); location.reload(); }
+    
+    loadCategories();
     loadProducts();
 </script>
 </body>
