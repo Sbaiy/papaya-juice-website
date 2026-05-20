@@ -3,12 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Menu</title>
+
+<title>Papaya Juice Menu</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f5f5f5;
+}
+
+/* NAVBAR */
+
+nav{
+    background:white;
+    padding:20px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    position:sticky;
+    top:0;
+}
+
+.logo{
+    font-size:35px;
+    font-weight:bold;
+    color:#e08b2c;
+}
+
+/* TITLE */
+
+.title{
+    text-align:center;
+    margin:50px 0;
+}
+
+.title h1{
+    font-size:55px;
+    color:#222;
+}
+
+/* MENU GRID */
+
+.menu-container{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:30px;
+    padding:40px;
+}
+
+/* CARD */
+
+.food-card{
+    background:white;
+    border-radius:25px;
+    overflow:hidden;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+
+.food-card:hover{
+    transform:translateY(-10px);
+}
+
+.food-card img{
+    width:100%;
+    height:220px;
+    object-fit:contain;
+    background:#fafafa;
+}
+
+.food-info{
+    padding:20px;
+}
+
+.food-info h3{
+    font-size:28px;
+    margin-bottom:15px;
+}
+
+.price-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.price-row span{
+    color:#f39c12;
+    font-size:25px;
+    font-weight:bold;
+}
+
+.price-row button{
+    width:55px;
+    height:55px;
+    border:none;
+    border-radius:50%;
+    background:#f39c12;
+    color:white;
+    font-size:30px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.price-row button:hover{
+    transform:scale(1.1);
+}
+
+/* RESPONSIVE */
+
+@media(max-width:768px){
+
+.title h1{
+    font-size:40px;
+}
+
+.logo{
+    font-size:25px;
+}
+
+}
+
+</style>
 </head>
 
 <body>
 
-<h1>achraf es 🔥</h1>
+<nav>
+
+<div class="logo">Papaya Juice</div>
+
+</nav>
+
+<div class="title">
+<h1>Our Menu</h1>
+</div>
+
+<div class="menu-container">
+
+<!-- CARD 1 -->
+
+<div class="food-card">
+
+<img src="espresso.png">
+
+<div class="food-info">
+
+<h3>Espresso</h3>
+
+<div class="price-row">
+
+<span>10 DH</span>
+
+<button>+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- CARD 2 -->
+
+<div class="food-card">
+
+<img src="latte.png">
+
+<div class="food-info">
+
+<h3>Latte</h3>
+
+<div class="price-row">
+
+<span>15 DH</span>
+
+<button>+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- CARD 3 -->
+
+<div class="food-card">
+
+<img src="juice.png">
+
+<div class="food-info">
+
+<h3>Mango Juice</h3>
+
+<div class="price-row">
+
+<span>20 DH</span>
+
+<button>+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- CARD 4 -->
+
+<div class="food-card">
+
+<img src="burger.png">
+
+<div class="food-info">
+
+<h3>Chicken Burger</h3>
+
+<div class="price-row">
+
+<span>35 DH</span>
+
+<button>+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </body>
 </html>
