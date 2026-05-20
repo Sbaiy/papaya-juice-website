@@ -43,15 +43,15 @@ body {
     padding: 30px;
 }
 
-/* --- تأثير الزجاج الشفاف الضبابي (Glassmorphism) --- */
+/* --- Glassmorphism Container --- */
 .container {
     max-width: 500px;
     width: 100%;
     margin: auto;
-    background: rgba(255, 255, 255, 0.75) !important; /* شفافية خفيفة */
-    backdrop-filter: blur(12px) !important; /* تأثير ضباب الزجاج */
-    -webkit-backdrop-filter: blur(12px) !important; /* دعم متصفحات Safari */
-    border: 1px solid rgba(255, 255, 255, 0.25) !important; /* إطار أبيض خفيف بحال حافة الزجاج */
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -83,7 +83,6 @@ h1 {
     color: #222;
 }
 
-/* تحسين شكل الخانات باش يتواتاو مع الزجاج */
 input {
     width: 100%;
     padding: 15px;
@@ -131,7 +130,6 @@ button:hover {
 }
 
 /* --- 4. Products List Layout --- */
-/* رجعنا حتى الكارطات ديال المنتجات لداخل شفافين باش يجي الديزاين متناسق كامل */
 .product-item {
     display: flex;
     align-items: center;
@@ -277,7 +275,7 @@ function showDashboard(){
     loadProducts();
 }
 
-// Fixed Product Management with PNG Transparency Support
+// Ultra-optimized PNG Compression (Max 180px for ultimate lightness)
 const imageInput = document.getElementById('imageInput');
 const preview = document.getElementById('preview');
 let imageData = "";
@@ -293,7 +291,7 @@ imageInput.addEventListener('change', function(){
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const maxSize = 400;
+                const maxSize = 180; // رجعناها 180px باش تكون خفيفة بزاف فـ الـ Storage
 
                 if (width > height) {
                     if (width > maxSize) {
@@ -352,7 +350,7 @@ function addProduct(){
 
         loadProducts();
     } catch (error) {
-        alert('Storage is full or image is too big! Try a smaller image.');
+        alert('Storage is full! Please delete some old products first.');
     }
 }
 
