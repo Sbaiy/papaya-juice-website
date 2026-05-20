@@ -6,7 +6,7 @@
 <title>Admin Dashboard</title>
 
 <style>
-/* --- 1. Base Reset & Animations --- */
+/* --- 1. Base Reset & Soft Smooth Animations --- */
 body {
     margin: 0 !important;
     padding: 0 !important;
@@ -15,9 +15,10 @@ body {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    background: linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f) !important;
+    /* ألوان هادئة كتلعب بشوية بين الليموني والأخضر الغامق */
+    background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
     background-size: 400% 400% !important;
-    animation: gradientAnimation 12s ease infinite !important;
+    animation: gradientAnimation 20s ease infinite !important; /* رجعناها 20 ثانية باش الحركة تكون ثقيلة وخفيفة */
 }
 
 @keyframes gradientAnimation {
@@ -50,7 +51,7 @@ body {
     background: white;
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     box-sizing: border-box;
 }
 
@@ -93,11 +94,16 @@ button {
     width: 100%;
     padding: 15px;
     border: none;
-    background: #f39c12;
+    background: #e67e22;
     color: white;
     border-radius: 10px;
     font-size: 18px;
     cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: #d35400;
 }
 
 .logout-btn {
@@ -105,6 +111,10 @@ button {
     width: auto;
     padding: 10px 20px;
     font-size: 16px;
+}
+
+.logout-btn:hover {
+    background: #b71c1c;
 }
 
 .error-message {
@@ -131,7 +141,7 @@ button {
     height: 80px;
     object-fit: cover;
     border-radius: 10px;
-    background: transparent !important; /* ضمان بقاء خلفية الصورة شفافة */
+    background: transparent !important;
 }
 
 .product-item div {
@@ -141,6 +151,7 @@ button {
 
 .product-item h3 {
     margin: 0 0 5px 0;
+    color: #333;
 }
 
 .product-item p {
@@ -154,6 +165,10 @@ button {
     padding: 10px 15px;
     background: #d32f2f;
     font-size: 14px;
+}
+
+.product-item button:hover {
+    background: #b71c1c;
 }
 
 .preview {
@@ -236,17 +251,20 @@ function logout(){
 }
 
 function showLogin(){
-    document.body.style.setProperty('background', 'linear-gradient(-45deg, #f39c12, #e67e22, #e74c3c, #f1c40f)', 'important');
+    // الحفاظ على الأنيميشن الهادئة فـ اللوغين
+    document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
     document.body.style.setProperty('background-size', '400% 400%', 'important');
-    document.body.style.setProperty('animation', 'gradientAnimation 12s ease infinite', 'important');
+    document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
     
     document.getElementById('loginSection').style.setProperty('display', 'flex', 'important');
     document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important');
 }
 
 function showDashboard(){
-    document.body.style.setProperty('background', '#f5f5f5', 'important');
-    document.body.style.setProperty('animation', 'none', 'important');
+    // دابا حتى الداشبورد غتبقى شادة نفس الأنيميشن الهادئة الليمونية والخضراء وماترجعش بيضاء
+    document.body.style.setProperty('background', 'linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c)', 'important');
+    document.body.style.setProperty('background-size', '400% 400%', 'important');
+    document.body.style.setProperty('animation', 'gradientAnimation 20s ease infinite', 'important');
     
     document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
     document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important');
@@ -287,12 +305,9 @@ imageInput.addEventListener('change', function(){
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 
-                // مسحنا أي خلفيات ثابتة باش تحافظ الـ canvas على الشفافية
                 ctx.clearRect(0, 0, width, height);
-                
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // حولناها لـ image/png باش تحافظ على الشفافية مية فالمية
                 imageData = canvas.toDataURL('image/png');
                 preview.src = imageData;
                 preview.style.display = 'block';
