@@ -49,10 +49,13 @@ nav{
 
 .menu-container{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    grid-template-columns:repeat(4, 1fr);
     gap:25px;
     padding:30px;
+    max-width:1400px;
+    margin:0 auto;
 }
+
 /* CARD */
 
 .food-card{
@@ -61,12 +64,12 @@ nav{
     overflow:hidden;
     box-shadow:0 5px 15px rgba(0,0,0,0.08);
     transition:0.3s;
-    max-width:280px;
-    margin:auto;
+    width:100%;
 }
     
 .food-card:hover{
     transform:translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.12);
 }
 
 .food-card img{
@@ -76,14 +79,16 @@ nav{
     background:#fafafa;
     padding:15px;
 }
+
 .food-info{
     padding:18px;
 }
 
 .food-info h3{
     font-size:20px;
-    margin-bottom:15px;
+    margin:0 0 15px 0;
     color:#222;
+}
 
 .price-row{
     display:flex;
@@ -106,16 +111,39 @@ nav{
 
 /* RESPONSIVE */
 
+/* Tablet - 2 columns */
+@media(max-width:1024px){
+    .menu-container{
+        grid-template-columns:repeat(2, 1fr);
+    }
+    
+    .title h1{
+        font-size:45px;
+    }
+}
+
+/* Mobile - 2 columns on phones */
 @media(max-width:768px){
+    .menu-container{
+        grid-template-columns:repeat(2, 1fr);
+        gap:15px;
+        padding:15px;
+    }
+    
+    .title h1{
+        font-size:40px;
+    }
 
-.title h1{
-    font-size:40px;
+    .logo{
+        font-size:25px;
+    }
 }
 
-.logo{
-    font-size:25px;
-}
-
+/* Small phones - 1 column */
+@media(max-width:480px){
+    .menu-container{
+        grid-template-columns:1fr;
+    }
 }
 
 </style>
@@ -124,16 +152,14 @@ nav{
 <body>
 
 <nav>
-
-<div class="logo">Papaya Juice</div>
-
+    <div class="logo">Papaya Juice</div>
 </nav>
 
 <div class="title">
-<h1>Our Menu</h1>
+    <h1>Our Menu</h1>
 </div>
 
-<div class="menu-container" id="menuContainer">
+<div class="menu-container" id="menuContainer"></div>
 
 <script>
 
@@ -172,5 +198,6 @@ products.forEach(product => {
 });
 
 </script>
+
 </body>
 </html>
