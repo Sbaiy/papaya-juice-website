@@ -258,6 +258,52 @@
     }
 
 }
+        /* Navbar animation */
+nav {
+    animation: slideDown 1s ease;
+}
+
+/* Hero text animation */
+.hero-content {
+    animation: fadeIn 2s ease;
+}
+
+/* Button animation */
+.btn {
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: scale(1.1);
+}
+
+/* Animations */
+
+@keyframes slideDown {
+
+    from {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
     </style>
 </head>
 <body>
