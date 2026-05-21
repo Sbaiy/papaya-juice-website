@@ -49,26 +49,60 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 .categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
 .category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: capitalize; }
 .category-btn:hover, .category-btn.active { background: white !important; color: #ff7700; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transform: translateY(-2px); }
-.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1200px; width: 90%; margin: 0 auto; }
-.product-card { background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(15px) !important; -webkit-backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; border-radius: 24px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-.product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.85) !important; }
-.product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); }
-.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #1a1a1a; font-weight: 600; text-transform: capitalize; }
-.product-card p { margin: 5px auto 0 auto; font-size: 18px; color: #ff7700; font-weight: 700; background: rgba(230, 126, 34, 0.1); padding: 4px 15px; border-radius: 50px; display: inline-block; }
 
+/* الـ Grid الأساسي للحاسوب */
+.menu-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 30px; 
+    max-width: 1200px; 
+    width: 90%; 
+    margin: 0 auto; 
+}
+
+/* تأثير الزجاج الضبابي الفخم (Glassmorphism) */
+.product-card { 
+    background: rgba(255, 255, 255, 0.2) !important; 
+    backdrop-filter: blur(15px) !important; 
+    -webkit-backdrop-filter: blur(15px) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.35) !important; 
+    border-radius: 24px; 
+    padding: 25px; 
+    text-align: center; 
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important; 
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, background 0.4s ease; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: space-between; 
+}
+.product-card:hover { 
+    transform: translateY(-8px); 
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important; 
+    background: rgba(255, 255, 255, 0.3) !important; 
+}
+.product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); }
+.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: 600; text-transform: capitalize; }
+
+/* ستايل الثمن ناصع وواضح فوق الزجاج */
+.product-card p { margin: 5px auto 0 auto; font-size: 18px; color: #ff7700; font-weight: 700; background: rgba(255, 255, 255, 0.75) !important; padding: 4px 15px; border-radius: 50px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+/* التعديل الذكي للتلفونات لضبط المسافات والوسط */
 @media (max-width: 768px) {
     .menu-grid {
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 10px !important; 
-        width: 98% !important; 
+        grid-template-columns: repeat(2, minmax(130px, 1fr)) !important; 
+        gap: 15px !important; 
+        width: 92% !important; 
+        margin: 0 auto !important;
+        justify-content: center !important; /* لموازنة اليمين واليسار بالتساوي */
     }
     .product-card {
         padding: 15px 10px !important; 
         border-radius: 18px !important;
     }
     .product-card img {
-        width: 90px !important; 
-        height: 90px !important;
+        width: 95px !important; 
+        height: 95px !important;
         margin-bottom: 10px !important;
     }
     .product-card h3 {
@@ -95,7 +129,6 @@ const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// متغيرات عالمية لحفظ البيانات
 let allProductsArray = [];
 
 async function loadMenuAndCategories() {
@@ -103,7 +136,6 @@ async function loadMenuAndCategories() {
     const categoriesContainer = document.getElementById('categoriesContainer');
     
     try {
-        // 1. جلب كاع المنتجات من Supabase
         let { data: products, error } = await _supabase.from('products').select('*');
         if(error) { 
             menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; 
@@ -112,16 +144,15 @@ async function loadMenuAndCategories() {
         
         allProductsArray = products || [];
 
-        // 2. استخراج الكاتيغوريات الفريدة اللي كاينة ف المنتجات دابا ديناميكياً
+        // جلب الكاتيغوريات من الداتابيز أوتوماتيكياً
         const uniqueCategories = [...new Set(allProductsArray.map(p => p.category).filter(Boolean))];
         
-        // 3. بناء أزرار الكاتيغوريات تلقائياً
+        // بناء الأزرار تلقائياً
         categoriesContainer.innerHTML = `<button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>`;
         uniqueCategories.forEach(cat => {
             categoriesContainer.innerHTML += `<button class="category-btn" onclick="filterMenu('${cat}', this)">${cat}</button>`;
         });
 
-        // 4. عرض كاع المنتجات ف الأول
         displayFilteredProducts(allProductsArray);
 
     } catch (err) { 
@@ -129,7 +160,6 @@ async function loadMenuAndCategories() {
     }
 }
 
-// دالة عرض المنتجات المصفاة وسط الـ Grid
 function displayFilteredProducts(filteredList) {
     const menuGrid = document.getElementById('menuGrid');
     menuGrid.innerHTML = "";
@@ -151,7 +181,6 @@ function displayFilteredProducts(filteredList) {
     });
 }
 
-// دالة الفلترة ملي يبرك الكليان على شي زر
 function filterMenu(category, buttonElement) {
     const buttons = document.querySelectorAll('.category-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
@@ -165,7 +194,6 @@ function filterMenu(category, buttonElement) {
     }
 }
 
-// تشغيل السيستيم التلقائي مع فتح الصفحة
 window.onload = loadMenuAndCategories;
 </script>
 </body>
