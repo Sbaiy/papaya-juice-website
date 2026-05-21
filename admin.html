@@ -46,7 +46,7 @@ body {
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
 /* لون العناوين للأبيض */
-h1 { text-align: center; margin-bottom: 30px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+h1 { text-align: center; margin-bottom: 25px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
 /* الخانات والقوائم المنسدلة زجاجية داكنة وشفافة */
 input, select { 
@@ -124,8 +124,10 @@ button:hover { background: #e05600; transform: translateY(-2px); box-shadow: 0 6
 .del-cat-btn { width: auto; padding: 15px 20px; background: #c0392b; font-size: 18px; font-weight: bold; border-radius: 12px; box-shadow: none; }
 .del-cat-btn:hover { background: #a93226; }
 
-/* تعديل لون لودينغ */
+/* تعديل لون لودينغ وعنوان الليستة */
 #productsList { color: rgba(255, 255, 255, 0.6); font-weight: 500; }
+.list-title { color: #ffffff; font-size: 20px; margin-bottom: 20px; text-align: center; font-weight: 600; }
+.divider { border: none; border-top: 1px solid var(--border-color); margin: 35px 0 25px 0; }
 </style>
 </head>
 <body>
@@ -146,9 +148,8 @@ button:hover { background: #e05600; transform: translateY(-2px); box-shadow: 0 6
             <h1 style="margin-bottom: 0;">Dashboard</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
-        <div id="productsList">Loading...</div>
         
-        <h1 id="formTitle" style="margin-top: 30px;">Add Product</h1>
+        <h1 id="formTitle">Add Product</h1>
         <input type="file" id="imageInput" accept="image/*" style="padding: 11px;">
         <img id="preview" class="preview">
         
@@ -162,6 +163,11 @@ button:hover { background: #e05600; transform: translateY(-2px); box-shadow: 0 6
         <input type="text" id="price" placeholder="Price">
         <button id="submitProductBtn" onclick="handleSubmit()">Add Product</button>
         <button id="cancelEditBtn" class="cancel-edit-btn" onclick="clearForm()">Cancel Edit</button>
+
+        <hr class="divider">
+        <div class="list-title">Products List</div>
+
+        <div id="productsList">Loading...</div>
     </div>
 </div>
 
