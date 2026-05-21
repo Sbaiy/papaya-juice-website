@@ -8,100 +8,124 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body { margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; display: flex !important; justify-content: center !important; align-items: center !important; background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important; background-size: 400% 400% !important; animation: gradientAnimation 20s ease infinite !important; }
-@keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+:root {
+    --primary: #ff6200;
+    --dark-bg: #141d16;
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body { 
+    margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; 
+    display: flex !important; justify-content: center !important; align-items: center !important; 
+    background-color: var(--dark-bg) !important;
+    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
+    background-attachment: fixed;
+    color: #eceff1;
+}
+
 .login-section { background: transparent !important; width: 100% !important; display: flex !important; justify-content: center !important; align-items: center !important; }
 .dashboard-section { width: 100% !important; min-height: 100vh !important; display: none; box-sizing: border-box; padding: 30px; }
 
-/* تأثير الزجاج الفخم (Glassmorphism) على الحاوية الرئيسية */
+/* تأثير الزجاج الفخم المظلم (Glassmorphism) على الحاوية الرئيسية */
 .container { 
     max-width: 550px; 
     width: 100%; 
-    margin: auto; 
-    background: rgba(255, 255, 255, 0.08) !important; 
+    margin: 40px auto; 
+    background: rgba(255, 255, 255, 0.05) !important; 
     backdrop-filter: blur(15px) !important; 
     -webkit-backdrop-filter: blur(15px) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.15) !important; 
+    border: 1px solid var(--border-color) !important; 
     padding: 30px; 
-    border-radius: 20px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+    border-radius: 24px; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
     box-sizing: border-box; 
 }
 
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
-/* تعديل لون العناوين للأبيض باش تبان واضحة */
-h1 { text-align: center; margin-bottom: 30px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+/* لون العناوين للأبيض */
+h1 { text-align: center; margin-bottom: 30px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-/* الخانات (Inputs) والقوائم المنسدلة (Select) زجاجية وشفافة */
+/* الخانات والقوائم المنسدلة زجاجية داكنة وشفافة */
 input, select { 
     width: 100%; 
     padding: 15px; 
     margin-bottom: 20px; 
-    border-radius: 10px; 
-    border: 1px solid rgba(255, 255, 255, 0.2); 
-    background: rgba(255, 255, 255, 0.12) !important; 
+    border-radius: 12px; 
+    border: 1px solid var(--border-color); 
+    background: var(--input-bg) !important; 
     font-size: 16px; 
     box-sizing: border-box; 
     color: #ffffff !important; 
     backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
 }
 
-/* تعديل لون النص التوضيحي (Placeholder) داخل الخانات ليكون واضحاً */
-input::placeholder { color: rgba(255, 255, 255, 0.7); }
+/* لون النص التوضيحي داخل الخانات */
+input::placeholder { color: rgba(255, 255, 255, 0.4); }
 
 /* ستايل عند التركيز على الخانات */
 input:focus, select:focus {
     outline: none;
-    border-color: #e67e22 !important;
-    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: var(--primary) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 0 10px rgba(255, 98, 0, 0.2);
 }
 
-/* تعديل ستايل الـ options داخل الـ Select باش تبان في الأنظمة العادية */
-select option { background: #1e824c; color: #fff; }
+/* ستايل الـ options داخل الـ Select باش يجي متناسق مع المظهر المظلم */
+select option { background: #1a241c; color: #fff; }
 
-button { width: 100%; padding: 15px; border: none; background: #e67e22; color: white; border-radius: 10px; font-size: 18px; cursor: pointer; font-weight: 600; transition: 0.3s ease; }
-button:hover { background: #d35400; transform: translateY(-2px); }
-.logout-btn { background: #d32f2f; width: auto; padding: 10px 20px; font-size: 14px; }
-.logout-btn:hover { background: #b71c1c; }
+/* أزرار عادية والـ Add الرئيسي */
+button { width: 100%; padding: 15px; border: none; background: var(--primary); color: white; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 600; transition: 0.3s ease; box-shadow: 0 4px 15px rgba(255, 98, 0, 0.2); }
+button:hover { background: #e05600; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 98, 0, 0.4); }
 
-/* كارتات المنتوجات زجاجية شفافة متناسقة */
+.logout-btn { background: #c0392b; width: auto; padding: 10px 20px; font-size: 14px; box-shadow: none; border-radius: 8px; }
+.logout-btn:hover { background: #a93226; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3); }
+
+/* كارتات المنتوجات زجاجية شفافة معتمة */
 .product-item { 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
-    background: rgba(255, 255, 255, 0.05) !important; 
+    background: var(--card-bg) !important; 
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.06); 
     padding: 15px; 
-    border-radius: 15px; 
+    border-radius: 18px; 
     margin-bottom: 20px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.product-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 10px; background: transparent; }
+.product-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 10px; background: transparent; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
 .product-item div { flex: 1; margin-left: 15px; }
-.product-item h3 { margin: 0 0 5px 0; color: #ffffff; font-size: 16px; }
-.product-item p { margin: 0; color: #ff9f43; font-weight: bold; }
-.product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; }
+.product-item h3 { margin: 0 0 5px 0; color: #ffffff; font-size: 16px; font-weight: 600; }
+.product-item p { margin: 0; color: var(--primary); font-weight: bold; }
+
+/* بادج الكاتيغوري مريح للعين */
+.product-item .badge { background: rgba(39, 174, 96, 0.2); color: #2ecc71; border: 1px solid rgba(39, 174, 96, 0.4); padding: 2px 10px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; font-weight: 500; }
+
 .action-btns { display: flex; flex-direction: column; gap: 8px; }
-.product-item button.delete-btn { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
-.product-item button.delete-btn:hover { background: #b71c1c; }
-.product-item button.edit-btn { width: auto; padding: 8px 12px; background: #2980b9; font-size: 13px; }
-.product-item button.edit-btn:hover { background: #1f6696; }
-.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent; }
-.cancel-edit-btn { background: #7f8c8d; margin-top: 10px; display: none; }
-.cancel-edit-btn:hover { background: #6c7a7d; }
+.product-item button.delete-btn { width: auto; padding: 8px 14px; background: #c0392b; font-size: 13px; border-radius: 8px; box-shadow: none; }
+.product-item button.delete-btn:hover { background: #a93226; }
+.product-item button.edit-btn { width: auto; padding: 8px 14px; background: #2980b9; font-size: 13px; border-radius: 8px; box-shadow: none; }
+.product-item button.edit-btn:hover { background: #2471a3; }
+
+.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4)); }
+.cancel-edit-btn { background: #566573; margin-top: 10px; display: none; box-shadow: none; }
+.cancel-edit-btn:hover { background: #46515c; }
 
 /* ستايل حاوية الكاتيغوري مع الأزرار + و - */
 .category-container { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
 .category-container select { margin-bottom: 0 !important; flex: 1; }
-.add-cat-btn { width: auto; padding: 15px 18px; background: #27ae60; font-size: 16px; font-weight: bold; border-radius: 10px; }
-.add-cat-btn:hover { background: #1e824c; }
-.del-cat-btn { width: auto; padding: 15px 18px; background: #d32f2f; font-size: 16px; font-weight: bold; border-radius: 10px; }
-.del-cat-btn:hover { background: #b71c1c; }
+.add-cat-btn { width: auto; padding: 15px 20px; background: #27ae60; font-size: 18px; font-weight: bold; border-radius: 12px; box-shadow: none; }
+.add-cat-btn:hover { background: #219a52; }
+.del-cat-btn { width: auto; padding: 15px 20px; background: #c0392b; font-size: 18px; font-weight: bold; border-radius: 12px; box-shadow: none; }
+.del-cat-btn:hover { background: #a93226; }
 
 /* تعديل لون لودينغ */
-#productsList { color: #ffffff; font-weight: 500; }
+#productsList { color: rgba(255, 255, 255, 0.6); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -124,8 +148,8 @@ button:hover { background: #d35400; transform: translateY(-2px); }
         </div>
         <div id="productsList">Loading...</div>
         
-        <h1 id="formTitle" style="margin-top: 20px;">Add Product</h1>
-        <input type="file" id="imageInput" accept="image/*" style="padding: 10px;">
+        <h1 id="formTitle" style="margin-top: 30px;">Add Product</h1>
+        <input type="file" id="imageInput" accept="image/*" style="padding: 11px;">
         <img id="preview" class="preview">
         
         <div class="category-container">
