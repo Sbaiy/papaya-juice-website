@@ -11,7 +11,7 @@
 <style>
 :root {
     --primary: #ff6200;
-    --dark-bg: #141d16; /* لون الخلفية الداكنة الأساسي المتناسق مع الصفحة الرئيسية */
+    --dark-bg: #141d16;
     --white: #ffffff;
 }
 
@@ -19,7 +19,6 @@ body {
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
     display: flex !important; flex-direction: column !important; align-items: center !important;
     padding-bottom: 50px !important; box-sizing: border-box;
-    /* خلفية دارك مود ثابتة وفخمة مع تدرج إضاءة ناعم غير متحرك */
     background-color: var(--dark-bg) !important;
     background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
     background-attachment: fixed;
@@ -37,16 +36,41 @@ header.main-header {
     -webkit-backdrop-filter: blur(15px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 30px !important;
-    margin: 20px auto !important;
+    margin: 0 !important;
     width: 90% !important;
     max-width: 1200px !important;
-    position: sticky !important;
+    position: fixed !important; /* تبدلات لـ fixed باش تعطينا الأنيماسيون */
     top: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(0) !important;
     z-index: 1000 !important;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out !important; 
+    animation: startUpAnimation 0.8s ease-out !important;
 }
 
-h1.menu-title { font-size: 42px; color: white; margin-top: 20px; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); font-weight: 700; text-align: center; }
+/* الكلاس لي كيتزاد فاش كتهبط لتحت باش يطلع المينيو */
+header.main-header.hide-nav {
+    transform: translateX(-50%) translateY(-150px) !important;
+    opacity: 0 !important;
+}
+
+/* كود الأنيماسيون الأولى ديال الـ PC */
+@keyframes startUpAnimation {
+    0% { top: -100px !important; opacity: 0; }
+    100% { top: 20px !important; opacity: 1; }
+}
+
+/* زدنا margin-top باش الهيدر ميغطيش على العنوان حيت رديناه fixed */
+h1.menu-title { 
+    font-size: 42px; 
+    color: white; 
+    margin-top: 120px; 
+    margin-bottom: 20px; 
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); 
+    font-weight: 700; 
+    text-align: center; 
+}
 
 /* أزرار الكاتيغوريات متناسقة مع الدارك مود */
 .categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
@@ -129,9 +153,17 @@ h1.menu-title { font-size: 42px; color: white; margin-top: 20px; margin-bottom: 
         gap: 12px !important;
         padding: 12px 15px !important;
         width: 92% !important;
-        margin: 10px auto !important;
+        margin: 0 auto !important;
         height: auto !important;
         background: rgba(20, 29, 22, 0.3) !important;
+        top: 10px !important;
+        animation: startUpAnimationMobile 0.8s ease-out !important;
+        left: 50% !important;
+        transform: translateX(-50%) translateY(0) !important;
+    }
+    @keyframes startUpAnimationMobile {
+        0% { top: -150px !important; opacity: 0; }
+        100% { top: 10px !important; opacity: 1; }
     }
     header.main-header nav {
         display: flex !important;
@@ -142,7 +174,7 @@ h1.menu-title { font-size: 42px; color: white; margin-top: 20px; margin-bottom: 
     header.main-header nav a {
         font-size: 15px !important;
     }
-    .menu-title { font-size: 32px !important; }
+    .menu-title { font-size: 32px !important; margin-top: 130px !important; }
     .menu-grid {
         grid-template-columns: repeat(2, minmax(130px, 1fr)) !important; 
         gap: 15px !important; 
@@ -172,14 +204,14 @@ h1.menu-title { font-size: 42px; color: white; margin-top: 20px; margin-bottom: 
 </head>
 <body>
 
-    <header class="main-header">
+    <header class="main-header" id="mainHeader">
         <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
             <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
             <span style="font-family: sans-serif; font-weight: bold; font-size: 22px; color: #FF6600; letter-spacing: 0.5px;">Papaya Juice</span>
         </a>
 
         <nav style="display: flex; gap: 25px; align-items: center;">
-            <a href="index.html" style="text-decoration: none; color: #FFFFFF; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
+            <a href="index.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
             <a href="menu.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
         </nav>
     </header>
@@ -210,10 +242,8 @@ async function loadMenuAndCategories() {
         
         allProductsArray = products || [];
 
-        // جلب الكاتيغوريات من الداتابيز أوتوماتيكياً
         const uniqueCategories = [...new Set(allProductsArray.map(p => p.category).filter(Boolean))];
         
-        // بناء الأزرار تلقائياً
         categoriesContainer.innerHTML = `<button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>`;
         uniqueCategories.forEach(cat => {
             categoriesContainer.innerHTML += `<button class="category-btn" onclick="filterMenu('${cat}', this)">${cat}</button>`;
@@ -258,9 +288,27 @@ function filterMenu(category, buttonElement) {
         const filtered = allProductsArray.filter(p => p.category === category);
         displayFilteredProducts(filtered);
     }
+    // التعديل المطلوب: الهبوط التلقائي للمنتجات بسلاسة
+    document.getElementById('menuGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 window.onload = loadMenuAndCategories;
+
+// --- كود المينيو لي كيطلع ويهبط فالسكرول ---
+let lastScrollTop = 0;
+const headerElement = document.getElementById('mainHeader');
+
+window.addEventListener('scroll', function() {
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+        headerElement.classList.add('hide-nav');
+    } else {
+        headerElement.classList.remove('hide-nav');
+    }
+    
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+});
 </script>
 </body>
 </html>
