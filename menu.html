@@ -27,6 +27,31 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 .product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); }
 .product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #1a1a1a; font-weight: 600; text-transform: capitalize; }
 .product-card p { margin: 5px auto 0 auto; font-size: 18px; color: #ff7700; font-weight: 700; background: rgba(230, 126, 34, 0.1); padding: 4px 15px; border-radius: 50px; display: inline-block; }
+
+@media (max-width: 768px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* هادي هي اللي كتفرض 2 منتجات فكل سطر */
+        gap: 10px !important; /* كنصغرو المساحة بيناتهم باش يقدو */
+        width: 98% !important; 
+    }
+    .product-card {
+        padding: 15px 10px !important; /* كنصغرو الجناب ديال البطاقة */
+        border-radius: 18px !important;
+    }
+    .product-card img {
+        width: 90px !important; /* كنصغرو التصويرة شوية باش ما تخرجش على الإطار */
+        height: 90px !important;
+        margin-bottom: 10px !important;
+    }
+    .product-card h3 {
+        font-size: 15px !important; /* تصغير السمية */
+        margin: 5px 0 !important;
+    }
+    .product-card p {
+        font-size: 13px !important; /* تصغير الثمن */
+        padding: 4px 10px !important;
+    }
+}
 </style>
 </head>
 <body>
