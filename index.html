@@ -4,23 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Papaya Juice</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght=300;400;600;700&family=Playfair+Display:wght=700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --primary: #ff6200;
-            --secondary: #126a11;
+            --secondary: #1e2d21; /* تعديل اللون الثانوي ليتناسب مع الخلفية المظلمة */
             --accent: #FDCB6E;
-            --light: #FEF9E7;
+            --light: rgba(255, 255, 255, 0.05); /* تحويل الـ light لشفافية خفيفة جداً */
             --white: #ffffff;
+            --dark-bg: #141d16; /* لون الخلفية الداكنة الأساسي */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: 'Poppins', sans-serif;
-            color: var(--secondary);
+            color: #eceff1; /* تغيير لون النص الأساسي للأبيض المائل للرمادي */
             line-height: 1.6;
             overflow-x: hidden;
-            background-color: var(--white);
+            /* خلفية دارك مود ثابتة وفخمة مع تدرج إضاءة ناعم غير متحرك */
+            background-color: var(--dark-bg) !important;
+            background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
+            background-attachment: fixed;
         }
 
         /* ستايل الهيدر الزجاجي ف الـ PC */
@@ -29,10 +34,10 @@
             justify-content: space-between !important; 
             align-items: center !important; 
             padding: 10px 30px !important; 
-            background: rgba(255, 255, 255, 0.15) !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            background: rgba(255, 255, 255, 0.06) !important; /* تقليل الشفافية لتناسب الظلام */
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
             border-radius: 30px !important;
             margin: 20px auto !important;
             width: 90% !important;
@@ -42,7 +47,7 @@
             left: 50% !important;
             transform: translateX(-50%) !important;
             z-index: 1000 !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
             transition: all 0.3s ease;
         }
 
@@ -87,10 +92,11 @@
         .glass-header nav a.active-link { color: var(--primary); font-weight: 700; }
         .mobile-menu { display: none; font-size: 1.8rem; cursor: pointer; color: #FFFFFF; }
 
-        /* Hero */
+        /* Hero Section */
         .hero {
             height: 100vh;
-            background: linear-gradient(135deg, rgba(255,140,66,0.9), rgba(253,203,110,0.8)), 
+            /* تثبيت الخلفية مع دمج الصورة بشكل فخم مع الدارك مود */
+            background: linear-gradient(135deg, rgba(20, 29, 22, 0.85), rgba(46, 68, 50, 0.75)), 
                         url('https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-49.jpg?auto=format&fit=fill&w=384') center/cover;
             display: flex;
             align-items: center;
@@ -103,26 +109,29 @@
             font-family: 'Playfair Display', serif;
             font-size: 4.5rem;
             margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 4px 8px rgba(0,0,0,0.5);
         }
         .hero-content p {
             font-size: 1.3rem;
             margin-bottom: 2rem;
             font-weight: 300;
+            color: #e0e0e0;
         }
         .btn {
             display: inline-block;
             padding: 1rem 2.5rem;
-            background: var(--white);
-            color: var(--primary);
+            background: var(--primary); /* جعل الزر برتقالي ليجذب العين وسط الدارك مود */
+            color: var(--white);
             text-decoration: none;
             border-radius: 50px;
             font-weight: 600;
             transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 98, 0, 0.4);
         }
         .btn:hover {
             transform: scale(1.1) translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #d35400;
+            box-shadow: 0 10px 30px rgba(255, 98, 0, 0.6);
         }
         .scroll-down {
             position: absolute;
@@ -140,19 +149,19 @@
         }
 
         /* Sections */
-        section { padding: 5rem 5%; }
+        section { padding: 5rem 5%; background: transparent; }
         .section-title {
             font-family: 'Playfair Display', serif;
             font-size: 2.5rem;
             text-align: center;
             margin-bottom: 3rem;
-            color: var(--secondary);
+            color: #ffffff; /* جعل العناوين بيضاء بالكامل */
         }
         .section-title span { color: var(--primary); }
 
-        /* About */
+        /* About Section */
         .about {
-            background: var(--light);
+            background: transparent;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
@@ -164,12 +173,12 @@
             border-radius: 20px;
             overflow: hidden;
         }
-        .about-img img { width: 50%; height: 350px; object-fit: cover; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .about-img img { width: 50%; height: 350px; object-fit: cover; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .about-text h2 { margin-bottom: 1.5rem; }
-        .about-text p { margin-bottom: 1rem; color: #636e72; }
+        .about-text p { margin-bottom: 1rem; color: #b0bec5; } /* لون مريح ومنسق للفقرات */
 
-        /* Menu */
-        .menu { background: var(--white); }
+        /* Menu Section */
+        .menu { background: transparent; }
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -177,17 +186,23 @@
             max-width: 1200px;
             margin: 0 auto;
         }
+        
+        /* تعديل كارتات المينيو لتصبح زجاجية مظلمة متناسقة مية فالمية */
         .menu-card {
-            background: var(--light);
+            background: rgba(255, 255, 255, 0.04) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
             border-radius: 20px;
             padding: 2rem;
             text-align: center;
-            transition: transform 0.3s;
-            border: 2px solid transparent;
+            transition: transform 0.3s, border-color 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
         .menu-card:hover {
             transform: translateY(-10px);
-            border-color: var(--primary);
+            border-color: var(--primary) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
         }
         .menu-card .icon {
             width: 145px;
@@ -199,7 +214,7 @@
         .menu-card h3 {
             font-family: 'Playfair Display', serif;
             margin-bottom: 0.5rem;
-            color: var(--primary);
+            color: #ffffff !important; /* اسم المنتج بالأبيض */
         }
         .price {
             display: inline-block;
@@ -209,11 +224,15 @@
             color: var(--white);
             border-radius: 20px;
             font-weight: 600;
+            box-shadow: 0 4px 10px rgba(255, 98, 0, 0.3);
         }
 
-        /* Location */
+        /* Location Section */
         .location {
-            background: var(--secondary);
+            background: rgba(255, 255, 255, 0.02) !important;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             color: var(--white);
             text-align: center;
         }
@@ -225,29 +244,36 @@
             max-width: 800px;
             margin: 2rem auto;
         }
+        
+        /* تعديل صناديق معلومات التواصل لتصبح زجاجية نقية */
         .info-box {
             padding: 2rem;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.04) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 15px;
             backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
         .info-box h3 {
             color: var(--accent);
             margin-bottom: 1rem;
             font-family: 'Playfair Display', serif;
         }
+        .info-box p { color: #cfd8dc; }
         .address a {
             color: var(--accent);
             text-decoration: none;
             font-weight: bold;
         }
+        .address a:hover { text-decoration: underline; }
 
         /* Footer */
         footer {
-            background: #0d4104;
+            background: #090f0b; /* لون داكن جداً لإنهاء الصفحة */
             color: var(--white);
             padding: 3rem 5%;
             text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
         .social-links { margin: 1.5rem 0; }
         .social-links a {
@@ -276,7 +302,6 @@
 
         /* 📱 كود التعديلات الخاصة بالتلفون (Mobile Responsive) */
         @media (max-width: 768px) {
-            /* تعديل الكارتات يولو 2 ف السطر بالتساوي */
             .my-menu-grid {
                 display: grid !important;
                 grid-template-columns: repeat(2, 1fr) !important;
@@ -300,7 +325,6 @@
                 padding: 0.4rem 1rem !important;
             }
 
-            /* تعديل الهيدر يرجع كبسولة مجموجة متناسقة */
             header.glass-header {
                 flex-direction: column !important;
                 display: flex !important;
@@ -310,6 +334,7 @@
                 margin: 0 auto !important;
                 top: 10px !important;
                 height: auto !important;
+                background: rgba(20, 29, 22, 0.3) !important; /* خلفية أغمق قليلاً للموبايل لضمان الوضوح */
             }
             
             header.glass-header nav {
@@ -350,8 +375,7 @@
         <div class="mobile-menu">☰</div>
     </header>
 
-    <section class="hero hidden" id="home">
-        <div class="hero-content">
+    <section class="hero" id="home"> <div class="hero-content">
             <h1>Papaya Juice</h1>
             <p>Fresh. Natural. Moroccan Sunshine in Every Sip.<br>Located in the heart of Mohammedia</p>
             <a href="#menu" class="btn">View Our Menu</a>
@@ -428,7 +452,7 @@
                 font-weight: bold; 
                 font-size: 16px; 
                 border-radius: 25px; 
-                box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3); 
+                box-shadow: 0 4px 15px rgba(255, 102, 0, 0.5); 
                 display: inline-block; 
                 text-align: center;
                 transition: 0.3s;
@@ -454,7 +478,7 @@
         </div>
         
         <div style="margin-top: 30px;">
-            <p class="address" style="font-size: 1.1rem;">
+            <p class="address" style="font-size: 1.1rem; color: #cfd8dc;">
                 602 LOTISSEMENT HORIA I ÉTAGE MG CAFE, Mohammédia 28800 — 
                 <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
             </p>
@@ -463,13 +487,13 @@
 
     <footer>
         <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Papaya Juice</h2>
-        <p style="color: #aaa; margin-bottom: 1rem;">Fresh flavors, warm vibes, Mohammedia soul.</p>
+        <p style="color: #90a4ae; margin-bottom: 1rem;">Fresh flavors, warm vibes, Mohammedia soul.</p>
         <div class="social-links">
             <a href="https://www.instagram.com/papaya__juice_/">Instagram</a>
             <a href="https://web.facebook.com/profile.php?id=61588320776692">Facebook</a>
             <a href="https://wa.me/+212601-556084">WhatsApp</a>
         </div>
-        <p style="color: #565656; font-size: 0.9rem;">© 2026 Papaya Juice. All rights reserved. | Mohammedia, Morocco</p>
+        <p style="color: #455a64; font-size: 0.9rem;">© 2026 Papaya Juice. All rights reserved. | Mohammedia, Morocco</p>
     </footer>
 
     <script>
