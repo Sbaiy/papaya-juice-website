@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+<header style="
+    display: flex !important; 
+    justify-content: space-between !important; 
+    align-items: center !important; 
+    padding: 10px 30px !important; 
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 30px !important;
+    margin: 20px auto !important;
+    width: 90% !important;
+    max-width: 1200px !important;
+    position: sticky !important;
+    top: 20px !important;
+    z-index: 1000 !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
+">
+    <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
+        <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
+        <span style="font-family: sans-serif; font-weight: bold; font-size: 22px; color: #FF6600; letter-spacing: 0.5px;">Papaya Juice</span>
+    </a>
+
+    <nav style="display: flex; gap: 25px; align-items: center;">
+        <a href="index.html" style="text-decoration: none; color: #FFFFFF; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
+        <a href="menu.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
+    </nav>
+</header>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +47,7 @@ body {
 @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); font-weight: 700; text-align: center; }
 .categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-.category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+.category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: capitalize; }
 .category-btn:hover, .category-btn.active { background: white !important; color: #ff7700; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transform: translateY(-2px); }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1200px; width: 90%; margin: 0 auto; }
 .product-card { background: rgba(255, 255, 255, 0.75) !important; backdrop-filter: blur(15px) !important; -webkit-backdrop-filter: blur(15px) !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; border-radius: 24px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
@@ -30,25 +58,25 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 
 @media (max-width: 768px) {
     .menu-grid {
-        grid-template-columns: repeat(2, 1fr) !important; /* هادي هي اللي كتفرض 2 منتجات فكل سطر */
-        gap: 10px !important; /* كنصغرو المساحة بيناتهم باش يقدو */
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 10px !important; 
         width: 98% !important; 
     }
     .product-card {
-        padding: 15px 10px !important; /* كنصغرو الجناب ديال البطاقة */
+        padding: 15px 10px !important; 
         border-radius: 18px !important;
     }
     .product-card img {
-        width: 90px !important; /* كنصغرو التصويرة شوية باش ما تخرجش على الإطار */
+        width: 90px !important; 
         height: 90px !important;
         margin-bottom: 10px !important;
     }
     .product-card h3 {
-        font-size: 15px !important; /* تصغير السمية */
+        font-size: 15px !important; 
         margin: 5px 0 !important;
     }
     .product-card p {
-        font-size: 13px !important; /* تصغير الثمن */
+        font-size: 13px !important; 
         padding: 4px 10px !important;
     }
 }
@@ -58,69 +86,87 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 
     <h1 class="menu-title">Our Menu</h1>
 
-    <div class="categories-container">
-        <button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>
-        <button class="category-btn" onclick="filterMenu('petit dejeuner', this)">petit dejeuner</button>
-        <button class="category-btn" onclick="filterMenu('juice', this)">Fresh Juices</button>
-        <button class="category-btn" onclick="filterMenu('crepe', this)">Crêpes</button>
-        <button class="category-btn" onclick="filterMenu('toast', this)">Toasts</button>
-        <button class="category-btn" onclick="filterMenu('mojito', this)">Mojitos</button>
-        <button class="category-btn" onclick="filterMenu('juice detox', this)">juice detox</button>
-        <button class="category-btn" onclick="filterMenu('tisanes', this)">Tisanes</button>
-        <button class="category-btn" onclick="filterMenu('boissons chaudes', this)">Boissons chaudes</button>
-        <button class="category-btn" onclick="filterMenu('Pancakes', this)">Pancakes</button>
-        <button class="category-btn" onclick="filterMenu('milkshake', this)">milkshake</button>
-        <button class="category-btn" onclick="filterMenu('smoothies', this)">Smoothies</button>
-        <button class="category-btn" onclick="filterMenu('restaurant', this)">Restaurant</button>
-        <button class="category-btn" onclick="filterMenu('ice coffee', this)">ice coffee</button>
-        <button class="category-btn" onclick="filterMenu('ice tea', this)">Ice Tea</button>
-        <button class="category-btn" onclick="filterMenu('salade fruite', this)">Salade Fruite</button>
-        <button class="category-btn" onclick="filterMenu('pâtisserie', this)">Pâtisserie</button>
+    <div class="categories-container" id="categoriesContainer">Loading Categories...</div>
 
-    </div>
-
-    <div class="menu-grid" id="menuGrid"><strong>please wait ⌛  Loading menu . . .</strong></div>
+    <div class="menu-grid" id="menuGrid">Loading Menu...</div>
 
 <script>
-// ⚠️ حط المعلومات ديالك هنا من خانة Data API
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function displayMenu(filterCategory = 'all') {
+// متغيرات عالمية لحفظ البيانات
+let allProductsArray = [];
+
+async function loadMenuAndCategories() {
     const menuGrid = document.getElementById('menuGrid');
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    
     try {
+        // 1. جلب كاع المنتجات من Supabase
         let { data: products, error } = await _supabase.from('products').select('*');
-        if(error) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; return; }
-        
-        menuGrid.innerHTML = "";
-        let filteredProducts = filterCategory === 'all' ? products : products.filter(p => p.category === filterCategory);
-
-        if(!filteredProducts || filteredProducts.length === 0) {
-            menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px;">No items found.</p>`;
-            return;
+        if(error) { 
+            menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; 
+            return; 
         }
+        
+        allProductsArray = products || [];
 
-        filteredProducts.forEach((product) => {
-            menuGrid.innerHTML += `
-            <div class="product-card">
-                <img src="${product.image}" alt="${product.title}">
-                <div class="product-info">
-                    <h3>${product.title}</h3>
-                    <p>${product.price} DH</p>
-                </div>
-            </div>`;
+        // 2. استخراج الكاتيغوريات الفريدة اللي كاينة ف المنتجات دابا ديناميكياً
+        const uniqueCategories = [...new Set(allProductsArray.map(p => p.category).filter(Boolean))];
+        
+        // 3. بناء أزرار الكاتيغوريات تلقائياً
+        categoriesContainer.innerHTML = `<button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>`;
+        uniqueCategories.forEach(cat => {
+            categoriesContainer.innerHTML += `<button class="category-btn" onclick="filterMenu('${cat}', this)">${cat}</button>`;
         });
-    } catch (err) { menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Connection error.</p>`; }
+
+        // 4. عرض كاع المنتجات ف الأول
+        displayFilteredProducts(allProductsArray);
+
+    } catch (err) { 
+        menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Connection error.</p>`; 
+    }
 }
 
+// دالة عرض المنتجات المصفاة وسط الـ Grid
+function displayFilteredProducts(filteredList) {
+    const menuGrid = document.getElementById('menuGrid');
+    menuGrid.innerHTML = "";
+
+    if(filteredList.length === 0) {
+        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px;">No items found.</p>`;
+        return;
+    }
+
+    filteredList.forEach((product) => {
+        menuGrid.innerHTML += `
+        <div class="product-card">
+            <img src="${product.image}" alt="${product.title}">
+            <div class="product-info">
+                <h3>${product.title}</h3>
+                <p>${product.price} DH</p>
+            </div>
+        </div>`;
+    });
+}
+
+// دالة الفلترة ملي يبرك الكليان على شي زر
 function filterMenu(category, buttonElement) {
     const buttons = document.querySelectorAll('.category-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     buttonElement.classList.add('active');
-    displayMenu(category);
+    
+    if (category === 'all') {
+        displayFilteredProducts(allProductsArray);
+    } else {
+        const filtered = allProductsArray.filter(p => p.category === category);
+        displayFilteredProducts(filtered);
+    }
 }
-window.onload = () => displayMenu('all');
+
+// تشغيل السيستيم التلقائي مع فتح الصفحة
+window.onload = loadMenuAndCategories;
 </script>
 </body>
 </html>
