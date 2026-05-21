@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Papaya Juice </title>
+    <title>Papaya Juice</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --primary: #FF8C42;
-            --secondary: #2D3436;
+            --primary: #ff6200;
+            --secondary: #126a11;
             --accent: #FDCB6E;
             --light: #FEF9E7;
             --white: #ffffff;
@@ -19,50 +20,72 @@
             color: var(--secondary);
             line-height: 1.6;
             overflow-x: hidden;
+            background-color: var(--white);
         }
 
-        /* Navigation */
-        nav {
-            .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 32px;
-    font-weight: bold;
-}
+        /* ستايل الهيدر الزجاجي ف الـ PC */
+        .glass-header {
+            display: flex !important; 
+            justify-content: space-between !important; 
+            align-items: center !important; 
+            padding: 10px 30px !important; 
+            background: rgba(255, 255, 255, 0.15) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 30px !important;
+            margin: 20px auto !important;
+            width: 90% !important;
+            max-width: 1200px !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 1000 !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s ease;
+        }
 
-.logo img {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-            position: fixed;
-            top: 0; width: 100%;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            padding: 1rem 5%;
+        .glass-header .logo {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        }
-        .logo {
+            gap: 12px;
+            text-decoration: none;
             font-family: 'Playfair Display', serif;
             font-size: 1.8rem;
             font-weight: 700;
             color: var(--primary);
         }
-        .nav-links a {
-            margin-left: 2rem;
+
+        .glass-header .logo img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .glass-header nav {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            position: static !important;
+            backdrop-filter: none !important;
+        }
+
+        .glass-header nav a {
             text-decoration: none;
-            color: var(--secondary);
+            color: #FFFFFF;
             font-weight: 500;
+            font-size: 16px;
             transition: color 0.3s;
         }
-        .nav-links a:hover { color: var(--primary); }
-        .mobile-menu { display: none; font-size: 1.5rem; cursor: pointer; }
+
+        .glass-header nav a:hover { color: var(--primary); }
+        .glass-header nav a.active-link { color: var(--primary); font-weight: 700; }
+        .mobile-menu { display: none; font-size: 1.8rem; cursor: pointer; color: #FFFFFF; }
 
         /* Hero */
         .hero {
@@ -98,7 +121,7 @@
             transition: transform 0.3s, box-shadow 0.3s;
         }
         .btn:hover {
-            transform: translateY(-3px);
+            transform: scale(1.1) translateY(-3px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         .scroll-down {
@@ -136,11 +159,12 @@
             align-items: center;
         }
         .about-img {
+            display: flex;
+            gap: 15px;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
-        .about-img img { width: 100%; height: 100%; object-fit: cover; }
+        .about-img img { width: 50%; height: 350px; object-fit: cover; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .about-text h2 { margin-bottom: 1.5rem; }
         .about-text p { margin-bottom: 1rem; color: #636e72; }
 
@@ -165,16 +189,18 @@
             transform: translateY(-10px);
             border-color: var(--primary);
         }
-        .menu-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+        .menu-card .icon {
+            width: 145px;
+            height: 145px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 15px;
         }
         .menu-card h3 {
             font-family: 'Playfair Display', serif;
             margin-bottom: 0.5rem;
             color: var(--primary);
         }
-        .menu-card p { color: #636e72; font-size: 0.95rem; }
         .price {
             display: inline-block;
             margin-top: 1rem;
@@ -210,30 +236,20 @@
             margin-bottom: 1rem;
             font-family: 'Playfair Display', serif;
         }
-        .map-placeholder {
-            width: 100%;
-            max-width: 800px;
-            height: 300px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-            margin: 2rem auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            border: 2px dashed rgba(255,255,255,0.3);
+        .address a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
         }
 
         /* Footer */
         footer {
-            background: #1a1a1a;
+            background: #0d4104;
             color: var(--white);
             padding: 3rem 5%;
             text-align: center;
         }
-        .social-links {
-            margin: 1.5rem 0;
-        }
+        .social-links { margin: 1.5rem 0; }
         .social-links a {
             display: inline-block;
             margin: 0 1rem;
@@ -244,165 +260,182 @@
         }
         .social-links a:hover { color: var(--primary); }
 
-        /* Responsive */
-       @media (max-width: 768px) {
+        /* Animations */
+        nav { animation: slideDown 1s ease; }
+        .hero-content { animation: fadeIn 2s ease; }
+        @keyframes slideDown {
+            from { transform: translate(-50%, -100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden { opacity: 0; transform: translateY(50px); transition: all 1s ease; }
+        .show { opacity: 1; transform: translateY(0); }
 
-    .nav-links {
-        display: none;
-    }
+        /* 📱 كود التعديلات الخاصة بالتلفون (Mobile Responsive) */
+        @media (max-width: 768px) {
+            /* تعديل الكارتات يولو 2 ف السطر بالتساوي */
+            .my-menu-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+                padding: 10px !important;
+            }
+            .my-menu-grid .menu-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 1.5rem 10px !important;
+            }
+            .my-menu-grid .menu-card .icon {
+                width: 100px !important;
+                height: 100px !important;
+            }
+            .my-menu-grid .menu-card h3 {
+                font-size: 1.1rem !important;
+            }
+            .my-menu-grid .menu-card .price {
+                font-size: 0.85rem !important;
+                padding: 0.4rem 1rem !important;
+            }
 
-    .mobile-menu {
-        display: block;
-        font-size: 30px;
-        cursor: pointer;
-    }
+            /* تعديل الهيدر يرجع كبسولة مجموجة متناسقة */
+            header.glass-header {
+                flex-direction: column !important;
+                display: flex !important;
+                gap: 12px !important;
+                padding: 12px 15px !important;
+                width: 92% !important;
+                margin: 0 auto !important;
+                top: 10px !important;
+                height: auto !important;
+            }
+            
+            header.glass-header nav {
+                display: flex !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                gap: 15px !important;
+                width: 100% !important;
+            }
+            
+            header.glass-header nav a {
+                font-size: 14px !important;
+            }
 
-}
-        /* Navbar animation */
-nav {
-    animation: slideDown 1s ease;
-}
-
-/* Hero text animation */
-.hero-content {
-    animation: fadeIn 2s ease;
-}
-
-/* Button animation */
-.btn {
-    transition: 0.3s;
-}
-
-.btn:hover {
-    transform: scale(1.1);
-}
-
-/* Animations */
-
-@keyframes slideDown {
-
-    from {
-        transform: translateY(-100px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes fadeIn {
-
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-        .hidden{
-    opacity:0;
-    transform:translateY(50px);
-    transition:all 1s ease;
-}
-
-.show{
-    opacity:1;
-    transform:translateY(0);
-}
+            .about {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .about-img img { height: 250px; }
+            .hero-content h1 { font-size: 2.8rem; }
+            .hero-content p { font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Navigation -->
-<nav>
-<div class="logo">
-    <img src="logo.png" alt="Logo">
-    Papaya Juice
-</div>
-    <div class="nav-links">
+    <header class="glass-header">
+        <a href="#home" class="logo">
+            <img src="logo.png" alt="Logo">
+            Papaya Juice
+        </a>
+        <nav class="nav-links">
             <a href="#home">Home</a>
             <a href="#about">About</a>
-            <a href="#menu">Menu</a>
+            <a href="#menu" class="active-link">Menu</a>
             <a href="#location">Location</a>
-        </div>
+        </nav>
         <div class="mobile-menu">☰</div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
     <section class="hero hidden" id="home">
         <div class="hero-content">
             <h1>Papaya Juice</h1>
             <p>Fresh. Natural. Moroccan Sunshine in Every Sip.<br>Located in the heart of Mohammedia</p>
-<a href="menu.html" class="btn">View Our Menu</a>
+            <a href="#menu" class="btn">View Our Menu</a>
         </div>
         <div class="scroll-down">↓</div>
     </section>
 
-    <!-- About Section -->
     <section class="about hidden" id="about">
         <div class="about-img">
-            <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-51.jpg?w=719&h=964&rect=0%2C73%2C719%2C964">
+            <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-51.jpg?w=719&h=964&rect=0%2C73%2C719%2C964" alt="About 1">
+            <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-33-05.jpg" alt="About 2">
         </div>
         <div class="about-text">
             <h2 class="section-title">Our <span>Story</span></h2>
             <p>Welcome to <strong>Papaya Juice</strong>, your cozy corner in <strong>Mohammedia, Morocco</strong>. Born from a passion for fresh, healthy living, we bring you the finest selection of handcrafted juices, smoothies, and café delights.</p>
-            <p>We source the freshest local fruits and ingredients to create vibrant, nutritious drinks that capture the essence of Moroccan hospitality. Whether you're looking for a morning energy boost or a refreshing afternoon treat, Papaya Juice is your destination.</p>
             <p>Come experience the warmth of Mohammedia with a glass of sunshine!</p>
         </div>
     </section>
 
-    <!-- Menu Section -->
-  <style>
-.menu-card .icon {
-    width: 145px;
-    height: 145px;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto 15px;
-}
-</style>
+    <section class="about hidden">
+        <div class="about-text">
+            <h2 class="section-title">Space <span>Games</span></h2>
+            <p>Welcome to <strong>Papaya Juice</strong>, your cozy corner in <strong>Mohammedia, Morocco</strong>.</p>
+            <p>Come experience the warmth of Mohammedia with a glass of sunshine!</p>
+        </div>
+        <div class="about-img">
+            <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-12-35.jpg" alt="Space 1">
+            <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-16-45.jpg" alt="Space 2">
+        </div>
+    </section>
+
     <section class="menu hidden" id="menu">
         <h2 class="section-title">Our <span>Menu</span></h2>
-        <div class="menu-grid">
-        <div class="menu-card">
-<img src="breakfast.png" alt="Breakfast" class="icon">
-            <h3>Breakfasts</h3>
+        <div class="menu-grid my-menu-grid">
+            <div class="menu-card">
+                <img src="breakfast.png" alt="Breakfasts" class="icon">
+                <h3>Breakfasts</h3>
                 <span class="price">30-99 MAD</span>
             </div>
             <div class="menu-card">
-<img src="jusnatur.png" alt="Breakfast" class="icon">
+                <img src="jusnatur.png" alt="Natural Juice" class="icon">
                 <h3>Natural Juice</h3>
                 <span class="price">23-50 MAD</span>
             </div>
             <div class="menu-card">
-<img src="toast.png" alt="Breakfast" class="icon">
+                <img src="toast.png" alt="Toasts" class="icon">
                 <h3>Toasts</h3>
                 <span class="price">15-30 MAD</span>
             </div>
             <div class="menu-card">
-<img src="crepes.png" alt="Breakfast" class="icon">
+                <img src="crepes.png" alt="Crepes and Pancakes" class="icon">
                 <h3>Crepes and Pancakes</h3>
                 <span class="price">35-40 MAD</span>
             </div>
             <div class="menu-card">
-<img src="smouties.png" alt="Breakfast" class="icon">
+                <img src="smouties.png" alt="Smoothies" class="icon">
                 <h3>Smoothies</h3>
                 <span class="price">35 MAD</span>
             </div>
             <div class="menu-card">
-<img src="mojito.png" alt="Breakfast" class="icon">
+                <img src="mojito.png" alt="Mojito" class="icon">
                 <h3>Mojito</h3>
                 <span class="price">30-35 MAD</span>
             </div>
+        </div> 
+
+        <div style="display: flex !important; justify-content: center !important; width: 100% !important; margin-top: 50px;">
+            <a href="menu.html" style="
+                background-color: #FF6600; 
+                color: #FFFFFF; 
+                text-decoration: none; 
+                padding: 14px 40px; 
+                font-family: sans-serif; 
+                font-weight: bold; 
+                font-size: 16px; 
+                border-radius: 25px; 
+                box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3); 
+                display: inline-block; 
+                text-align: center;
+                transition: 0.3s;
+            ">View Our Menu</a>
         </div>
     </section>
 
-    <!-- Location Section -->
     <section class="location hidden" id="location">
         <h2 class="section-title">Find <span>Us</span></h2>
         <div class="location-info">
@@ -412,29 +445,22 @@ nav {
             </div>
             <div class="info-box">
                 <h3>🕒 Hours</h3>
-                <p>Monday - Friday: 8:00 AM - 10:00 PM<br>Saturday - Sunday: 9:00 AM - 11:00 PM</p>
+                <p>Monday - Sunday: 8:00 - 00:00</p>
             </div>
             <div class="info-box">
                 <h3>📞 Contact</h3>
-                <p>Phone: +212 706265133<br>Email: papayajuicemohammedia@gmail.com</p>
+                <p>Phone: +212 601-556084<br>Email: papayajuicemohammedia@gmail.com</p>
             </div>
         </div>
-       <section id="location">
-  <h2>Our Location</h2>
+        
+        <div style="margin-top: 30px;">
+            <p class="address" style="font-size: 1.1rem;">
+                602 LOTISSEMENT HORIA I ÉTAGE MG CAFE, Mohammédia 28800 — 
+                <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+            </p>
+        </div>
+    </section>
 
-  <p class="address">
-    602 LOTISSEMENT HORIA I ÉTAGE MG CAFE, Mohammédia 28800 —
-    <a href="https://www.google.com/maps/place/Papaya+Juice/@33.6910817,-7.3771041,590m/data=!3m2!1e3!4b1!4m6!3m5!1s0xda7b73b7ef4f869:0x28fd27929ca558c1!8m2!3d33.6910817!4d-7.3771041!16s%2Fg%2F11vjxvqhq4?entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
-  </p>
-
-</section>
-
-<style>
-  .map-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; }
-  .map-container iframe { position: absolute; top:0; left:0; width:100%; height:100%; }
-</style>
-
-    <!-- Footer -->
     <footer>
         <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Papaya Juice</h2>
         <p style="color: #aaa; margin-bottom: 1rem;">Fresh flavors, warm vibes, Mohammedia soul.</p>
@@ -443,7 +469,7 @@ nav {
             <a href="https://web.facebook.com/profile.php?id=61588320776692">Facebook</a>
             <a href="https://wa.me/+212601-556084">WhatsApp</a>
         </div>
-        <p style="color: #666; font-size: 0.9rem;">© 2026 Papaya Juice. All rights reserved. | Mohammedia, Morocco</p>
+        <p style="color: #565656; font-size: 0.9rem;">© 2026 Papaya Juice. All rights reserved. | Mohammedia, Morocco</p>
     </footer>
 
     <script>
@@ -458,40 +484,28 @@ nav {
         });
 
         // Mobile menu toggle
-const mobileMenu = document.querySelector('.mobile-menu');
-const navLinks = document.querySelector('.nav-links');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
 
-mobileMenu.onclick = function () {
-
-    if (navLinks.style.display === "flex") {
-
-        navLinks.style.display = "none";
-
-    } else {
-
-        navLinks.style.display = "flex";
-        navLinks.style.flexDirection = "column";
-
-    }
-
-}
-        const hiddenElements = document.querySelectorAll('.hidden');
-
-window.addEventListener('scroll', () => {
-
-    hiddenElements.forEach(el => {
-
-        const position = el.getBoundingClientRect().top;
-
-        if(position < window.innerHeight - 100){
-
-            el.classList.add('show');
-
+        mobileMenu.onclick = function () {
+            if (navLinks.style.display === "flex") {
+                navLinks.style.display = "none";
+            } else {
+                navLinks.style.display = "flex";
+                navLinks.style.flexDirection = "column";
+            }
         }
 
-    });
-
-});
+        // Animation on scroll
+        const hiddenElements = document.querySelectorAll('.hidden');
+        window.addEventListener('scroll', () => {
+            hiddenElements.forEach(el => {
+                const position = el.getBoundingClientRect().top;
+                if(position < window.innerHeight - 100){
+                    el.classList.add('show');
+                }
+            });
+        });
     </script>
 </body>
 </html>
