@@ -1,33 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<header style="
-    display: flex !important; 
-    justify-content: space-between !important; 
-    align-items: center !important; 
-    padding: 10px 30px !important; 
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 30px !important;
-    margin: 20px auto !important;
-    width: 90% !important;
-    max-width: 1200px !important;
-    position: sticky !important;
-    top: 20px !important;
-    z-index: 1000 !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
-">
-    <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
-        <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
-        <span style="font-family: sans-serif; font-weight: bold; font-size: 22px; color: #FF6600; letter-spacing: 0.5px;">Papaya Juice</span>
-    </a>
-
-    <nav style="display: flex; gap: 25px; align-items: center;">
-        <a href="index.html" style="text-decoration: none; color: #FFFFFF; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
-        <a href="menu.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
-    </nav>
-</header>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,18 +9,68 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+:root {
+    --primary: #ff6200;
+    --dark-bg: #141d16; /* لون الخلفية الداكنة الأساسي المتناسق مع الصفحة الرئيسية */
+    --white: #ffffff;
+}
+
 body {
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
     display: flex !important; flex-direction: column !important; align-items: center !important;
-    padding-top: 40px !important; padding-bottom: 50px !important; box-sizing: border-box;
-    background: linear-gradient(-45deg, #e67e22, #27ae60, #d35400, #1e824c) !important;
-    background-size: 400% 400% !important; animation: gradientAnimation 20s ease infinite !important;
+    padding-bottom: 50px !important; box-sizing: border-box;
+    /* خلفية دارك مود ثابتة وفخمة مع تدرج إضاءة ناعم غير متحرك */
+    background-color: var(--dark-bg) !important;
+    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
+    background-attachment: fixed;
+    color: #eceff1;
 }
-@keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); font-weight: 700; text-align: center; }
+
+/* ستايل الهيدر الزجاجي ف الـ PC المتناسق مع المينيو */
+header.main-header {
+    display: flex !important; 
+    justify-content: space-between !important; 
+    align-items: center !important; 
+    padding: 10px 30px !important; 
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 30px !important;
+    margin: 20px auto !important;
+    width: 90% !important;
+    max-width: 1200px !important;
+    position: sticky !important;
+    top: 20px !important;
+    z-index: 1000 !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+h1.menu-title { font-size: 42px; color: white; margin-top: 20px; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); font-weight: 700; text-align: center; }
+
+/* أزرار الكاتيغوريات متناسقة مع الدارك مود */
 .categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-.category-btn { background: rgba(255, 255, 255, 0.25) !important; backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white; padding: 10px 25px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: capitalize; }
-.category-btn:hover, .category-btn.active { background: white !important; color: #ff7700; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transform: translateY(-2px); }
+.category-btn { 
+    background: rgba(255, 255, 255, 0.05) !important; 
+    backdrop-filter: blur(10px) !important; 
+    -webkit-backdrop-filter: blur(10px) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+    color: #e0e0e0; 
+    padding: 10px 25px; 
+    border-radius: 30px; 
+    font-size: 15px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    text-transform: capitalize; 
+}
+.category-btn:hover, .category-btn.active { 
+    background: var(--primary) !important; 
+    color: white !important; 
+    border-color: var(--primary) !important;
+    box-shadow: 0 8px 20px rgba(255, 98, 0, 0.4); 
+    transform: translateY(-2px); 
+}
 
 /* الـ Grid الأساسي للحاسوب */
 .menu-grid { 
@@ -60,16 +82,16 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
     margin: 0 auto; 
 }
 
-/* تأثير الزجاج الضبابي الفخم (Glassmorphism) */
+/* تأثير الزجاج الضبابي الفخم المظلم للمنتوجات */
 .product-card { 
-    background: rgba(255, 255, 255, 0.2) !important; 
+    background: rgba(255, 255, 255, 0.04) !important; 
     backdrop-filter: blur(15px) !important; 
     -webkit-backdrop-filter: blur(15px) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.35) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.08) !important; 
     border-radius: 24px; 
     padding: 25px; 
     text-align: center; 
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15) !important; 
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important; 
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, background 0.4s ease; 
     display: flex; 
     flex-direction: column; 
@@ -78,23 +100,55 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 }
 .product-card:hover { 
     transform: translateY(-8px); 
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important; 
-    background: rgba(255, 255, 255, 0.3) !important; 
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important; 
+    background: rgba(255, 255, 255, 0.08) !important; 
+    border-color: var(--primary) !important;
 }
-.product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.18)); }
-.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: 600; text-transform: capitalize; }
+.product-card img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; background: transparent !important; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); }
+.product-card h3 { margin: 12px 0 8px 0; font-size: 19px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.4); font-weight: 600; text-transform: capitalize; }
 
-/* ستايل الثمن ناصع وواضح فوق الزجاج */
-.product-card p { margin: 5px auto 0 auto; font-size: 18px; color: #ff7700; font-weight: 700; background: rgba(255, 255, 255, 0.75) !important; padding: 4px 15px; border-radius: 50px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+/* ستايل الثمن منسجم مع الدارك مود بلا بيوضية فاقعة */
+.product-card p { 
+    margin: 5px auto 0 auto; 
+    font-size: 17px; 
+    color: var(--primary); 
+    font-weight: 700; 
+    background: rgba(255, 255, 255, 0.05) !important; 
+    padding: 4px 18px; 
+    border-radius: 50px; 
+    display: inline-block; 
+    border: 1px solid rgba(255, 98, 0, 0.3) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+}
 
 /* التعديل الذكي للتلفونات لضبط المسافات والوسط */
 @media (max-width: 768px) {
+    header.main-header {
+        flex-direction: column !important;
+        display: flex !important;
+        gap: 12px !important;
+        padding: 12px 15px !important;
+        width: 92% !important;
+        margin: 10px auto !important;
+        height: auto !important;
+        background: rgba(20, 29, 22, 0.3) !important;
+    }
+    header.main-header nav {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 20px !important;
+        width: 100% !important;
+    }
+    header.main-header nav a {
+        font-size: 15px !important;
+    }
+    .menu-title { font-size: 32px !important; }
     .menu-grid {
         grid-template-columns: repeat(2, minmax(130px, 1fr)) !important; 
         gap: 15px !important; 
         width: 92% !important; 
         margin: 0 auto !important;
-        justify-content: center !important; /* لموازنة اليمين واليسار بالتساوي */
+        justify-content: center !important;
     }
     .product-card {
         padding: 15px 10px !important; 
@@ -117,6 +171,18 @@ h1.menu-title { font-size: 42px; color: white; margin-bottom: 20px; text-shadow:
 </style>
 </head>
 <body>
+
+    <header class="main-header">
+        <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
+            <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
+            <span style="font-family: sans-serif; font-weight: bold; font-size: 22px; color: #FF6600; letter-spacing: 0.5px;">Papaya Juice</span>
+        </a>
+
+        <nav style="display: flex; gap: 25px; align-items: center;">
+            <a href="index.html" style="text-decoration: none; color: #FFFFFF; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
+            <a href="menu.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
+        </nav>
+    </header>
 
     <h1 class="menu-title">Our Menu</h1>
 
