@@ -68,7 +68,6 @@ button:hover { background: #d35400; }
             <option value="ice tea">Ice Tea</option>
             <option value="salade fruite">Salade Fruite</option>
             <option value="pâtisserie">Pâtisserie</option>
-
         </select>
         <input type="text" id="title" placeholder="Product Name">
         <input type="text" id="price" placeholder="Price">
@@ -83,11 +82,76 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_USERNAME = "sbaiy"; const ADMIN_PASSWORD = "2030";
 
-function checkLogin(){ if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); } else { showLogin(); } }
-function login(){ if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ localStorage.setItem('adminLoggedIn', 'true'); showDashboard(); } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; } }
-function logout(){ localStorage.removeItem('adminLoggedIn'); showLogin(); }
-function showLogin(){ document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); }
-function showDashboard(){ document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); loadProducts(); }
+// ⏱️ كود نظام الخروج التلقائي عند الغياب لمدة دقيقة
+const inactivityTimeout = 60000; // دقيقة واحدة بالميلي ثانية
+let inactivityTimer;
+
+function startInactivityTimer() {
+    if (localStorage.getItem('adminLoggedIn') === 'true') {
+        resetInactivityTimer();
+        // الاستماع لحركات المستخدم لإعادة تصفير العداد
+        window.onmousemove = resetInactivityTimer;
+        window.onmousedown = resetInactivityTimer;
+        window.onkeydown = resetInactivityTimer;
+        window.onclick = resetInactivityTimer;
+        window.ontouchstart = resetInactivityTimer;
+    }
+}
+
+function stopInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    window.onmousemove = null;
+    window.onmousedown = null;
+    window.onkeydown = null;
+    window.onclick = null;
+    window.ontouchstart = null;
+}
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(triggerAutoLogout, inactivityTimeout);
+}
+
+function triggerAutoLogout() {
+    alert("Session expired due to inactivity. Please login again.");
+    logout();
+}
+
+function checkLogin(){ 
+    if(localStorage.getItem('adminLoggedIn') === 'true') { 
+        showDashboard(); 
+    } else { 
+        showLogin(); 
+    } 
+}
+
+function login(){ 
+    if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ 
+        localStorage.setItem('adminLoggedIn', 'true'); 
+        showDashboard(); 
+    } else { 
+        document.getElementById('errorMessage').style.display = 'block'; 
+        document.getElementById('errorMessage').textContent = 'Wrong credentials'; 
+    } 
+}
+
+function logout(){ 
+    localStorage.removeItem('adminLoggedIn'); 
+    stopInactivityTimer();
+    showLogin(); 
+}
+
+function showLogin(){ 
+    document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); 
+    document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); 
+}
+
+function showDashboard(){ 
+    document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); 
+    document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); 
+    loadProducts(); 
+    startInactivityTimer(); // تفعيل العداد غير ملي يدخل للـ Dashboard
+}
 
 const imageInput = document.getElementById('imageInput'); const preview = document.getElementById('preview'); let imageData = "";
 imageInput.addEventListener('change', function(){
@@ -104,7 +168,6 @@ imageInput.addEventListener('change', function(){
                 canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, width, height); 
                 ctx.drawImage(img, 0, 0, width, height);
-                // التعديل هنا: PNG باش تبقى الشفافية
                 imageData = canvas.toDataURL('image/png'); 
                 preview.src = imageData; preview.style.display = 'block';
             }
@@ -116,6 +179,7 @@ imageInput.addEventListener('change', function(){
 async function addProduct(){ const title = document.getElementById('title').value; const price = document.getElementById('price').value; const category = document.getElementById('categorySelect').value; if(!title || !price || !imageData){ alert('Fill all fields!'); return; } const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]); if(error) { alert('Error saving data'); } else { document.getElementById('title').value = ''; document.getElementById('price').value = ''; preview.style.display = 'none'; loadProducts(); } }
 async function deleteProduct(id){ const { error } = await _supabase.from('products').delete().eq('id', id); if(!error) loadProducts(); }
 async function loadProducts(){ const list = document.getElementById('productsList'); list.innerHTML = "Loading..."; let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); if(error) { list.innerHTML = "Error"; return; } list.innerHTML = ""; products.forEach((product)=>{ list.innerHTML += `<div class="product-item"><img src="${product.image}"><div><h3>${product.title}</h3><p>${product.price} DH</p><span class="badge">${product.category}</span></div><button onclick="deleteProduct(${product.id})">Delete</button></div>`; }); }
+
 checkLogin();
 </script>
 </body>
