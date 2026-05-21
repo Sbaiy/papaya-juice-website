@@ -25,8 +25,21 @@ button:hover { background: #d35400; }
 .product-item h3 { margin: 0 0 5px 0; color: #222; font-size: 16px; }
 .product-item p { margin: 0; color: #e67e22; font-weight: bold; }
 .product-item .badge { background: #27ae60; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; }
-.product-item button { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
+.action-btns { display: flex; flex-direction: column; gap: 8px; }
+.product-item button.delete-btn { width: auto; padding: 8px 12px; background: #d32f2f; font-size: 13px; }
+.product-item button.edit-btn { width: auto; padding: 8px 12px; background: #2980b9; font-size: 13px; }
+.product-item button.edit-btn:hover { background: #1f6696; }
 .preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent; }
+.cancel-edit-btn { background: #7f8c8d; margin-top: 10px; display: none; }
+.cancel-edit-btn:hover { background: #6c7a7d; }
+
+/* ستايل حاوية الكاتيغوري مع الأزرار + و - */
+.category-container { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
+.category-container select { margin-bottom: 0 !important; flex: 1; }
+.add-cat-btn { width: auto; padding: 15px 18px; background: #27ae60; font-size: 16px; font-weight: bold; border-radius: 10px; }
+.add-cat-btn:hover { background: #1e824c; }
+.del-cat-btn { width: auto; padding: 15px 18px; background: #d32f2f; font-size: 16px; font-weight: bold; border-radius: 10px; }
+.del-cat-btn:hover { background: #b71c1c; }
 </style>
 </head>
 <body>
@@ -48,30 +61,21 @@ button:hover { background: #d35400; }
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
         <div id="productsList">Loading...</div>
-        <h1>Add Product</h1>
+        
+        <h1 id="formTitle">Add Product</h1>
         <input type="file" id="imageInput" accept="image/*">
         <img id="preview" class="preview">
-        <select id="categorySelect">
-            <option value="petit dejeuner">petit dejeuner</option>
-            <option value="juice">Fresh Juice</option>
-            <option value="crepe">Crêpe</option>
-            <option value="toast">Toast</option>
-            <option value="mojito">Mojito</option>
-            <option value="juice detox">juice detox</option>
-            <option value="tisanes">tisanes</option>
-            <option value="boissons chaudes">Boissons chaudes</option>
-            <option value="Pancakes">Pancakes</option>
-            <option value="milkshake">milkshake</option>
-            <option value="smoothies">Smoothies</option>
-            <option value="restaurant">Restaurant</option>
-            <option value="ice coffee">ice coffee</option>
-            <option value="ice tea">Ice Tea</option>
-            <option value="salade fruite">Salade Fruite</option>
-            <option value="pâtisserie">Pâtisserie</option>
-        </select>
+        
+        <div class="category-container">
+            <select id="categorySelect"></select>
+            <button class="add-cat-btn" onclick="addNewCategory()" type="button" title="Add new category">+</button>
+            <button class="del-cat-btn" onclick="deleteCurrentCategory()" type="button" title="Delete selected category">-</button>
+        </div>
+
         <input type="text" id="title" placeholder="Product Name">
         <input type="text" id="price" placeholder="Price">
-        <button onclick="addProduct()">Add Product</button>
+        <button id="submitProductBtn" onclick="handleSubmit()">Add Product</button>
+        <button id="cancelEditBtn" class="cancel-edit-btn" onclick="clearForm()">Cancel Edit</button>
     </div>
 </div>
 
@@ -82,76 +86,92 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_USERNAME = "sbaiy"; const ADMIN_PASSWORD = "2030";
 
-// ⏱️ كود نظام الخروج التلقائي عند الغياب لمدة دقيقة
-const inactivityTimeout = 60000; // دقيقة واحدة بالميلي ثانية
+const defaultCategories = [
+    "petit dejeuner", "juice", "crepe", "toast", "mojito", 
+    "juice detox", "tisanes", "boissons chaudes", "Pancakes", 
+    "milkshake", "smoothies", "restaurant", "ice coffee", 
+    "ice tea", "salade fruite", "pâtisserie"
+];
+
+const inactivityTimeout = 60000; 
 let inactivityTimer;
+let currentEditingProductId = null; 
+let globalProductsArray = []; 
+
+function loadCategoriesSelect() {
+    const select = document.getElementById('categorySelect');
+    let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+    let allCategories = [...defaultCategories, ...customCategories];
+    
+    select.innerHTML = "";
+    allCategories.forEach(cat => {
+        select.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+}
+
+function addNewCategory() {
+    let newCat = prompt("Enter the name of the new category:");
+    if (newCat) {
+        newCat = newCat.trim();
+        if (newCat === "") return;
+        
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        
+        if (defaultCategories.includes(newCat) || customCategories.includes(newCat)) {
+            alert("This category already exists!");
+            return;
+        }
+        
+        customCategories.push(newCat);
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+        
+        loadCategoriesSelect();
+        document.getElementById('categorySelect').value = newCat;
+    }
+}
+
+// دالة مسح الكاتيغوري الجديدة
+function deleteCurrentCategory() {
+    const select = document.getElementById('categorySelect');
+    const selectedCat = select.value;
+
+    // الحماية: إلا كانت الكاتيغوري من الأساسيين مايسمحش بمسحها
+    if (defaultCategories.includes(selectedCat)) {
+        alert("This is a system category and cannot be deleted!");
+        return;
+    }
+
+    // تأكيد الحذف
+    if (confirm(`Are you sure you want to delete the category "${selectedCat}"?`)) {
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        
+        // تصفية المصفوفة وحذف الكاتيغوري منها
+        customCategories = customCategories.filter(cat => cat !== selectedCat);
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+        
+        // إعادة التحديث
+        loadCategoriesSelect();
+        alert("Category deleted successfully!");
+    }
+}
 
 function startInactivityTimer() {
     if (localStorage.getItem('adminLoggedIn') === 'true') {
         resetInactivityTimer();
-        // الاستماع لحركات المستخدم لإعادة تصفير العداد
-        window.onmousemove = resetInactivityTimer;
-        window.onmousedown = resetInactivityTimer;
-        window.onkeydown = resetInactivityTimer;
-        window.onclick = resetInactivityTimer;
-        window.ontouchstart = resetInactivityTimer;
+        window.onmousemove = resetInactivityTimer; window.onmousedown = resetInactivityTimer;
+        window.onkeydown = resetInactivityTimer; window.onclick = resetInactivityTimer; window.ontouchstart = resetInactivityTimer;
     }
 }
 
-function stopInactivityTimer() {
-    clearTimeout(inactivityTimer);
-    window.onmousemove = null;
-    window.onmousedown = null;
-    window.onkeydown = null;
-    window.onclick = null;
-    window.ontouchstart = null;
-}
+function stopInactivityTimer() { clearTimeout(inactivityTimer); window.onmousemove = null; window.onmousedown = null; window.onkeydown = null; window.onclick = null; window.ontouchstart = null; }
+function resetInactivityTimer() { clearTimeout(inactivityTimer); inactivityTimer = setTimeout(triggerAutoLogout, inactivityTimeout); }
+function triggerAutoLogout() { alert("Session expired due to inactivity. Please login again."); logout(); }
 
-function resetInactivityTimer() {
-    clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(triggerAutoLogout, inactivityTimeout);
-}
-
-function triggerAutoLogout() {
-    alert("Session expired due to inactivity. Please login again.");
-    logout();
-}
-
-function checkLogin(){ 
-    if(localStorage.getItem('adminLoggedIn') === 'true') { 
-        showDashboard(); 
-    } else { 
-        showLogin(); 
-    } 
-}
-
-function login(){ 
-    if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ 
-        localStorage.setItem('adminLoggedIn', 'true'); 
-        showDashboard(); 
-    } else { 
-        document.getElementById('errorMessage').style.display = 'block'; 
-        document.getElementById('errorMessage').textContent = 'Wrong credentials'; 
-    } 
-}
-
-function logout(){ 
-    localStorage.removeItem('adminLoggedIn'); 
-    stopInactivityTimer();
-    showLogin(); 
-}
-
-function showLogin(){ 
-    document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); 
-    document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); 
-}
-
-function showDashboard(){ 
-    document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); 
-    document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); 
-    loadProducts(); 
-    startInactivityTimer(); // تفعيل العداد غير ملي يدخل للـ Dashboard
-}
+function checkLogin(){ if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); } else { showLogin(); } }
+function login(){ if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ localStorage.setItem('adminLoggedIn', 'true'); showDashboard(); } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; } }
+function logout(){ localStorage.removeItem('adminLoggedIn'); stopInactivityTimer(); showLogin(); }
+function showLogin(){ document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); }
+function showDashboard(){ document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); loadProducts(); startInactivityTimer(); }
 
 const imageInput = document.getElementById('imageInput'); const preview = document.getElementById('preview'); let imageData = "";
 imageInput.addEventListener('change', function(){
@@ -176,10 +196,88 @@ imageInput.addEventListener('change', function(){
     }
 });
 
-async function addProduct(){ const title = document.getElementById('title').value; const price = document.getElementById('price').value; const category = document.getElementById('categorySelect').value; if(!title || !price || !imageData){ alert('Fill all fields!'); return; } const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]); if(error) { alert('Error saving data'); } else { document.getElementById('title').value = ''; document.getElementById('price').value = ''; preview.style.display = 'none'; loadProducts(); } }
-async function deleteProduct(id){ const { error } = await _supabase.from('products').delete().eq('id', id); if(!error) loadProducts(); }
-async function loadProducts(){ const list = document.getElementById('productsList'); list.innerHTML = "Loading..."; let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); if(error) { list.innerHTML = "Error"; return; } list.innerHTML = ""; products.forEach((product)=>{ list.innerHTML += `<div class="product-item"><img src="${product.image}"><div><h3>${product.title}</h3><p>${product.price} DH</p><span class="badge">${product.category}</span></div><button onclick="deleteProduct(${product.id})">Delete</button></div>`; }); }
+async function handleSubmit() { if (currentEditingProductId === null) { await addProduct(); } else { await updateProduct(); } }
 
+async function addProduct(){ 
+    const title = document.getElementById('title').value; 
+    const price = document.getElementById('price').value; 
+    const category = document.getElementById('categorySelect').value; 
+    if(!title || !price || !imageData){ alert('Fill all fields!'); return; } 
+    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]); 
+    if(error) { alert('Error saving data'); } else { clearForm(); loadProducts(); } 
+}
+
+function startEdit(id) {
+    const product = globalProductsArray.find(p => p.id === id);
+    if (!product) return;
+
+    currentEditingProductId = id;
+    
+    document.getElementById('formTitle').textContent = "Update Product";
+    document.getElementById('submitProductBtn').textContent = "Save Changes";
+    document.getElementById('cancelEditBtn').style.display = "block";
+
+    document.getElementById('title').value = product.title;
+    document.getElementById('price').value = product.price;
+    
+    let select = document.getElementById('categorySelect');
+    let options = Array.from(select.options).map(opt => opt.value);
+    if(!options.includes(product.category)) {
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        customCategories.push(product.category);
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+        loadCategoriesSelect();
+    }
+    
+    select.value = product.category;
+    imageData = product.image; preview.src = imageData; preview.style.display = 'block';
+    document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function updateProduct() {
+    const title = document.getElementById('title').value;
+    const price = document.getElementById('price').value;
+    const category = document.getElementById('categorySelect').value;
+    if(!title || !price || !imageData){ alert('Fill all fields!'); return; }
+    const { error } = await _supabase.from('products').update({ title, price, image: imageData, category }).eq('id', currentEditingProductId);
+    if (error) { alert('Error updating data'); } else { alert('Product updated successfully!'); clearForm(); loadProducts(); }
+}
+
+function clearForm() {
+    currentEditingProductId = null; document.getElementById('formTitle').textContent = "Add Product"; document.getElementById('submitProductBtn').textContent = "Add Product"; document.getElementById('cancelEditBtn').style.display = "none";
+    document.getElementById('title').value = ''; document.getElementById('price').value = ''; document.getElementById('imageInput').value = ''; preview.style.display = 'none'; imageData = "";
+}
+
+async function deleteProduct(id){ 
+    if(confirm('Are you sure you want to delete this product?')) {
+        const { error } = await _supabase.from('products').delete().eq('id', id); 
+        if(!error) { if(currentEditingProductId === id) clearForm(); loadProducts(); } else { alert('Error deleting product'); }
+    }
+}
+
+async function loadProducts(){ 
+    const list = document.getElementById('productsList'); list.innerHTML = "Loading..."; 
+    let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); 
+    if(error) { list.innerHTML = "Error"; return; } 
+    list.innerHTML = ""; globalProductsArray = products; 
+    products.forEach((product)=>{ 
+        list.innerHTML += `
+            <div class="product-item">
+                <img src="${product.image}">
+                <div>
+                    <h3>${product.title}</h3>
+                    <p>${product.price} DH</p>
+                    <span class="badge">${product.category}</span>
+                </div>
+                <div class="action-btns">
+                    <button class="edit-btn" onclick="startEdit(${product.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
+                </div>
+            </div>`; 
+    }); 
+}
+
+loadCategoriesSelect();
 checkLogin();
 </script>
 </body>
