@@ -4,51 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Papaya Juice</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght=300;400;600;700&family=Playfair+Display:wght=700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --primary: #ff6200;
-            --secondary: #1e2d21; /* تعديل اللون الثانوي ليتناسب مع الخلفية المظلمة */
+            --secondary: #1e2d21;
             --accent: #FDCB6E;
-            --light: rgba(255, 255, 255, 0.05); /* تحويل الـ light لشفافية خفيفة جداً */
+            --light: rgba(255, 255, 255, 0.05);
             --white: #ffffff;
-            --dark-bg: #141d16; /* لون الخلفية الداكنة الأساسي */
+            --dark-bg: #141d16;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Poppins', sans-serif;
-            color: #eceff1; /* تغيير لون النص الأساسي للأبيض المائل للرمادي */
+            color: #eceff1;
             line-height: 1.6;
             overflow-x: hidden;
-            /* خلفية دارك مود ثابتة وفخمة مع تدرج إضاءة ناعم غير متحرك */
             background-color: var(--dark-bg) !important;
             background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
             background-attachment: fixed;
         }
 
-        /* ستايل الهيدر الزجاجي ف الـ PC */
+        /* ستايل الهيدر الزجاجي ف الـ PC مع أنيماسيون الهبوط */
         .glass-header {
             display: flex !important; 
             justify-content: space-between !important; 
             align-items: center !important; 
             padding: 10px 30px !important; 
-            background: rgba(255, 255, 255, 0.06) !important; /* تقليل الشفافية لتناسب الظلام */
+            background: rgba(255, 255, 255, 0.06) !important;
             backdrop-filter: blur(15px) !important;
             -webkit-backdrop-filter: blur(15px) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             border-radius: 30px !important;
-            margin: 20px auto !important;
+            margin: 0 !important;
             width: 90% !important;
             max-width: 1200px !important;
             position: fixed !important;
-            top: 0 !important;
             left: 50% !important;
-            transform: translateX(-50%) !important;
+            top: 20px !important;
+            transform: translateX(-50%) translateY(0) !important;
             z-index: 1000 !important;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
-            transition: all 0.3s ease;
+            
+            /* هاد السطر هو لي كيعطي الأنيماسيون ديال السكرول */
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out !important; 
+            
+            /* الأنيماسيون فاش يالاه كتحل السيت */
+            animation: startUpAnimation 0.8s ease-out !important;
+        }
+
+        /* الكلاس لي كيتزاد فاش كتهبط لتحت باش يطلع المينيو */
+        .glass-header.hide-nav {
+            transform: translateX(-50%) translateY(-150px) !important;
+            opacity: 0 !important;
+        }
+
+        /* كود الأنيماسيون الأولى ديال الـ PC */
+        @keyframes startUpAnimation {
+            0% { top: -100px !important; opacity: 0; }
+            100% { top: 20px !important; opacity: 1; }
         }
 
         .glass-header .logo {
@@ -82,20 +98,18 @@
 
         .glass-header nav a {
             text-decoration: none;
-            color: #FFFFFF;
+            color: var(--primary);
             font-weight: 500;
             font-size: 16px;
-            transition: color 0.3s;
         }
 
-        .glass-header nav a:hover { color: var(--primary); }
+        .glass-header nav a:hover { color: #FFFFFF; }
         .glass-header nav a.active-link { color: var(--primary); font-weight: 700; }
         .mobile-menu { display: none; font-size: 1.8rem; cursor: pointer; color: #FFFFFF; }
 
         /* Hero Section */
         .hero {
             height: 100vh;
-            /* تثبيت الخلفية مع دمج الصورة بشكل فخم مع الدارك مود */
             background: linear-gradient(135deg, rgba(20, 29, 22, 0.85), rgba(46, 68, 50, 0.75)), 
                         url('https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-49.jpg?auto=format&fit=fill&w=384') center/cover;
             display: flex;
@@ -120,7 +134,7 @@
         .btn {
             display: inline-block;
             padding: 1rem 2.5rem;
-            background: var(--primary); /* جعل الزر برتقالي ليجذب العين وسط الدارك مود */
+            background: var(--primary);
             color: var(--white);
             text-decoration: none;
             border-radius: 50px;
@@ -155,7 +169,7 @@
             font-size: 2.5rem;
             text-align: center;
             margin-bottom: 3rem;
-            color: #ffffff; /* جعل العناوين بيضاء بالكامل */
+            color: #ffffff;
         }
         .section-title span { color: var(--primary); }
 
@@ -175,7 +189,7 @@
         }
         .about-img img { width: 50%; height: 350px; object-fit: cover; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
         .about-text h2 { margin-bottom: 1.5rem; }
-        .about-text p { margin-bottom: 1rem; color: #b0bec5; } /* لون مريح ومنسق للفقرات */
+        .about-text p { margin-bottom: 1rem; color: #b0bec5; }
 
         /* Menu Section */
         .menu { background: transparent; }
@@ -187,7 +201,6 @@
             margin: 0 auto;
         }
         
-        /* تعديل كارتات المينيو لتصبح زجاجية مظلمة متناسقة مية فالمية */
         .menu-card {
             background: rgba(255, 255, 255, 0.04) !important;
             backdrop-filter: blur(15px) !important;
@@ -214,7 +227,7 @@
         .menu-card h3 {
             font-family: 'Playfair Display', serif;
             margin-bottom: 0.5rem;
-            color: #ffffff !important; /* اسم المنتج بالأبيض */
+            color: #ffffff !important;
         }
         .price {
             display: inline-block;
@@ -245,7 +258,6 @@
             margin: 2rem auto;
         }
         
-        /* تعديل صناديق معلومات التواصل لتصبح زجاجية نقية */
         .info-box {
             padding: 2rem;
             background: rgba(255, 255, 255, 0.04) !important;
@@ -269,7 +281,7 @@
 
         /* Footer */
         footer {
-            background: #090f0b; /* لون داكن جداً لإنهاء الصفحة */
+            background: #090f0b;
             color: var(--white);
             padding: 3rem 5%;
             text-align: center;
@@ -287,12 +299,7 @@
         .social-links a:hover { color: var(--primary); }
 
         /* Animations */
-        nav { animation: slideDown 1s ease; }
         .hero-content { animation: fadeIn 2s ease; }
-        @keyframes slideDown {
-            from { transform: translate(-50%, -100px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -300,7 +307,7 @@
         .hidden { opacity: 0; transform: translateY(50px); transition: all 1s ease; }
         .show { opacity: 1; transform: translateY(0); }
 
-        /* 📱 كود التعديلات الخاصة بالتلفون (Mobile Responsive) */
+        /* 📱 كود التعديلات الخاصة بالتلفون */
         @media (max-width: 768px) {
             .my-menu-grid {
                 display: grid !important;
@@ -332,9 +339,15 @@
                 padding: 12px 15px !important;
                 width: 92% !important;
                 margin: 0 auto !important;
-                top: 10px !important;
                 height: auto !important;
-                background: rgba(20, 29, 22, 0.3) !important; /* خلفية أغمق قليلاً للموبايل لضمان الوضوح */
+                background: rgba(20, 29, 22, 0.3) !important;
+                top: 10px !important;
+                animation: startUpAnimationMobile 0.8s ease-out !important;
+            }
+            
+            @keyframes startUpAnimationMobile {
+                0% { top: -150px !important; opacity: 0; }
+                100% { top: 10px !important; opacity: 1; }
             }
             
             header.glass-header nav {
@@ -361,7 +374,7 @@
 </head>
 <body>
 
-    <header class="glass-header">
+    <header class="glass-header" id="navbar">
         <a href="#home" class="logo">
             <img src="logo.png" alt="Logo">
             Papaya Juice
@@ -398,8 +411,8 @@
     <section class="about hidden">
         <div class="about-text">
             <h2 class="section-title">Space <span>Games</span></h2>
-            <p>Welcome to <strong>Papaya Juice</strong>, your cozy corner in <strong>Mohammedia, Morocco</strong>.</p>
-            <p>Come experience the warmth of Mohammedia with a glass of sunshine!</p>
+            <p>Discover our interactive gaming table with more than 20 exciting games where fun, competition, and good vibes come together for the ultimate experience with friends 🎮🔥.</p>
+            <p>Enjoy the thrill of billiard in a stylish gaming atmosphere where every shot brings excitement, competition, and unforgettable moments with friends 🎱🔥</p>
         </div>
         <div class="about-img">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-12-35.jpg" alt="Space 1">
@@ -456,7 +469,7 @@
                 display: inline-block; 
                 text-align: center;
                 transition: 0.3s;
-            ">View Our Menu</a>
+            ">View Menu</a>
         </div>
     </section>
 
@@ -465,7 +478,7 @@
         <div class="location-info">
             <div class="info-box">
                 <h3>📍 Address</h3>
-                <p>Papaya Juice Café<br>Mohammedia, Morocco<br>(Near the Corniche)</p>
+                <p>Papaya Juice Café<br>Mohammedia, Morocco<br>(Near Maroc Telecom, Chhawta.)</p>
             </div>
             <div class="info-box">
                 <h3>🕒 Hours</h3>
@@ -520,7 +533,7 @@
             }
         }
 
-        // Animation on scroll
+        // Animation on scroll elements
         const hiddenElements = document.querySelectorAll('.hidden');
         window.addEventListener('scroll', () => {
             hiddenElements.forEach(el => {
@@ -529,6 +542,24 @@
                     el.classList.add('show');
                 }
             });
+        });
+
+        // --- كود المينيو لي كيطلع ويهبط فالسكرول ---
+        let lastScrollTop = 0;
+        const navbar = document.getElementById('navbar');
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // ملي كتهبط لتحت (Scroll Down) -> خبي المينيو
+                navbar.classList.add('hide-nav');
+            } else {
+                // ملي كتطلع الفوق (Scroll Up) -> بين المينيو
+                navbar.classList.remove('hide-nav');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
         });
     </script>
 </body>
