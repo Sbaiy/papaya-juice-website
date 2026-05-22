@@ -96,12 +96,19 @@ h1.menu-title {
 
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
     max-width: 1200px;
     width: 90%;
     margin: 0 auto;
-    align-items: stretch;
+    align-items: stretch; /* كتخلي الكارطات ياخدو نفس الطول */
+}
+
+@media (min-width: 900px) {
+    .menu-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 30px;
+    }
 }
 
 /* الكارد الأساسي */
@@ -122,8 +129,10 @@ h1.menu-title {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    justify-content: flex-start;
-    min-height: 280px;
+    justify-content: flex-start; /* بدلناها باش يبداو من الفوق */
+    align-self: stretch;
+    box-sizing: border-box;
+    height: 100%; /* زدناها باش تعمر البلاصة كاملة */
 }
 
 .product-card:hover {
@@ -154,6 +163,11 @@ h1.menu-title {
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
     font-weight: 600;
     text-transform: capitalize;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    min-height: 55px; /* عطيناها طول أدنى باش ديما يكون عندها نفس ليسباس */
 }
 
 .product-desc {
@@ -177,7 +191,7 @@ h1.menu-title {
 }
 
 .product-price {
-    margin: 10px auto 0 auto;
+    margin: auto auto 10px auto !important; /* auto كتدفع الثمن ديما لتحت */
     font-size: 17px;
     color: var(--primary);
     font-weight: 700;
@@ -229,14 +243,18 @@ h1.menu-title {
     header.main-header nav a { font-size: 15px !important; }
     .menu-title { font-size: 32px !important; margin-top: 130px !important; }
     .menu-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 15px !important;
-        width: 92% !important;
-        align-items: stretch !important;
+        gap: 12px !important;
+        width: 94% !important;
     }
-    .product-card { padding: 15px 10px !important; border-radius: 18px !important; min-height: 220px !important; }
+    .product-card { padding: 15px 10px !important; border-radius: 18px !important; }
     .product-card img { width: 95px !important; height: 95px !important; }
-    .product-card h3 { font-size: 14px !important; margin: 8px 0 3px 0 !important; }
+    
+    .product-card h3 { 
+        font-size: 14px !important; 
+        margin: 8px 0 3px 0 !important; 
+        min-height: 42px !important; /* طول أدنى باش السميات فالتليفون يوليو مقادين */
+    }
+    
     .product-desc { font-size: 10px !important; }
     .product-price { font-size: 13px !important; padding: 4px 10px !important; }
     .expand-hint { font-size: 10px !important; }
