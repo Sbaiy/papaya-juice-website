@@ -25,7 +25,6 @@ body {
     color: #eceff1;
 }
 
-/* ستايل الهيدر الزجاجي ف الـ PC المتناسق مع المينيو */
 header.main-header {
     display: flex !important; 
     justify-content: space-between !important; 
@@ -94,14 +93,13 @@ h1.menu-title {
 
 .menu-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* زدت شوية فالعرض باش الوصف يجي مرتاح */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 30px; 
     max-width: 1200px; 
     width: 90%; 
     margin: 0 auto; 
 }
 
-/* تأثير الزجاج الضبابي الفخم المظلم للمنتوجات */
 .product-card { 
     background: rgba(255, 255, 255, 0.04) !important; 
     backdrop-filter: blur(15px) !important; 
@@ -113,8 +111,10 @@ h1.menu-title {
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, background 0.4s ease; 
     display: flex; 
     flex-direction: column; 
-    align-items: center; /* باش الصورة تبقى فالوسط */
-    justify-content: flex-start; 
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .product-card:hover { 
@@ -122,6 +122,53 @@ h1.menu-title {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important; 
     background: rgba(255, 255, 255, 0.08) !important; 
     border-color: var(--primary) !important;
+}
+
+/* expanded card overlay */
+.card-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 500;
+    backdrop-filter: blur(4px);
+}
+.card-overlay.active { display: block; }
+
+.product-card.expanded {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 600 !important;
+    width: min(340px, 88vw) !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8) !important;
+    background: rgba(30, 42, 33, 0.98) !important;
+    border-color: var(--primary) !important;
+    cursor: default !important;
+    animation: expandCard 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.product-card.expanded .product-info .product-desc {
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    overflow: visible !important;
+    font-size: 13px !important;
+    color: #c8d8ca !important;
+    margin-top: 10px !important;
+    line-height: 1.7 !important;
+}
+
+.product-card.expanded img {
+    width: 180px !important;
+    height: 180px !important;
+}
+
+@keyframes expandCard {
+    0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
 }
 
 .product-card img { 
@@ -133,50 +180,76 @@ h1.menu-title {
     filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); 
 }
 
-/* التعديل الجديد باش النص يجي لليسار ومقاد */
+/* ✅ smiya w taman f nafs s-saff */
 .product-info {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-    flex-grow: 1; /* باش يدفع الثمن لتحت ديما */
+    flex-grow: 1;
+}
+
+.product-info .title-price-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
 }
 
 .product-info h3 { 
-    margin: 0 0 8px 0; 
-    font-size: 20px; 
+    margin: 0; 
+    font-size: 16px;
     color: #ffffff; 
     font-weight: 700; 
-    text-transform: uppercase; /* باش يجي بحال العنوان د Asalat Bladi */
+    text-transform: uppercase;
     letter-spacing: 0.5px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* وصف المنتج بحال الديزاين المطلوب */
 .product-info .product-desc {
-    font-size: 13px;
-    color: #b0b8b4; 
+    font-size: 11px;
+    color: #b0bdb2;
     font-weight: 400;
-    margin: 0 0 15px 0;
-    line-height: 1.6;
+    margin: 6px 0 0 0;
+    line-height: 1.55;
     text-transform: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    width: 100%;
+    transition: all 0.3s ease;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #b0bdb2 !important;
 }
 
-/* ستايل الثمن */
-.product-info p:last-child { 
-    margin: auto 0 0 0; /* Auto من الفوق باش يلصق لتحت */
-    font-size: 17px; 
+.product-info .product-price { 
+    margin: 0;
+    font-size: 15px; 
     color: var(--primary); 
     font-weight: 700; 
     background: rgba(255, 255, 255, 0.05) !important; 
-    padding: 4px 18px; 
+    padding: 4px 14px; 
     border-radius: 50px; 
     display: inline-block; 
     border: 1px solid rgba(255, 98, 0, 0.3) !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    white-space: nowrap;
 }
 
-/* التعديل الذكي للتلفونات */
 @media (max-width: 768px) {
     header.main-header {
         flex-direction: column !important;
@@ -223,26 +296,20 @@ h1.menu-title {
         height: 95px !important;
         margin-bottom: 12px !important;
     }
-    
-    /* التعديل ديال الموبايل باش يبقى الوصف مقاد */
     .product-info h3 {
-        font-size: 15px !important; 
-        margin: 0 0 6px 0 !important;
+        font-size: 12px !important;
+        margin: 0 !important;
     }
-    .product-info .product-desc {
-        font-size: 11px !important;
-        line-height: 1.5 !important;
-        margin-bottom: 12px !important;
-    }
-    .product-info p:last-child {
-        font-size: 14px !important; 
-        padding: 4px 12px !important;
+    .product-info .product-price {
+        font-size: 13px !important; 
+        padding: 4px 10px !important;
     }
 }
 </style>
 </head>
 <body>
 
+    <div class="card-overlay" id="cardOverlay"></div>
     <header class="main-header" id="mainHeader">
         <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
             <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
@@ -250,8 +317,8 @@ h1.menu-title {
         </a>
 
         <nav style="display: flex; gap: 25px; align-items: center;">
-            <a href="index.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
-            <a href="menu.html" style="text-decoration: none; color: #FF6600; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
+            <a href="index.html" style="text-decoration: none; color: #ffffff; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
+            <a href="menu.html" style="text-decoration: none; color: #ffffff; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
         </nav>
     </header>
 
@@ -310,9 +377,11 @@ function displayFilteredProducts(filteredList) {
         <div class="product-card">
             <img src="${product.image}" alt="${product.title}">
             <div class="product-info">
-                <h3>${product.title}</h3>
+                <div class="title-price-row">
+                    <h3>${product.title}</h3>
+                    <p class="product-price">${product.price} DH</p>
+                </div>
                 ${desc ? `<p class="product-desc">${desc}</p>` : ''}
-                <p>${product.price} DH</p>
             </div>
         </div>`;
     });
@@ -339,15 +408,41 @@ const headerElement = document.getElementById('mainHeader');
 
 window.addEventListener('scroll', function() {
     let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
     if (scrollTop > lastScrollTop && scrollTop > 100) {
         headerElement.classList.add('hide-nav');
     } else {
         headerElement.classList.remove('hide-nav');
     }
-    
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    // close expanded card on scroll
+    closeExpanded();
 });
+
+// card expand logic
+let expandedCard = null;
+
+function closeExpanded() {
+    if (expandedCard) {
+        expandedCard.classList.remove('expanded');
+        expandedCard = null;
+    }
+    document.getElementById('cardOverlay').classList.remove('active');
+}
+
+document.getElementById('cardOverlay').addEventListener('click', closeExpanded);
+
+document.addEventListener('click', function(e) {
+    const card = e.target.closest('.product-card');
+    if (!card) return;
+    if (card.classList.contains('expanded')) return; // already open, ignore
+    if (expandedCard) closeExpanded();
+    card.classList.add('expanded');
+    expandedCard = card;
+    document.getElementById('cardOverlay').classList.add('active');
+});
+
+// close on browser back
+window.addEventListener('popstate', closeExpanded);
 </script>
 </body>
 </html>
