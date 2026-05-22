@@ -108,7 +108,7 @@ h1.menu-title {
     border-radius: 24px; 
     padding: 25px; 
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important; 
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, background 0.4s ease; 
+    transition: box-shadow 0.2s ease, background 0.2s ease; 
     display: flex; 
     flex-direction: column; 
     align-items: center;
@@ -118,7 +118,6 @@ h1.menu-title {
 }
 
 .product-card:hover { 
-    transform: translateY(-8px); 
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important; 
     background: rgba(255, 255, 255, 0.08) !important; 
     border-color: var(--primary) !important;
@@ -148,7 +147,7 @@ h1.menu-title {
     background: rgba(30, 42, 33, 0.98) !important;
     border-color: var(--primary) !important;
     cursor: default !important;
-    animation: expandCard 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: expandCard 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .product-card.expanded .product-info .product-desc {
@@ -167,8 +166,18 @@ h1.menu-title {
 }
 
 @keyframes expandCard {
-    0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
-    100% { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    70%  { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes shrinkCard {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+
+.product-card.closing {
+    animation: shrinkCard 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 }
 
 .product-card img { 
@@ -346,7 +355,27 @@ async function loadMenuAndCategories() {
             return; 
         }
         
-        allProductsArray = (products || []).filter(p => p.disponible !== false);
+        let filtered = (products || []).filter(p => p.disponible !== false);
+        
+        // Sort by sort_order from Supabase if available
+        const hasSortOrder = filtered.some(p => p.sort_order !== null && p.sort_order !== undefined);
+        if (hasSortOrder) {
+            filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+        } else {
+            // Fallback: sort by localStorage order
+            const savedOrder = JSON.parse(localStorage.getItem('productOrder') || '[]');
+            if (savedOrder.length > 0) {
+                filtered.sort((a, b) => {
+                    const ai = savedOrder.indexOf(a.id);
+                    const bi = savedOrder.indexOf(b.id);
+                    if (ai === -1) return 1;
+                    if (bi === -1) return -1;
+                    return ai - bi;
+                });
+            }
+        }
+        
+        allProductsArray = filtered;
 
         const uniqueCategories = [...new Set(allProductsArray.map(p => p.category).filter(Boolean))];
         
@@ -423,10 +452,17 @@ let expandedCard = null;
 
 function closeExpanded() {
     if (expandedCard) {
-        expandedCard.classList.remove('expanded');
+        const card = expandedCard;
         expandedCard = null;
+        card.classList.add('closing');
+        document.getElementById('cardOverlay').classList.remove('active');
+        setTimeout(() => {
+            card.classList.remove('expanded');
+            card.classList.remove('closing');
+        }, 500);
+    } else {
+        document.getElementById('cardOverlay').classList.remove('active');
     }
-    document.getElementById('cardOverlay').classList.remove('active');
 }
 
 document.getElementById('cardOverlay').addEventListener('click', closeExpanded);
