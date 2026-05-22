@@ -101,7 +101,7 @@ h1.menu-title {
     max-width: 1200px;
     width: 90%;
     margin: 0 auto;
-    align-items: start;
+    align-items: stretch;
 }
 
 /* الكارد الأساسي */
@@ -123,6 +123,7 @@ h1.menu-title {
     align-items: center;
     cursor: pointer;
     justify-content: flex-start;
+    min-height: 280px;
 }
 
 .product-card:hover {
@@ -231,9 +232,9 @@ h1.menu-title {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 15px !important;
         width: 92% !important;
-        align-items: start !important;
+        align-items: stretch !important;
     }
-    .product-card { padding: 15px 10px !important; border-radius: 18px !important; }
+    .product-card { padding: 15px 10px !important; border-radius: 18px !important; min-height: 220px !important; }
     .product-card img { width: 95px !important; height: 95px !important; }
     .product-card h3 { font-size: 14px !important; margin: 8px 0 3px 0 !important; }
     .product-desc { font-size: 10px !important; }
