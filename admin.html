@@ -4,38 +4,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 :root {
-    --primary: #ff6200;
+    --primary: #c0392b; /* بدلت اللون للأحمر باش يمشي مع الديزاين الجديد */
     --dark-bg: #141d16;
-    --card-bg: rgba(255, 255, 255, 0.04);
     --input-bg: rgba(255, 255, 255, 0.06);
     --border-color: rgba(255, 255, 255, 0.1);
 }
 
 body { 
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; 
-    display: flex !important; justify-content: center !important; align-items: center !important; 
+    display: flex !important; justify-content: center !important; align-items: flex-start !important; 
     background-color: var(--dark-bg) !important;
     background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
     background-attachment: fixed;
     color: #eceff1;
 }
 
-.login-section { background: transparent !important; width: 100% !important; display: flex !important; justify-content: center !important; align-items: center !important; }
-.dashboard-section { width: 100% !important; min-height: 100vh !important; display: none; box-sizing: border-box; padding: 30px; }
+.login-section { background: transparent !important; width: 100% !important; min-height: 100vh; display: flex !important; justify-content: center !important; align-items: center !important; }
+.dashboard-section { width: 100% !important; min-height: 100vh !important; display: none; box-sizing: border-box; padding: 30px 15px; }
 
-/* تأثير الزجاج الفخم المظلم (Glassmorphism) على الحاوية الرئيسية */
-.container { 
-    max-width: 550px; 
+/* حاوية تسجيل الدخول (صغيرة) */
+.login-container { 
+    max-width: 450px; 
     width: 100%; 
-    margin: 40px auto; 
     background: rgba(255, 255, 255, 0.05) !important; 
     backdrop-filter: blur(15px) !important; 
-    -webkit-backdrop-filter: blur(15px) !important; 
+    border: 1px solid var(--border-color) !important; 
+    padding: 30px; 
+    border-radius: 24px; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+    box-sizing: border-box; 
+}
+
+/* حاوية لوحة التحكم (عريضة باش تهز الجدول) */
+.dashboard-container { 
+    max-width: 1200px; /* كبرنا العرض هنا */
+    width: 100%; 
+    margin: 0 auto; 
+    background: rgba(255, 255, 255, 0.05) !important; 
+    backdrop-filter: blur(15px) !important; 
     border: 1px solid var(--border-color) !important; 
     padding: 30px; 
     border-radius: 24px; 
@@ -45,127 +56,222 @@ body {
 
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
-/* لون العناوين للأبيض */
 h1 { text-align: center; margin-bottom: 25px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
-/* الخانات والقوائم المنسدلة زجاجية داكنة وشفافة */
+/* الخانات ديال الإضافة */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.form-grid input, .form-grid select { margin-bottom: 0; }
+
 input, select { 
-    width: 100%; 
-    padding: 15px; 
-    margin-bottom: 20px; 
-    border-radius: 12px; 
-    border: 1px solid var(--border-color); 
-    background: var(--input-bg) !important; 
-    font-size: 16px; 
-    box-sizing: border-box; 
-    color: #ffffff !important; 
-    backdrop-filter: blur(5px);
-    transition: all 0.3s ease;
+    width: 100%; padding: 12px 15px; margin-bottom: 15px; border-radius: 8px; 
+    border: 1px solid var(--border-color); background: var(--input-bg) !important; 
+    font-size: 14px; box-sizing: border-box; color: #ffffff !important; transition: all 0.3s ease;
 }
-
-/* لون النص التوضيحي داخل الخانات */
-input::placeholder { color: rgba(255, 255, 255, 0.4); }
-
-/* ستايل عند التركيز على الخانات */
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary) !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 0 10px rgba(255, 98, 0, 0.2);
-}
-
-/* ستايل الـ options داخل الـ Select باش يجي متناسق مع المظهر المظلم */
+input:focus, select:focus { outline: none; border-color: var(--primary) !important; background: rgba(255, 255, 255, 0.1) !important; }
 select option { background: #1a241c; color: #fff; }
 
-/* أزرار عادية والـ Add الرئيسي */
-button { width: 100%; padding: 15px; border: none; background: var(--primary); color: white; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 600; transition: 0.3s ease; box-shadow: 0 4px 15px rgba(255, 98, 0, 0.2); }
-button:hover { background: #e05600; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 98, 0, 0.4); }
+.main-btn { width: 100%; padding: 14px; border: none; background: var(--primary); color: white; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; transition: 0.3s ease; }
+.main-btn:hover { background: #a93226; }
 
-.logout-btn { background: #c0392b; width: auto; padding: 10px 20px; font-size: 14px; box-shadow: none; border-radius: 8px; }
-.logout-btn:hover { background: #a93226; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3); }
+.logout-btn { background: transparent; border: 1px solid #fff; color: #fff; width: auto; padding: 8px 16px; font-size: 14px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+.logout-btn:hover { background: rgba(255,255,255,0.1); }
 
-/* كارتات المنتوجات زجاجية شفافة معتمة */
-.product-item { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    background: var(--card-bg) !important; 
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06); 
-    padding: 15px; 
-    border-radius: 18px; 
-    margin-bottom: 20px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-.product-item img { width: 60px; height: 60px; object-fit: contain; border-radius: 10px; background: transparent; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
-.product-item div { flex: 1; margin-left: 15px; }
-.product-item h3 { margin: 0 0 5px 0; color: #ffffff; font-size: 16px; font-weight: 600; }
-.product-item p { margin: 0; color: var(--primary); font-weight: bold; }
-
-/* بادج الكاتيغوري مريح للعين */
-.product-item .badge { background: rgba(39, 174, 96, 0.2); color: #2ecc71; border: 1px solid rgba(39, 174, 96, 0.4); padding: 2px 10px; border-radius: 20px; font-size: 11px; display: inline-block; margin-top: 4px; font-weight: 500; }
-
-.action-btns { display: flex; flex-direction: column; gap: 8px; }
-.product-item button.delete-btn { width: auto; padding: 8px 14px; background: #c0392b; font-size: 13px; border-radius: 8px; box-shadow: none; }
-.product-item button.delete-btn:hover { background: #a93226; }
-.product-item button.edit-btn { width: auto; padding: 8px 14px; background: #2980b9; font-size: 13px; border-radius: 8px; box-shadow: none; }
-.product-item button.edit-btn:hover { background: #2471a3; }
-
-.preview { width: 100%; height: 150px; object-fit: contain; margin-bottom: 20px; display: none; background: transparent; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4)); }
-.cancel-edit-btn { background: #566573; margin-top: 10px; display: none; box-shadow: none; }
+.preview { width: 100px; height: 100px; object-fit: contain; margin-bottom: 15px; display: none; background: #fff; border-radius: 8px; padding: 5px; }
+.cancel-edit-btn { background: #566573; margin-top: 10px; display: none; width: 100%; padding: 14px; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
 .cancel-edit-btn:hover { background: #46515c; }
 
-/* ستايل حاوية الكاتيغوري مع الأزرار + و - */
-.category-container { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
+.category-container { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; grid-column: span 2; }
 .category-container select { margin-bottom: 0 !important; flex: 1; }
-.add-cat-btn { width: auto; padding: 15px 20px; background: #27ae60; font-size: 18px; font-weight: bold; border-radius: 12px; box-shadow: none; }
-.add-cat-btn:hover { background: #219a52; }
-.del-cat-btn { width: auto; padding: 15px 20px; background: #c0392b; font-size: 18px; font-weight: bold; border-radius: 12px; box-shadow: none; }
-.del-cat-btn:hover { background: #a93226; }
+.cat-btn { padding: 12px 18px; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.add-cat-btn { background: #27ae60; } .add-cat-btn:hover { background: #219a52; }
+.del-cat-btn { background: #c0392b; } .del-cat-btn:hover { background: #a93226; }
 
-/* تعديل لون لودينغ وعنوان الليستة */
-#productsList { color: rgba(255, 255, 255, 0.6); font-weight: 500; }
-.list-title { color: #ffffff; font-size: 20px; margin-bottom: 20px; text-align: center; font-weight: 600; }
-.divider { border: none; border-top: 1px solid var(--border-color); margin: 35px 0 25px 0; }
+
+/* ======================================================== */
+/* ستايل الجدول الجديد (مطابق للتصويرة 100%) */
+/* ======================================================== */
+
+.white-table-container {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 35px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.table-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(192, 57, 43, 0.08);
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #eceff1;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.table-filter select {
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: #eceff1 !important;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    width: auto;
+    cursor: pointer;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+    color: #eceff1;
+    text-align: left;
+    font-size: 13px;
+}
+
+.custom-table th {
+    background: transparent;
+    padding: 15px 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.custom-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+}
+
+.custom-table tr:hover {
+    background: rgba(255,255,255,0.04);
+}
+
+/* عمود الـ ID */
+.td-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+}
+.drag-icon { color: rgba(255,255,255,0.2); font-weight: bold; font-size: 16px; cursor: grab; }
+.delete-icon { cursor: pointer; transition: 0.2s; display: flex; align-items: center;}
+.delete-icon:hover { transform: scale(1.1); }
+
+/* عمود الصورة */
+.td-img { position: relative; width: 45px; }
+.td-img img { width: 40px; height: 40px; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+.img-badge {
+    position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; width: 16px; height: 16px;
+    border-radius: 50%; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold;
+}
+
+/* عمود التصنيف والاسم */
+.td-cat { font-weight: 600; color: #eceff1; }
+.td-name, .td-desc { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #eceff1; cursor: pointer; }
+.td-desc { color: rgba(255,255,255,0.5); font-weight: 400; }
+.td-name:hover, .td-desc:hover { color: var(--primary); }
+
+/* عمود الثمن */
+.td-price { font-weight: 700; color: #ffffff !important; line-height: 1.2; cursor: pointer; }
+.td-price:hover { color: #e67e22 !important; }
+.td-price .dh { color: rgba(255,255,255,0.35) !important; font-weight: 400; font-size: 11px; margin-left: 2px; }
+.price-sub { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 500; }
+
+/* هوفر أورانج على الصفوف */
+.custom-table tbody tr:hover {
+    background: rgba(230, 126, 34, 0.08) !important;
+    border-left: 3px solid #e67e22;
+}
+
+/* زر التوفر (Toggle Switch) */
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #2ecc71; }
+input:checked + .slider:before { transform: translateX(18px); }
+
+/* Image cliquable */
+.td-img img { cursor: pointer; transition: opacity 0.2s; }
+.td-img img:hover { opacity: 0.75; }
+
+/* Input inline للاسم والوصف والثمن */
+.inline-input {
+    width: 100%; padding: 5px 8px; border: 2px solid var(--primary);
+    border-radius: 6px; font-size: 13px; font-weight: 600; color: #ffffff;
+    background: rgba(255,255,255,0.1); outline: none; box-sizing: border-box;
+}
+.price-input {
+    width: 80px; padding: 4px 6px; border: 2px solid var(--primary);
+    border-radius: 6px; font-size: 13px; font-weight: 700; color: #ffffff;
+    background: rgba(255,255,255,0.1); text-align: center; outline: none;
+}
+/* Toggle indisponible → ligne grisée */
+tr.indisponible td { opacity: 0.45; }
+tr.indisponible .switch { opacity: 1 !important; }
+/* ======================================================== */
+
 </style>
 </head>
 <body>
 
 <div id="loginSection" class="login-section">
-    <div class="container">
+    <div class="container login-container">
         <h1>Admin Login</h1>
         <div id="errorMessage" style="color:#ff4d4d; display:none; text-align:center; margin-bottom:15px; font-weight:bold;"></div>
         <input type="text" id="username" placeholder="Username">
         <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Login</button>
+        <button class="main-btn" onclick="login()">Login</button>
     </div>
 </div>
 
 <div id="dashboardSection" class="dashboard-section">
-    <div class="container">
+    <div class="container dashboard-container">
         <div class="admin-header">
-            <h1 style="margin-bottom: 0;">Dashboard</h1>
+            <h1 style="margin-bottom: 0;">Menu Management</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
         
-        <h1 id="formTitle">Add Product</h1>
-        <input type="file" id="imageInput" accept="image/*" style="padding: 11px;">
-        <img id="preview" class="preview">
-        
-        <div class="category-container">
-            <select id="categorySelect"></select>
-            <button class="add-cat-btn" onclick="addNewCategory()" type="button" title="Add new category">+</button>
-            <button class="del-cat-btn" onclick="deleteCurrentCategory()" type="button" title="Delete selected category">-</button>
+        <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h2 id="formTitle" style="margin-top:0; font-size:18px; color:#fff;">+ Add New Item</h2>
+            
+            <div class="form-grid">
+                <div class="category-container">
+                    <select id="categorySelect"></select>
+                    <button class="cat-btn add-cat-btn" onclick="addNewCategory()" type="button" title="Add new category">+</button>
+                    <button class="cat-btn del-cat-btn" onclick="deleteCurrentCategory()" type="button" title="Delete selected category">-</button>
+                </div>
+
+                <input type="text" id="title" placeholder="Item Name (e.g. Coca-Cola)">
+                <input type="text" id="description" placeholder="Short Description (Optional)">
+                <input type="text" id="price" placeholder="Price (DH) (e.g. 15.00)" style="grid-column: span 2;">
+            </div>
+            
+            <input type="file" id="imageInput" accept="image/*" style="padding: 9px; grid-column: span 2;">
+            <img id="preview" class="preview">
+
+            <button id="submitProductBtn" class="main-btn" onclick="handleSubmit()">+ Add Item</button>
+            <button id="cancelEditBtn" class="cancel-edit-btn" onclick="clearForm()">Cancel Edit</button>
         </div>
-
-        <input type="text" id="title" placeholder="Product Name">
-        <input type="text" id="price" placeholder="Price">
-        <button id="submitProductBtn" onclick="handleSubmit()">Add Product</button>
-        <button id="cancelEditBtn" class="cancel-edit-btn" onclick="clearForm()">Cancel Edit</button>
-
-        <hr class="divider">
-        <div class="list-title">Products List</div>
 
         <div id="productsList">Loading...</div>
     </div>
@@ -185,8 +291,6 @@ const defaultCategories = [
     "ice tea", "salade fruite", "pâtisserie"
 ];
 
-const inactivityTimeout = 60000; 
-let inactivityTimer;
 let currentEditingProductId = null; 
 let globalProductsArray = []; 
 
@@ -195,70 +299,58 @@ function loadCategoriesSelect() {
     let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
     let allCategories = [...defaultCategories, ...customCategories];
     
-    select.innerHTML = "";
-    allCategories.forEach(cat => {
-        select.innerHTML += `<option value="${cat}">${cat}</option>`;
-    });
+    select.innerHTML = "<option value='' disabled selected>Select a category</option>";
+    allCategories.forEach(cat => { select.innerHTML += `<option value="${cat}">${cat}</option>`; });
 }
 
 function addNewCategory() {
     let newCat = prompt("Enter the name of the new category:");
-    if (newCat) {
-        newCat = newCat.trim();
-        if (newCat === "") return;
-        
+    if (newCat && newCat.trim() !== "") {
         let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-        
-        if (defaultCategories.includes(newCat) || customCategories.includes(newCat)) {
-            alert("This category already exists!");
-            return;
-        }
-        
-        customCategories.push(newCat);
-        localStorage.setItem('customCategories', JSON.stringify(customCategories));
-        
-        loadCategoriesSelect();
-        document.getElementById('categorySelect').value = newCat;
+        if (!defaultCategories.includes(newCat) && !customCategories.includes(newCat)) {
+            customCategories.push(newCat);
+            localStorage.setItem('customCategories', JSON.stringify(customCategories));
+            loadCategoriesSelect();
+            document.getElementById('categorySelect').value = newCat;
+        } else { alert("This category already exists!"); }
     }
 }
 
 function deleteCurrentCategory() {
-    const select = document.getElementById('categorySelect');
-    const selectedCat = select.value;
-
-    if (defaultCategories.includes(selectedCat)) {
-        alert("This is a system category and cannot be deleted!");
-        return;
-    }
-
-    if (confirm(`Are you sure you want to delete the category "${selectedCat}"?`)) {
+    const selectedCat = document.getElementById('categorySelect').value;
+    if(!selectedCat) return;
+    if (defaultCategories.includes(selectedCat)) { alert("System category cannot be deleted!"); return; }
+    if (confirm(`Delete category "${selectedCat}"?`)) {
         let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-        
         customCategories = customCategories.filter(cat => cat !== selectedCat);
         localStorage.setItem('customCategories', JSON.stringify(customCategories));
-        
         loadCategoriesSelect();
-        alert("Category deleted successfully!");
     }
 }
 
-function startInactivityTimer() {
-    if (localStorage.getItem('adminLoggedIn') === 'true') {
-        resetInactivityTimer();
-        window.onmousemove = resetInactivityTimer; window.onmousedown = resetInactivityTimer;
-        window.onkeydown = resetInactivityTimer; window.onclick = resetInactivityTimer; window.ontouchstart = resetInactivityTimer;
-    }
-}
-
-function stopInactivityTimer() { clearTimeout(inactivityTimer); window.onmousemove = null; window.onmousedown = null; window.onkeydown = null; window.onclick = null; window.ontouchstart = null; }
-function resetInactivityTimer() { clearTimeout(inactivityTimer); inactivityTimer = setTimeout(triggerAutoLogout, inactivityTimeout); }
-function triggerAutoLogout() { alert("Session expired due to inactivity. Please login again."); logout(); }
-
-function checkLogin(){ if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); } else { showLogin(); } }
-function login(){ if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ localStorage.setItem('adminLoggedIn', 'true'); showDashboard(); } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; } }
-function logout(){ localStorage.removeItem('adminLoggedIn'); stopInactivityTimer(); showLogin(); }
+function checkLogin(){ if(localStorage.getItem('adminLoggedIn') === 'true') { showDashboard(); resetInactivityTimer(); } else { showLogin(); } }
+function login(){ if(document.getElementById('username').value === ADMIN_USERNAME && document.getElementById('password').value === ADMIN_PASSWORD){ localStorage.setItem('adminLoggedIn', 'true'); showDashboard(); resetInactivityTimer(); } else { document.getElementById('errorMessage').style.display = 'block'; document.getElementById('errorMessage').textContent = 'Wrong credentials'; } }
+function logout(){ clearTimeout(inactivityTimer); localStorage.removeItem('adminLoggedIn'); showLogin(); }
 function showLogin(){ document.getElementById('loginSection').style.setProperty('display', 'flex', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'none', 'important'); }
-function showDashboard(){ document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); loadProducts(); startInactivityTimer(); }
+function showDashboard(){ document.getElementById('loginSection').style.setProperty('display', 'none', 'important'); document.getElementById('dashboardSection').style.setProperty('display', 'block', 'important'); loadProducts(); }
+
+// ====== AUTO LOGOUT AFTER 15 MIN INACTIVITY ======
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
+let inactivityTimer;
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        if(localStorage.getItem('adminLoggedIn') === 'true') {
+            logout();
+            alert('Session expired due to inactivity. Please log in again.');
+        }
+    }, INACTIVITY_LIMIT);
+}
+['mousemove','keydown','click','scroll','touchstart'].forEach(evt => 
+    document.addEventListener(evt, () => { 
+        if(localStorage.getItem('adminLoggedIn') === 'true') resetInactivityTimer(); 
+    }, { passive: true })
+);
 
 const imageInput = document.getElementById('imageInput'); const preview = document.getElementById('preview'); let imageData = "";
 imageInput.addEventListener('change', function(){
@@ -273,10 +365,8 @@ imageInput.addEventListener('change', function(){
                 if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
                 else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
                 canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, width, height); 
-                ctx.drawImage(img, 0, 0, width, height);
-                imageData = canvas.toDataURL('image/png'); 
-                preview.src = imageData; preview.style.display = 'block';
+                ctx.clearRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
+                imageData = canvas.toDataURL('image/png'); preview.src = imageData; preview.style.display = 'block';
             }
         }
         reader.readAsDataURL(file);
@@ -287,10 +377,13 @@ async function handleSubmit() { if (currentEditingProductId === null) { await ad
 
 async function addProduct(){ 
     const title = document.getElementById('title').value; 
+    const description = document.getElementById('description').value || "-"; 
     const price = document.getElementById('price').value; 
     const category = document.getElementById('categorySelect').value; 
-    if(!title || !price || !imageData){ alert('Fill all fields!'); return; } 
-    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category }]); 
+    
+    if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
+    
+    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category, description, disponible: true }]); 
     if(error) { alert('Error saving data'); } else { clearForm(); loadProducts(); } 
 }
 
@@ -299,12 +392,12 @@ function startEdit(id) {
     if (!product) return;
 
     currentEditingProductId = id;
-    
-    document.getElementById('formTitle').textContent = "Update Product";
+    document.getElementById('formTitle').textContent = "Edit Item";
     document.getElementById('submitProductBtn').textContent = "Save Changes";
     document.getElementById('cancelEditBtn').style.display = "block";
 
     document.getElementById('title').value = product.title;
+    document.getElementById('description').value = product.description || "";
     document.getElementById('price').value = product.price;
     
     let select = document.getElementById('categorySelect');
@@ -323,46 +416,250 @@ function startEdit(id) {
 
 async function updateProduct() {
     const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value || "-"; 
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
-    if(!title || !price || !imageData){ alert('Fill all fields!'); return; }
-    const { error } = await _supabase.from('products').update({ title, price, image: imageData, category }).eq('id', currentEditingProductId);
-    if (error) { alert('Error updating data'); } else { alert('Product updated successfully!'); clearForm(); loadProducts(); }
+    
+    if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
+    
+    const { error } = await _supabase.from('products').update({ title, price, image: imageData, category, description }).eq('id', currentEditingProductId);
+    if (error) { alert('Error updating data'); } else { clearForm(); loadProducts(); }
 }
 
 function clearForm() {
-    currentEditingProductId = null; document.getElementById('formTitle').textContent = "Add Product"; document.getElementById('submitProductBtn').textContent = "Add Product"; document.getElementById('cancelEditBtn').style.display = "none";
-    document.getElementById('title').value = ''; document.getElementById('price').value = ''; document.getElementById('imageInput').value = ''; preview.style.display = 'none'; imageData = "";
+    currentEditingProductId = null; 
+    document.getElementById('formTitle').textContent = "+ Add New Item"; 
+    document.getElementById('submitProductBtn').textContent = "+ Add Item"; 
+    document.getElementById('cancelEditBtn').style.display = "none";
+    
+    document.getElementById('title').value = ''; 
+    document.getElementById('description').value = ''; 
+    document.getElementById('price').value = ''; 
+    document.getElementById('categorySelect').selectedIndex = 0;
+    document.getElementById('imageInput').value = ''; 
+    preview.style.display = 'none'; 
+    imageData = "";
 }
 
 async function deleteProduct(id){ 
-    if(confirm('Are you sure you want to delete this product?')) {
+    if(confirm('Are you sure you want to delete this item?')) {
         const { error } = await _supabase.from('products').delete().eq('id', id); 
         if(!error) { if(currentEditingProductId === id) clearForm(); loadProducts(); } else { alert('Error deleting product'); }
     }
 }
 
 async function loadProducts(){ 
-    const list = document.getElementById('productsList'); list.innerHTML = "Loading..."; 
+    const list = document.getElementById('productsList'); list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
     let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); 
-    if(error) { list.innerHTML = "Error"; return; } 
-    list.innerHTML = ""; globalProductsArray = products; 
+    if(error) { 
+        console.error('Supabase error full:', JSON.stringify(error, null, 2));
+        list.innerHTML = `<div style='color:red; padding:20px; text-align:center; font-size:13px;'>
+            <b>Failed to load data</b><br>
+            <pre style='color:#ff8888; text-align:left; background:#1a0000; padding:10px; border-radius:8px; margin-top:10px; white-space:pre-wrap;'>${JSON.stringify(error, null, 2)}</pre>
+        </div>`; 
+        return; 
+    } 
+    
+    globalProductsArray = products; 
+    
+    let tableHTML = `
+    <div class="white-table-container">
+        <div class="table-top-bar">
+            <div class="table-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Menu Items (${products.length})
+            </div>
+            <div class="table-filter">
+                <select><option>All Categories (${products.length})</option></select>
+            </div>
+        </div>
+        
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th width="12%">ID</th>
+                    <th width="10%">IMAGE</th>
+                    <th width="18%">CATEGORY</th>
+                    <th width="20%">NAME</th>
+                    <th width="20%">DESCRIPTION</th>
+                    <th width="10%">PRICE</th>
+                    <th width="10%">AVAILABILITY</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     products.forEach((product)=>{ 
-        list.innerHTML += `
-            <div class="product-item">
-                <img src="${product.image}">
-                <div>
-                    <h3>${product.title}</h3>
-                    <p>${product.price} DH</p>
-                    <span class="badge">${product.category}</span>
-                </div>
-                <div class="action-btns">
-                    <button class="edit-btn" onclick="startEdit(${product.id})">Edit</button>
-                    <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
-                </div>
-            </div>`; 
+        let pencilIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+        let trashIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        
+        let desc = product.description ? product.description : "-";
+        let isDisponible = product.disponible !== false; // true par défaut si null
+        let rowClass = isDisponible ? "" : "indisponible";
+
+        tableHTML += `
+            <tr id="row-${product.id}" class="${rowClass}">
+                <td>
+                    <div class="td-id">
+                        <span class="drag-icon">=</span>
+                        A0${product.id}
+                        <div class="delete-icon" onclick="deleteProduct(${product.id})" title="Delete">${trashIcon}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="td-img" onclick="changeProductImage(${product.id})" title="Changer l'image">
+                        <img id="img-${product.id}" src="${product.image}" alt="${product.title}">
+                        <div class="img-badge">+</div>
+                    </div>
+                </td>
+                <td class="td-cat">${product.category}</td>
+                <td id="name-cell-${product.id}">
+                    <div class="td-name" onclick="makeFieldEditable(${product.id}, 'title', '${(product.title||'').replace(/'/g,"\\'")}')">
+                        ${pencilIcon} ${product.title}
+                    </div>
+                </td>
+                <td id="desc-cell-${product.id}">
+                    <div class="td-desc" onclick="makeFieldEditable(${product.id}, 'description', '${(desc === '-' ? '' : desc).replace(/'/g,"\\'")}')">
+                        ${pencilIcon} ${desc}
+                    </div>
+                </td>
+                <td id="price-cell-${product.id}" onclick="makePriceEditable(${product.id}, '${product.price}')" title="Modifier le prix">
+                    <div class="td-price">${product.price} <span class="dh">DH</span></div>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" ${isDisponible ? 'checked' : ''} onchange="toggleDisponibilite(${product.id}, this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>`; 
     }); 
+    
+    tableHTML += `</tbody></table></div>`;
+    list.innerHTML = tableHTML;
 }
+
+// ====== INLINE EDIT: NOM & DESCRIPTION ======
+function makeFieldEditable(id, field, currentVal) {
+    const cellId = field === 'title' ? 'name-cell-' + id : 'desc-cell-' + id;
+    const cell = document.getElementById(cellId);
+    if (cell.querySelector('input')) return;
+
+    const isDesc = field === 'description';
+    cell.innerHTML = `<input class="inline-input" id="finput-${field}-${id}" type="text" value="${currentVal}" placeholder="${isDesc ? 'Description...' : 'Nom...'}" autofocus>`;
+    const input = document.getElementById(`finput-${field}-${id}`);
+    input.focus(); input.select();
+
+    const pencilIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+
+    let isSaving = false;
+    async function saveField() {
+        if (isSaving) return;
+        isSaving = true;
+        const newVal = input.value.trim() || (isDesc ? '-' : currentVal);
+        const updateData = {}; updateData[field] = newVal;
+        const { error } = await _supabase.from('products').update(updateData).eq('id', id);
+        if (error) { 
+            console.error('Save error:', error);
+            alert('Error: ' + (error.message || error.details || JSON.stringify(error)));
+            isSaving = false;
+            return;
+        }
+        let p = globalProductsArray.find(p => p.id === id);
+        if (p) p[field] = newVal;
+        const cssClass = isDesc ? 'td-desc' : 'td-name';
+        const displayVal = newVal || '-';
+        cell.innerHTML = `<div class="${cssClass}" onclick="makeFieldEditable(${id}, '${field}', '${newVal.replace(/'/g, "\\'")}')">${pencilIcon} ${displayVal}</div>`;
+    }
+
+    input.addEventListener('blur', saveField);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') {
+            const cssClass = isDesc ? 'td-desc' : 'td-name';
+            cell.innerHTML = `<div class="${cssClass}" onclick="makeFieldEditable(${id}, '${field}', '${currentVal.replace(/'/g, "\\'")}')">${pencilIcon} ${currentVal || '-'}</div>`;
+        }
+    });
+}
+
+// ====== TOGGLE DISPONIBILITÉ ======
+async function toggleDisponibilite(id, isChecked) {
+    const row = document.getElementById('row-' + id);
+    if (isChecked) { row.classList.remove('indisponible'); } 
+    else { row.classList.add('indisponible'); }
+    const { error } = await _supabase.from('products').update({ disponible: isChecked }).eq('id', id);
+    if (error) { alert('Error updating availability'); }
+}
+
+// ====== PRIX ÉDITABLE INLINE ======
+function makePriceEditable(id, currentPrice) {
+    const cell = document.getElementById('price-cell-' + id);
+    if (cell.querySelector('input')) return; // déjà en édition
+    cell.onclick = null;
+    cell.innerHTML = `<input class="price-input" id="pinput-${id}" type="number" step="0.01" value="${currentPrice}" autofocus>`;
+    const input = document.getElementById('pinput-' + id);
+    input.focus(); input.select();
+
+    async function savePrice() {
+        const newPrice = parseFloat(input.value);
+        if (isNaN(newPrice) || newPrice < 0) { 
+            cell.innerHTML = `<div class="td-price">${currentPrice} DH</div>`;
+        } else {
+            const { error } = await _supabase.from('products').update({ price: newPrice }).eq('id', id);
+            if (error) { alert('Error updating price'); cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; }
+            else { 
+                cell.innerHTML = `<div class="td-price">${newPrice} <span class="dh">DH</span></div>`;
+                let p = globalProductsArray.find(p => p.id === id);
+                if (p) p.price = newPrice;
+            }
+        }
+        cell.onclick = () => makePriceEditable(id, newPrice || currentPrice);
+    }
+    input.addEventListener('blur', savePrice);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; cell.onclick = () => makePriceEditable(id, currentPrice); } });
+}
+
+// ====== CHANGER IMAGE EN CLIQUANT ======
+const hiddenImageInput = document.createElement('input');
+hiddenImageInput.type = 'file'; hiddenImageInput.accept = 'image/*'; hiddenImageInput.style.display = 'none';
+document.body.appendChild(hiddenImageInput);
+let targetImageProductId = null;
+
+function changeProductImage(id) {
+    targetImageProductId = id;
+    hiddenImageInput.click();
+}
+
+hiddenImageInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file || targetImageProductId === null) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image(); img.src = e.target.result;
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height, maxSize = 800;
+            if (w > h) { if (w > maxSize) { h *= maxSize/w; w = maxSize; } }
+            else { if (h > maxSize) { w *= maxSize/h; h = maxSize; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+            const newImageData = canvas.toDataURL('image/png');
+            
+            _supabase.from('products').update({ image: newImageData }).eq('id', targetImageProductId).then(({ error }) => {
+                if (error) { alert('Error updating image'); }
+                else {
+                    const imgEl = document.getElementById('img-' + targetImageProductId);
+                    if (imgEl) imgEl.src = newImageData;
+                    let p = globalProductsArray.find(p => p.id === targetImageProductId);
+                    if (p) p.image = newImageData;
+                }
+            });
+        };
+    };
+    reader.readAsDataURL(file);
+    hiddenImageInput.value = '';
+});
 
 loadCategoriesSelect();
 checkLogin();
