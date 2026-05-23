@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Our Menu</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -15,468 +14,721 @@
     --white: #ffffff;
 }
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-    margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif;
-    display: flex !important; flex-direction: column !important; align-items: center !important;
-    padding-bottom: 50px !important; box-sizing: border-box;
-    background-color: var(--dark-bg) !important;
-    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 60px;
+    background-color: var(--dark-bg);
+    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%);
     background-attachment: fixed;
     color: #eceff1;
+    overflow-x: hidden;
 }
 
+/* ── HEADER ── */
 header.main-header {
-    display: flex !important; 
-    justify-content: space-between !important; 
-    align-items: center !important; 
-    padding: 10px 30px !important; 
-    background: rgba(255, 255, 255, 0.06) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 30px !important;
-    margin: 0 !important;
-    width: 90% !important;
-    max-width: 1200px !important;
-    position: fixed !important; 
-    top: 20px !important;
-    left: 50% !important;
-    transform: translateX(-50%) translateY(0) !important;
-    z-index: 1000 !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
-    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out !important; 
-    animation: startUpAnimation 0.8s ease-out !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 30px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 30px;
+    width: 90%;
+    max-width: 1200px;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    animation: startUpAnimation 0.8s ease-out;
 }
 
 header.main-header.hide-nav {
-    transform: translateX(-50%) translateY(-150px) !important;
-    opacity: 0 !important;
+    transform: translateX(-50%) translateY(-150px);
+    opacity: 0;
 }
 
 @keyframes startUpAnimation {
-    0% { top: -100px !important; opacity: 0; }
-    100% { top: 20px !important; opacity: 1; }
+    0%   { top: -100px; opacity: 0; }
+    100% { top: 20px;   opacity: 1; }
 }
 
-h1.menu-title { 
-    font-size: 42px; 
-    color: white; 
-    margin-top: 120px; 
-    margin-bottom: 20px; 
-    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); 
-    font-weight: 700; 
-    text-align: center; 
-}
-
-.categories-container { display: flex; gap: 15px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; width: 90%; }
-.category-btn { 
-    background: rgba(255, 255, 255, 0.05) !important; 
-    backdrop-filter: blur(10px) !important; 
-    -webkit-backdrop-filter: blur(10px) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-    color: #e0e0e0; 
-    padding: 10px 25px; 
-    border-radius: 30px; 
-    font-size: 15px; 
-    font-weight: 600; 
-    cursor: pointer; 
-    transition: all 0.3s ease; 
-    text-transform: capitalize; 
-}
-.category-btn:hover, .category-btn.active { 
-    background: var(--primary) !important; 
-    color: white !important; 
-    border-color: var(--primary) !important;
-    box-shadow: 0 8px 20px rgba(255, 98, 0, 0.4); 
-    transform: translateY(-2px); 
-}
-
-.menu-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 30px; 
-    max-width: 1200px; 
-    width: 90%; 
-    margin: 0 auto; 
-}
-
-.product-card { 
-    background: rgba(255, 255, 255, 0.04) !important; 
-    backdrop-filter: blur(15px) !important; 
-    -webkit-backdrop-filter: blur(15px) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.08) !important; 
-    border-radius: 24px; 
-    padding: 25px; 
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important; 
-    transition: box-shadow 0.2s ease, background 0.2s ease; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center;
-    justify-content: flex-start;
-    overflow: hidden;
-    min-width: 0;
-}
-
-.product-card:hover { 
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important; 
-    background: rgba(255, 255, 255, 0.08) !important; 
-    border-color: var(--primary) !important;
-}
-
-/* expanded card overlay */
-.card-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 500;
-    backdrop-filter: blur(4px);
-}
-.card-overlay.active { display: block; }
-
-.product-card.expanded {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    z-index: 600 !important;
-    width: min(340px, 88vw) !important;
-    max-height: 85vh !important;
-    overflow-y: auto !important;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.8) !important;
-    background: rgba(30, 42, 33, 0.98) !important;
-    border-color: var(--primary) !important;
-    cursor: default !important;
-    animation: expandCard 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.product-card.expanded .product-info .product-desc {
-    display: block !important;
-    -webkit-line-clamp: unset !important;
-    overflow: visible !important;
-    font-size: 13px !important;
-    color: #c8d8ca !important;
-    margin-top: 10px !important;
-    line-height: 1.7 !important;
-}
-
-.product-card.expanded img {
-    width: 180px !important;
-    height: 180px !important;
-}
-
-@keyframes expandCard {
-    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-    70%  { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-}
-
-@keyframes shrinkCard {
-    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-}
-
-.product-card.closing {
-    animation: shrinkCard 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
-}
-
-.product-card img { 
-    width: 140px; 
-    height: 140px; 
-    object-fit: contain; 
-    margin-bottom: 20px; 
-    background: transparent !important; 
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); 
-}
-
-/* ✅ smiya w taman f nafs s-saff */
-.product-info {
-    width: 100%;
+.logo-link {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    flex-grow: 1;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.logo-link img {
+    height: 42px; width: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.logo-link span {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
 }
 
-.product-info .title-price-row {
-    width: 100%;
+/* ── NAV LINKS ── */
+.nav-links {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    flex-shrink: 0;
+}
+.nav-links a {
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 15px;
+    transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--primary); }
+.nav-links a.active { color: var(--primary); font-weight: 700; }
+
+/* ── CATEGORIES BAR ── */
+.cat-bar {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1200px;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    overflow: visible;           /* important — dropdown floats outside */
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    animation: catBarIn 0.9s ease-out both;
+}
+
+.cat-bar.hide-nav {
+    transform: translateX(-50%) translateY(-160px);
+    opacity: 0;
+}
+
+@keyframes catBarIn {
+    0%   { top: -60px; opacity: 0; }
+    100% { top: 90px;  opacity: 1; }
+}
+
+/* ── ALL MENU TOGGLE PILL ── */
+.cat-pill {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #ccc;
+    padding: 7px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.cat-pill:hover {
+    background: rgba(255,98,0,0.2);
+    border-color: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+}
+.cat-pill.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 6px 18px rgba(255,98,0,0.4);
+    transform: translateY(-2px);
+}
+
+/* Arrow icon inside All Menu */
+.arrow-icon {
+    display: inline-block;
+    font-style: normal;
+    font-size: 11px;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1;
+}
+.cat-pill.all-toggle.open .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* ── DROPDOWN (floats below cat-bar) ── */
+.cat-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    background: rgba(16, 26, 18, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 22px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 6px;
+    overflow: hidden;
+
+    /* Hidden state */
+    max-height: 0;
+    opacity: 0;
+    padding: 0 16px;
+    pointer-events: none;
+    transition:
+        max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.35s ease,
+        padding 0.35s ease;
 }
 
-.product-info h3 { 
-    margin: 0; 
-    font-size: 16px;
-    color: #ffffff; 
-    font-weight: 700; 
+/* Open state */
+.cat-dropdown.open {
+    max-height: 400px;
+    opacity: 1;
+    padding: 14px 16px;
+    pointer-events: all;
+}
+
+/* Pills inside dropdown (slightly smaller) */
+.cat-dropdown .cat-pill {
+    font-size: 12.5px;
+    padding: 6px 18px;
+}
+
+/* ── PAGE TITLE ── */
+h1.menu-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    color: white;
+    margin-top: 170px;
+    margin-bottom: 30px;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    font-weight: 700;
+    text-align: center;
+    animation: fadeDown 0.8s ease both;
+}
+
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── MENU GRID ── */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+/* ── PRODUCT CARD ── */
+.product-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.product-card:hover {
+    box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.08);
+    border-color: var(--primary);
+    transform: translateY(-5px);
+}
+.product-card img {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 8px 12px rgba(0,0,0,0.35));
+    transition: transform 0.3s ease;
+}
+.product-card:hover img { transform: scale(1.07); }
+
+.product-info { width: 100%; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+
+.title-price-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.product-info h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #fff;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     flex: 1;
     min-width: 0;
     word-break: break-word;
 }
-
-.product-info .product-desc {
+.product-price {
+    margin: 0;
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 700;
+    background: rgba(255,255,255,0.05);
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,98,0,0.3);
+    white-space: nowrap;
+}
+.product-desc {
     font-size: 11px;
-    color: #b0bdb2;
-    font-weight: 400;
-    margin: 6px 0 0 0;
+    color: #9db3a0;
+    margin: 4px 0 0;
     line-height: 1.55;
-    text-transform: none;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     word-break: break-word;
-    width: 100%;
-    transition: all 0.3s ease;
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    color: #b0bdb2 !important;
 }
 
-.product-info .product-price { 
-    margin: 0;
-    font-size: 15px; 
-    color: var(--primary); 
-    font-weight: 700; 
-    background: rgba(255, 255, 255, 0.05) !important; 
-    padding: 4px 14px; 
-    border-radius: 50px; 
-    display: inline-block; 
-    border: 1px solid rgba(255, 98, 0, 0.3) !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    white-space: nowrap;
+/* ── MODAL EXPAND ── */
+.card-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 500;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
+.card-overlay.active { display: block; }
 
+.modal-card {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    z-index: 600;
+    width: min(360px, 90vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: rgba(22, 38, 25, 0.98);
+    border: 1px solid var(--primary);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.35s ease;
+}
+.modal-card.active {
+    display: flex;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+.modal-card img {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,0.4));
+}
+.modal-card h3 {
+    font-size: 17px;
+    color: #fff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+.modal-card .modal-price {
+    font-size: 15px;
+    color: var(--primary);
+    font-weight: 700;
+    background: rgba(255,255,255,0.06);
+    padding: 5px 16px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,98,0,0.35);
+    margin-bottom: 16px;
+}
+.modal-card .modal-desc {
+    font-size: 13px;
+    color: #b8cebb;
+    line-height: 1.75;
+    text-align: center;
+}
+.modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    color: #fff;
+    font-size: 16px;
+}
+.modal-close:hover { background: rgba(255,98,0,0.4); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #7a9980;
+    font-size: 16px;
+    animation: fadeDown 0.5s ease;
+}
+.empty-state span { font-size: 3rem; display: block; margin-bottom: 14px; }
+
+/* ── MOBILE ── */
 @media (max-width: 768px) {
     header.main-header {
-        flex-direction: column !important;
-        display: flex !important;
-        gap: 12px !important;
-        padding: 12px 15px !important;
-        width: 92% !important;
-        margin: 0 auto !important;
-        height: auto !important;
-        background: rgba(20, 29, 22, 0.3) !important;
-        top: 10px !important;
-        animation: startUpAnimationMobile 0.8s ease-out !important;
-        left: 50% !important;
-        transform: translateX(-50%) translateY(0) !important;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 15px;
+        width: 92%;
+        top: 10px;
+        animation: startUpAnimationMobile 0.8s ease-out;
     }
     @keyframes startUpAnimationMobile {
-        0% { top: -150px !important; opacity: 0; }
-        100% { top: 10px !important; opacity: 1; }
+        0%   { top: -150px; opacity: 0; }
+        100% { top: 10px;   opacity: 1; }
     }
-    header.main-header nav {
-        display: flex !important;
-        justify-content: center !important;
-        gap: 20px !important;
-        width: 100% !important;
+    .nav-links { gap: 18px; }
+    .nav-links a { font-size: 14px; }
+
+    .cat-bar {
+        top: 115px;
+        width: 92%;
+        padding: 8px 14px;
+        gap: 8px;
+        border-radius: 20px;
     }
-    header.main-header nav a {
-        font-size: 15px !important;
+    @keyframes catBarIn {
+        0%   { top: -60px; opacity: 0; }
+        100% { top: 115px; opacity: 1; }
     }
-    .menu-title { font-size: 32px !important; margin-top: 130px !important; }
-    
+
+    .cat-dropdown {
+        border-radius: 16px;
+    }
+
+    h1.menu-title { font-size: 30px; margin-top: 210px; margin-bottom: 20px; }
+
     .menu-grid {
-        grid-template-columns: repeat(2, minmax(140px, 1fr)) !important; 
-        gap: 15px !important; 
-        width: 92% !important; 
-        margin: 0 auto !important;
-        justify-content: center !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        width: 92% !important;
     }
-    .product-card {
-        padding: 15px !important; 
-        border-radius: 18px !important;
-    }
-    .product-card img {
-        width: 95px !important; 
-        height: 95px !important;
-        margin-bottom: 12px !important;
-    }
-    .product-info h3 {
-        font-size: 12px !important;
-        margin: 0 !important;
-    }
-    .product-info .product-price {
-        font-size: 13px !important; 
-        padding: 4px 10px !important;
-    }
+    .product-card { padding: 14px !important; border-radius: 18px !important; }
+    .product-card img { width: 90px !important; height: 90px !important; margin-bottom: 12px !important; }
+    .product-info h3 { font-size: 11px !important; }
+    .product-price { font-size: 12px !important; padding: 3px 9px !important; }
+    .product-desc { display: -webkit-box !important; -webkit-line-clamp: 3 !important; }
 }
 </style>
 </head>
 <body>
 
-    <div class="card-overlay" id="cardOverlay"></div>
-    <header class="main-header" id="mainHeader">
-        <a href="index.html" style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
-            <img src="logo.png" alt="Papaya Juice" style="height: 45px; width: 45px; border-radius: 50%; object-fit: cover;">
-            <span style="font-family: sans-serif; font-weight: bold; font-size: 22px; color: #FF6600; letter-spacing: 0.5px;">Papaya Juice</span>
-        </a>
+<div class="card-overlay" id="cardOverlay"></div>
 
-        <nav style="display: flex; gap: 25px; align-items: center;">
-            <a href="index.html" style="text-decoration: none; color: #ffffff; font-family: sans-serif; font-weight: 500; font-size: 16px; transition: 0.3s;">Home</a>
-            <a href="menu.html" style="text-decoration: none; color: #ffffff; font-family: sans-serif; font-weight: bold; font-size: 16px; transition: 0.3s;">Menu</a>
-        </nav>
-    </header>
+<div class="modal-card" id="modalCard">
+    <button class="modal-close" id="modalClose">✕</button>
+    <img id="modalImg" src="" alt="">
+    <h3 id="modalTitle"></h3>
+    <span class="modal-price" id="modalPrice"></span>
+    <p class="modal-desc" id="modalDesc"></p>
+</div>
 
-    <h1 class="menu-title">Our Menu</h1>
+<header class="main-header" id="mainHeader">
+    <a href="index.html" class="logo-link">
+        <img src="logo.png" alt="Papaya Juice">
+        <span>Papaya Juice</span>
+    </a>
+    <nav class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="menu.html" class="active">Menu</a>
+    </nav>
+</header>
 
-    <div class="categories-container" id="categoriesContainer">Loading Categories...</div>
+<!-- Category bar: only All Menu toggle + floating dropdown -->
+<div class="cat-bar" id="catBar"></div>
 
-    <div class="menu-grid" id="menuGrid">Loading Menu...</div>
+<h1 class="menu-title">Our <span style="color:var(--primary)">Menu</span></h1>
+
+<div class="menu-grid" id="menuGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
+</div>
 
 <script>
-const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let allProductsArray = [];
+let allProducts = [];
+let activeCategory = 'all';
 
+/* ── LOAD ── */
 async function loadMenuAndCategories() {
-    const menuGrid = document.getElementById('menuGrid');
-    const categoriesContainer = document.getElementById('categoriesContainer');
-    
     try {
         let { data: products, error } = await _supabase.from('products').select('*');
-        if(error) { 
-            menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Error loading products.</p>`; 
-            return; 
-        }
-        
+        if (error) { showError(); return; }
+
         let filtered = (products || []).filter(p => p.disponible !== false);
-        
-        // Sort by sort_order from Supabase if available
-        const hasSortOrder = filtered.some(p => p.sort_order !== null && p.sort_order !== undefined);
+
+        const hasSortOrder = filtered.some(p => p.sort_order != null);
         if (hasSortOrder) {
             filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
         } else {
-            // Fallback: sort by localStorage order
-            const savedOrder = JSON.parse(localStorage.getItem('productOrder') || '[]');
-            if (savedOrder.length > 0) {
+            const saved = JSON.parse(localStorage.getItem('productOrder') || '[]');
+            if (saved.length) {
                 filtered.sort((a, b) => {
-                    const ai = savedOrder.indexOf(a.id);
-                    const bi = savedOrder.indexOf(b.id);
-                    if (ai === -1) return 1;
-                    if (bi === -1) return -1;
-                    return ai - bi;
+                    const ai = saved.indexOf(a.id), bi = saved.indexOf(b.id);
+                    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
                 });
             }
         }
-        
-        allProductsArray = filtered;
 
-        const uniqueCategories = [...new Set(allProductsArray.map(p => p.category).filter(Boolean))];
-        
-        categoriesContainer.innerHTML = `<button class="category-btn active" onclick="filterMenu('all', this)">All Menu</button>`;
-        uniqueCategories.forEach(cat => {
-            categoriesContainer.innerHTML += `<button class="category-btn" onclick="filterMenu('${cat}', this)">${cat}</button>`;
-        });
+        allProducts = filtered;
 
-        displayFilteredProducts(allProductsArray);
+        const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+        buildCategoryBar(cats);
+        displayProducts(allProducts);
+        attachCardClicks();
 
-    } catch (err) { 
-        menuGrid.innerHTML = `<p style="color:white; text-align:center; grid-column:1/-1;">Connection error.</p>`; 
-    }
+    } catch { showError(); }
 }
 
-function displayFilteredProducts(filteredList) {
-    const menuGrid = document.getElementById('menuGrid');
-    menuGrid.innerHTML = "";
+/* ── BUILD CATEGORY BAR ── */
+function buildCategoryBar(cats) {
+    const bar = document.getElementById('catBar');
+    bar.innerHTML = '';
 
-    if(filteredList.length === 0) {
-        menuGrid.innerHTML = `<p style="color: white; text-align: center; grid-column: 1/-1; font-size: 18px;">No items found.</p>`;
+    /* All Menu toggle button */
+    const allBtn = document.createElement('button');
+    allBtn.className = 'cat-pill all-toggle active';
+    allBtn.id = 'allMenuBtn';
+    allBtn.innerHTML = 'Category <span class="arrow-icon">▾</span>';
+    bar.appendChild(allBtn);
+
+    /* Floating dropdown */
+    const dropdown = document.createElement('div');
+    dropdown.className = 'cat-dropdown';
+    dropdown.id = 'catDropdown';
+    bar.appendChild(dropdown);
+
+    /* Category pills inside dropdown */
+    cats.forEach((cat, i) => {
+        const pill = document.createElement('button');
+        pill.className = 'cat-pill';
+        pill.textContent = cat;
+        pill.style.animationDelay = `${i * 50}ms`;
+        pill.addEventListener('click', () => onCategoryClick(cat, pill));
+        dropdown.appendChild(pill);
+    });
+
+    /* All Menu click: toggle dropdown + reset to all products */
+    allBtn.addEventListener('click', () => {
+        const isOpen = dropdown.classList.contains('open');
+        if (isOpen) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+        /* always reset to show all products */
+        activeCategory = 'all';
+        dropdown.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        displayProducts(allProducts);
+        attachCardClicks();
+    });
+
+    /* Close dropdown when clicking outside */
+    document.addEventListener('click', (e) => {
+        const catBar = document.getElementById('catBar');
+        if (!catBar.contains(e.target)) closeDropdown();
+    });
+}
+
+function openDropdown() {
+    const dropdown = document.getElementById('catDropdown');
+    const allBtn   = document.getElementById('allMenuBtn');
+    if (!dropdown || !allBtn) return;
+    dropdown.classList.add('open');
+    allBtn.classList.add('open');
+}
+
+function closeDropdown() {
+    const dropdown = document.getElementById('catDropdown');
+    const allBtn   = document.getElementById('allMenuBtn');
+    if (!dropdown || !allBtn) return;
+    dropdown.classList.remove('open');
+    allBtn.classList.remove('open');
+}
+
+/* ── CATEGORY CLICK ── */
+function onCategoryClick(category, pill) {
+    /* 1. Update active state */
+    document.querySelectorAll('#catDropdown .cat-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+
+    /* 2. Filter products */
+    activeCategory = category;
+    const list = allProducts.filter(p => p.category === category);
+    displayProducts(list);
+    attachCardClicks();
+
+    /* 3. Close dropdown with a tiny delay so user sees the active state */
+    setTimeout(closeDropdown, 180);
+
+    /* 4. Smooth scroll so cards are visible just below the fixed bars */
+    setTimeout(() => {
+        const grid = document.getElementById('menuGrid');
+        const barBottom = 90 + 52 + 16; /* header ~90 + catbar ~52 + gap */
+        const gridTop   = grid.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({ top: Math.max(0, gridTop - barBottom - 16), behavior: 'smooth' });
+    }, 220);
+}
+
+/* ── DISPLAY ── */
+function displayProducts(list) {
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = '';
+
+    if (!list.length) {
+        grid.innerHTML = `<div class="empty-state"><span>🍃</span>No items in this category yet.</div>`;
         return;
     }
 
-    filteredList.forEach((product) => {
+    list.forEach((product) => {
         const desc = product.description && product.description !== '-' ? product.description : '';
-        menuGrid.innerHTML += `
-        <div class="product-card">
-            <img src="${product.image}" alt="${product.title}">
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <img src="${product.image}" alt="${product.title}" loading="lazy">
             <div class="product-info">
                 <div class="title-price-row">
                     <h3>${product.title}</h3>
                     <p class="product-price">${product.price} DH</p>
                 </div>
                 ${desc ? `<p class="product-desc">${desc}</p>` : ''}
-            </div>
-        </div>`;
+            </div>`;
+        grid.appendChild(card);
     });
 }
 
-function filterMenu(category, buttonElement) {
-    const buttons = document.querySelectorAll('.category-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    buttonElement.classList.add('active');
-    
-    if (category === 'all') {
-        displayFilteredProducts(allProductsArray);
-    } else {
-        const filtered = allProductsArray.filter(p => p.category === category);
-        displayFilteredProducts(filtered);
-    }
-    document.getElementById('menuGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+function showError() {
+    document.getElementById('menuGrid').innerHTML =
+        `<div class="empty-state"><span>⚠️</span>Could not load menu. Please try again.</div>`;
 }
+
+/* ── MODAL ── */
+const overlay    = document.getElementById('cardOverlay');
+const modal      = document.getElementById('modalCard');
+const modalClose = document.getElementById('modalClose');
+
+function openModal(product) {
+    document.getElementById('modalImg').src              = product.image;
+    document.getElementById('modalTitle').textContent    = product.title;
+    document.getElementById('modalPrice').textContent    = product.price + ' DH';
+    document.getElementById('modalDesc').textContent     = (product.description && product.description !== '-') ? product.description : '';
+    overlay.classList.add('active');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
+    /* hide nav bars when modal opens */
+    header.classList.add('hide-nav');
+    catBar.classList.add('hide-nav');
+    closeDropdown();
+}
+
+function closeModal() {
+    modal.classList.remove('active');
+    overlay.classList.remove('active');
+    setTimeout(() => { modal.style.display = 'none'; }, 400);
+    /* restore nav bars */
+    header.classList.remove('hide-nav');
+    catBar.classList.remove('hide-nav');
+}
+
+overlay.addEventListener('click', closeModal);
+modalClose.addEventListener('click', closeModal);
+
+function attachCardClicks() {
+    document.querySelectorAll('.product-card').forEach((card) => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+            const title = card.querySelector('h3').textContent;
+            const product = allProducts.find(p => p.title === title) || {};
+            openModal(product);
+        });
+    });
+}
+
+/* ── SCROLL: hide/show header + cat bar ── */
+let lastST = 0;
+const header = document.getElementById('mainHeader');
+const catBar = document.getElementById('catBar');
+
+window.addEventListener('scroll', function () {
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+    if (st > lastST && st > 100) {
+        header.classList.add('hide-nav');
+        catBar.classList.add('hide-nav');
+        closeDropdown(); /* close dropdown when scrolling down */
+    } else {
+        header.classList.remove('hide-nav');
+        catBar.classList.remove('hide-nav');
+    }
+    lastST = st <= 0 ? 0 : st;
+}, { passive: true });
 
 window.onload = loadMenuAndCategories;
-
-let lastScrollTop = 0;
-const headerElement = document.getElementById('mainHeader');
-
-window.addEventListener('scroll', function() {
-    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    if (scrollTop > lastScrollTop && scrollTop > 100) {
-        headerElement.classList.add('hide-nav');
-    } else {
-        headerElement.classList.remove('hide-nav');
-    }
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-    // close expanded card on scroll
-    closeExpanded();
-});
-
-// card expand logic
-let expandedCard = null;
-
-function closeExpanded() {
-    if (expandedCard) {
-        const card = expandedCard;
-        expandedCard = null;
-        card.classList.add('closing');
-        document.getElementById('cardOverlay').classList.remove('active');
-        setTimeout(() => {
-            card.classList.remove('expanded');
-            card.classList.remove('closing');
-        }, 500);
-    } else {
-        document.getElementById('cardOverlay').classList.remove('active');
-    }
-}
-
-document.getElementById('cardOverlay').addEventListener('click', closeExpanded);
-
-document.addEventListener('click', function(e) {
-    const card = e.target.closest('.product-card');
-    if (!card) return;
-    if (card.classList.contains('expanded')) return; // already open, ignore
-    if (expandedCard) closeExpanded();
-    card.classList.add('expanded');
-    expandedCard = card;
-    document.getElementById('cardOverlay').classList.add('active');
-});
-
-// close on browser back
-window.addEventListener('popstate', closeExpanded);
 </script>
 </body>
 </html>
