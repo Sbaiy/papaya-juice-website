@@ -291,6 +291,86 @@ h1.menu-title {
 .order-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .order-btn:active { transform: scale(0.98); }
 
+/* ── ORDER CONFIRM MODAL ── */
+.order-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 1100;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+}
+.order-modal-overlay.active { display: flex; }
+.order-modal {
+    background: rgba(16,26,18,0.99); border: 1px solid rgba(255,98,0,0.4);
+    border-radius: 26px; padding: 32px 28px; width: min(400px, 92vw);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+    animation: modalPop 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes modalPop { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
+.order-modal h2 { font-family:'Playfair Display',serif; font-size:20px; color:#fff; margin-bottom:6px; }
+.order-modal .order-modal-sub { font-size:12px; color:#7a9980; margin-bottom:22px; }
+.order-modal-summary {
+    background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:14px 16px; margin-bottom:20px; max-height:180px; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:rgba(255,98,0,0.3) transparent;
+}
+.order-modal-summary::-webkit-scrollbar { width:3px; }
+.order-modal-summary::-webkit-scrollbar-thumb { background:rgba(255,98,0,0.3); border-radius:3px; }
+.om-item { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+.om-item:last-child { border-bottom:none; }
+.om-item-name { color:#d1d5db; }
+.om-item-name span { color:var(--primary); font-weight:700; margin-right:6px; }
+.om-item-price { color:var(--primary); font-weight:600; white-space:nowrap; }
+.om-total { display:flex; justify-content:space-between; align-items:center; padding-top:12px; margin-top:4px; border-top:1px solid rgba(255,255,255,0.1); font-weight:700; font-size:15px; color:#fff; }
+.om-total span:last-child { color:var(--primary); font-size:18px; }
+
+.om-field { margin-bottom:14px; }
+.om-field label { display:block; font-size:12px; color:#9db3a0; font-weight:600; margin-bottom:6px; }
+.om-field input, .om-field textarea {
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    border-radius:12px; color:#fff; font-family:'Poppins',sans-serif; font-size:14px;
+    padding:10px 14px; outline:none; transition:border-color 0.2s;
+    resize:none;
+}
+.om-field input:focus, .om-field textarea:focus { border-color:var(--primary); }
+.om-field input::placeholder, .om-field textarea::placeholder { color:#4a6050; }
+
+.om-btns { display:flex; gap:10px; margin-top:20px; }
+.om-cancel {
+    flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:#9db3a0; font-family:'Poppins',sans-serif; font-size:14px; font-weight:600;
+    padding:13px; border-radius:14px; cursor:pointer; transition:all 0.2s;
+}
+.om-cancel:hover { background:rgba(255,50,50,0.15); color:#ff6b6b; border-color:rgba(255,50,50,0.3); }
+.om-confirm {
+    flex:2; background:var(--primary); border:none; color:#fff;
+    font-family:'Poppins',sans-serif; font-size:14px; font-weight:700;
+    padding:13px; border-radius:14px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(255,98,0,0.4);
+    transition:transform 0.2s, box-shadow 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.om-confirm:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(255,98,0,0.6); }
+.om-confirm:active { transform:scale(0.97); }
+.om-confirm:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+/* ── TOAST ── */
+.toast {
+    position:fixed; bottom:120px; left:50%; transform:translateX(-50%) translateY(30px);
+    background:linear-gradient(135deg,#1a3a1f,#0f2412);
+    border:1px solid rgba(34,197,94,0.4); border-radius:20px;
+    padding:14px 24px; color:#fff; font-size:14px; font-weight:600;
+    display:flex; align-items:center; gap:10px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5);
+    z-index:1200; opacity:0; pointer-events:none;
+    transition:opacity 0.4s ease, transform 0.4s ease;
+    white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast-icon { font-size:22px; }
+.toast-text { display:flex; flex-direction:column; }
+.toast-text strong { font-size:15px; color:#4ade80; }
+.toast-text span { font-size:12px; color:#86efac; font-weight:400; margin-top:1px; }
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
     header.main-header { flex-direction: column; gap: 10px; padding: 12px 15px; width: 92%; top: 10px; animation: startUpAnimationMobile 0.8s ease-out; }
@@ -379,6 +459,36 @@ h1.menu-title {
         <button class="order-btn" id="orderBtn">
             <span>✅</span> Confirmer la commande
         </button>
+    </div>
+</div>
+
+<!-- ORDER CONFIRM MODAL -->
+<div class="order-modal-overlay" id="orderModalOverlay">
+    <div class="order-modal">
+        <h2>✅ Confirmer la commande</h2>
+        <p class="order-modal-sub">Vérifiez votre commande avant d'envoyer</p>
+        <div class="order-modal-summary" id="omSummary"></div>
+        <div class="om-field">
+            <label>🪑 Numéro de table (optionnel)</label>
+            <input type="text" id="omTable" placeholder="Ex: 5, Terrasse, Comptoir…">
+        </div>
+        <div class="om-field">
+            <label>📝 Note / Remarque (optionnel)</label>
+            <textarea id="omNote" rows="2" placeholder="Allergies, préférences…"></textarea>
+        </div>
+        <div class="om-btns">
+            <button class="om-cancel" id="omCancelBtn">Annuler</button>
+            <button class="om-confirm" id="omConfirmBtn">🚀 Envoyer la commande</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="successToast">
+    <span class="toast-icon">🎉</span>
+    <div class="toast-text">
+        <strong>Commande envoyée !</strong>
+        <span id="toastOrderNum">En attente de traitement…</span>
     </div>
 </div>
 
@@ -492,12 +602,95 @@ document.getElementById('cartFab').addEventListener('click', openCart);
 document.getElementById('cartOverlay').addEventListener('click', closeCart);
 document.getElementById('cartClearBtn').addEventListener('click', cartClear);
 
-document.getElementById('orderBtn').addEventListener('click', () => {
-    const items = Object.values(cart).map(({ product, qty }) =>
-        `• ${qty}x ${product.title} — ${(product.price * qty).toFixed(0)} DH`).join('%0A');
-    const total = cartTotal().toFixed(0);
-    const msg = `🧃 *Commande Papaya Juice*%0A%0A${items}%0A%0A*Total: ${total} DH*`;
-    window.open(`https://wa.me/212773444366?text=${msg}`, '_blank');
+/* ════════════════════════
+   ORDER CONFIRM MODAL
+════════════════════════ */
+function openOrderModal() {
+    if (!Object.keys(cart).length) return;
+
+    // Build summary
+    const summaryEl = document.getElementById('omSummary');
+    const items = Object.values(cart);
+    let html = items.map(({ product, qty }) => {
+        const lineTotal = (parseFloat(product.price) * qty).toFixed(0);
+        return `<div class="om-item">
+            <div class="om-item-name"><span>${qty}x</span>${product.title}</div>
+            <div class="om-item-price">${lineTotal} DH</div>
+        </div>`;
+    }).join('');
+    html += `<div class="om-total"><span>Total</span><span>${cartTotal().toFixed(0)} DH</span></div>`;
+    summaryEl.innerHTML = html;
+
+    document.getElementById('omTable').value = '';
+    document.getElementById('omNote').value = '';
+    document.getElementById('orderModalOverlay').classList.add('active');
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModalOverlay').classList.remove('active');
+}
+
+async function submitOrder() {
+    const confirmBtn = document.getElementById('omConfirmBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '⏳ Envoi en cours…';
+
+    const tableNum = document.getElementById('omTable').value.trim();
+    const note     = document.getElementById('omNote').value.trim();
+
+    // Build items array
+    const items = Object.values(cart).map(({ product, qty }) => ({
+        id:       product.id,
+        title:    product.title,
+        price:    parseFloat(product.price),
+        qty:      qty,
+        category: product.category || ''
+    }));
+
+    const total    = cartTotal();
+    const orderNum = 'CMD-' + Date.now().toString().slice(-6);
+
+    try {
+        const { error } = await _supabase.from('orders').insert([{
+            order_number:  orderNum,
+            items:         JSON.stringify(items),
+            total:         parseFloat(total.toFixed(2)),
+            status:        'paiement',
+            table_number:  tableNum || null,
+            note:          note     || null,
+            created_at:    new Date().toISOString()
+        }]);
+
+        if (error) throw error;
+
+        // Success!
+        closeOrderModal();
+        closeCart();
+        cartClear();
+        showToast(orderNum);
+
+    } catch (err) {
+        console.error('Erreur commande:', err);
+        alert('❌ Erreur lors de l\'envoi : ' + (err.message || 'Réessayez.'));
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '🚀 Envoyer la commande';
+    }
+}
+
+function showToast(orderNum) {
+    const toast = document.getElementById('successToast');
+    document.getElementById('toastOrderNum').textContent = orderNum + ' · En attente de traitement';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+// Wire up buttons
+document.getElementById('orderBtn').addEventListener('click', openOrderModal);
+document.getElementById('omCancelBtn').addEventListener('click', closeOrderModal);
+document.getElementById('omConfirmBtn').addEventListener('click', submitOrder);
+document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('orderModalOverlay')) closeOrderModal();
 });
 
 /* ════════════════════════
