@@ -4,6 +4,7 @@
   "rewrites": [
     { "source": "/dashboard/personnel", "destination": "/personnel.html" },
     { "source": "/dashboard/commandes-live", "destination": "/commandes-live.html" },
-    { "source": "/dashboard/admin", "destination": "/admin.html" }
+    { "source": "/dashboard/admin", "destination": "/admin.html" },
+    { "source": "/dashboard/kiosk", "destination": "/kiosk.html" }
   ]
 }
