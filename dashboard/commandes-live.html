@@ -286,10 +286,15 @@ body {
 <script src="api.js"></script>
 </head>
 <body>
+<script>
+if (sessionStorage.getItem('papaya_auth') !== '1') {
+    window.location.replace('/dashboard');
+}
+</script>
 
 <!-- TOPBAR -->
 <header class="topbar">
-  <a href="dashboard.html" class="topbar-logo">
+  <a href="/dashboard" class="topbar-logo">
     <img src="logo.png" alt="Papaya Juice">
     <span>Papaya Juice</span>
   </a>
@@ -344,8 +349,6 @@ body {
   </div>
   <div class="filter-bar" id="filterBar">
     <button class="filter-tab active" data-status="all">📋 Tout <span class="tab-count" id="cnt-all">0</span></button>
-    <button class="filter-tab" data-status="paiement">💰 Paiement <span class="tab-count" id="cnt-paiement">0</span></button>
-    <button class="filter-tab" data-status="payee">✅ Payées <span class="tab-count" id="cnt-payee">0</span></button>
     <button class="filter-tab" data-status="en_preparation">⚡ En Préparation <span class="tab-count" id="cnt-en_preparation">0</span></button>
     <button class="filter-tab" data-status="pret">✔️ Prêt <span class="tab-count" id="cnt-pret">0</span></button>
     <button class="filter-tab" data-status="termine">✓ Terminé <span class="tab-count" id="cnt-termine">0</span></button>
@@ -398,7 +401,7 @@ function resetOrders() {
 function logout() {
   sessionStorage.removeItem('papaya_auth');
   sessionStorage.removeItem('papaya_user');
-  window.location.href = 'dashboard.html';
+  window.location.href = '/dashboard';
 }
 
 function activateSound() {
@@ -505,6 +508,7 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
 function renderOrders() {
   const hideFinished = document.getElementById('hideFinished').checked;
   let filtered = [...allOrders];
+  filtered = filtered.filter(o => o.status !== 'annule');
   if (activeFilter !== 'all') filtered = filtered.filter(o => o.status === activeFilter);
   if (hideFinished) filtered = filtered.filter(o => o.status !== 'termine' && o.status !== 'payee');
   const grid = document.getElementById('ordersGrid');
