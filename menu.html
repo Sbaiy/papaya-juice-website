@@ -737,31 +737,38 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
 /* ════════════════════════
    LOAD PRODUCTS
 ════════════════════════ */
-// Cache en mémoire (évite les requêtes multiples dans la même session)
-let _menuCache = null;
+// ── Retry helper: katjarrab 4 fois si Supabase paused ──
+async function fetchWithRetry(maxRetries = 4, delayMs = 1500) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const { data, error } = await _supabase.from('products').select('*');
+            if (!error && data && data.length > 0) return data;
+        } catch (e) {}
+        if (i < maxRetries - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+    return null;
+}
 
 async function loadMenuAndCategories() {
-    // Si déjà chargé dans cette session, affiche direct
-    if (_menuCache) { applyProducts(_menuCache); return; }
+    const products = await fetchWithRetry();
+    if (!products) { showError(); return; }
 
-    try {
-        let { data: products, error } = await _supabase.from('products').select('*');
-
-        // Retry automatique si erreur
-        if (error || !products) {
-            await new Promise(r => setTimeout(r, 2000));
-            const retry = await _supabase.from('products').select('*');
-            if (retry.error || !retry.data) { showError(); return; }
-            products = retry.data;
-        }
-
-        _menuCache = products;
-        applyProducts(products);
-
-    } catch (err) {
-        console.error('Menu error:', err);
-        showError();
+    let filtered = products.filter(p => p.disponible !== false);
+    const hasSortOrder = filtered.some(p => p.sort_order != null);
+    if (hasSortOrder) {
+        filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+    } else {
+        const saved = JSON.parse(localStorage.getItem('productOrder') || '[]');
+        if (saved.length) filtered.sort((a, b) => {
+            const ai = saved.indexOf(a.id), bi = saved.indexOf(b.id);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        });
     }
+    allProducts = filtered;
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+    buildCategoryBar(cats);
+    displayProducts(allProducts);
+    attachCardClicks();
 }
 
 function applyProducts(products) {
