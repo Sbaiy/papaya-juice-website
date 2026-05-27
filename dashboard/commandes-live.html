@@ -508,11 +508,24 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
 function renderOrders() {
   const hideFinished = document.getElementById('hideFinished').checked;
   let filtered = [...allOrders];
-  filtered = filtered.filter(o => o.status !== 'annule');
-  if (activeFilter !== 'all') filtered = filtered.filter(o => o.status === activeFilter);
-  if (hideFinished) filtered = filtered.filter(o => o.status !== 'termine' && o.status !== 'payee');
+
+  if (activeFilter !== 'annule') {
+    filtered = filtered.filter(o => o.status !== 'annule');
+  }
+
+  if (activeFilter !== 'all') {
+    filtered = filtered.filter(o => o.status === activeFilter);
+  }
+
+  if (hideFinished) {
+    filtered = filtered.filter(o => o.status !== 'termine' && o.status !== 'payee');
+  }
+
   const grid = document.getElementById('ordersGrid');
-  if (!filtered.length) { grid.innerHTML = `<div class="no-orders"><span class="no-icon">📋</span>Aucune commande à afficher.</div>`; return; }
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="no-orders"><span class="no-icon">📋</span>Aucune commande à afficher.</div>`;
+    return;
+  }
   grid.innerHTML = '';
   filtered.forEach(order => { grid.appendChild(buildCard(order)); });
 }
