@@ -416,13 +416,13 @@ h1.menu-title {
 </div>
 
 <header class="main-header" id="mainHeader">
-    <a href="index.html" class="logo-link">
+    <a href="/" class="logo-link">
         <img src="logo.png" alt="Papaya Juice">
         <span>Papaya Juice</span>
     </a>
     <nav class="nav-links">
-        <a href="index.html">Home</a>
-        <a href="menu.html" class="active">Menu</a>
+        <a href="/">Home</a>
+        <a href="/menu" class="active">Menu</a>
     </nav>
 </header>
 
@@ -737,38 +737,39 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
 /* ════════════════════════
    LOAD PRODUCTS
 ════════════════════════ */
-// ── Retry helper: katjarrab 4 fois si Supabase paused ──
-async function fetchWithRetry(maxRetries = 4, delayMs = 1500) {
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            const { data, error } = await _supabase.from('products').select('*');
-            if (!error && data && data.length > 0) return data;
-        } catch (e) {}
-        if (i < maxRetries - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1)));
-    }
-    return null;
-}
+const CACHE_KEY = 'papaya_menu_cache';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 async function loadMenuAndCategories() {
-    const products = await fetchWithRetry();
-    if (!products) { showError(); return; }
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+                applyProducts(data);
+                return;
+            }
+        }
 
-    let filtered = products.filter(p => p.disponible !== false);
-    const hasSortOrder = filtered.some(p => p.sort_order != null);
-    if (hasSortOrder) {
-        filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
-    } else {
-        const saved = JSON.parse(localStorage.getItem('productOrder') || '[]');
-        if (saved.length) filtered.sort((a, b) => {
-            const ai = saved.indexOf(a.id), bi = saved.indexOf(b.id);
-            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-        });
+        let { data: products, error } = await _supabase.from('products').select('*');
+        if (error) {
+            const old = localStorage.getItem(CACHE_KEY);
+            if (old) { applyProducts(JSON.parse(old).data); return; }
+            showError(); return;
+        }
+
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data: products,
+            timestamp: Date.now()
+        }));
+
+        applyProducts(products);
+
+    } catch {
+        const old = localStorage.getItem(CACHE_KEY);
+        if (old) { applyProducts(JSON.parse(old).data); return; }
+        showError();
     }
-    allProducts = filtered;
-    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-    buildCategoryBar(cats);
-    displayProducts(allProducts);
-    attachCardClicks();
 }
 
 function applyProducts(products) {
