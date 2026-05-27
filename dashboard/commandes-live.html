@@ -568,15 +568,13 @@ function buildActions(order) {
   let btns = '';
 
   if (s !== 'annule' && s !== 'termine') {
-    let mainBtn = '';
     if (s === 'pret') {
-      mainBtn = `<button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button>`;
+      btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
     } else if (s === 'en_preparation') {
-      mainBtn = `<button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button>`;
+      btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
     } else {
-      mainBtn = `<button class="action-btn btn-ready" data-action="commencer">▶️ Commencer</button>`;
+      btns += `<div class="btn-main-row"><button class="action-btn btn-ready" data-action="commencer">▶️ Commencer</button><button class="btn-annule-x" data-action="annuler" title="Annuler">✕</button></div>`;
     }
-    btns += `<div class="btn-main-row">${mainBtn}<button class="btn-annule-x" data-action="annuler" title="Annuler">✕</button></div>`;
   }
 
   return btns;
