@@ -222,6 +222,12 @@ body {
 .card-serveur span { color: var(--primary); font-weight: 700; }
 .card-note { margin: 0 16px 10px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #92400e; }
 .card-actions { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--border); }
+.btn-main-row { display: flex; gap: 8px; width: 100%; }
+.btn-main-row .action-btn.btn-ready,
+.btn-main-row .action-btn.btn-pay,
+.btn-main-row .action-btn.btn-cancel { flex: 1; justify-content: center; }
+.btn-annule-x { width: 36px; height: 36px; padding: 0; border-radius: 8px; border: none; background: #fee2e2; color: #dc2626; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+.btn-annule-x:hover { background: #fca5a5; }
 .action-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer;
@@ -280,15 +286,10 @@ body {
 <script src="api.js"></script>
 </head>
 <body>
-<script>
-if (sessionStorage.getItem('papaya_auth') !== '1') {
-    window.location.replace('/dashboard');
-}
-</script>
 
 <!-- TOPBAR -->
 <header class="topbar">
-  <a href="/dashboard" class="topbar-logo">
+  <a href="dashboard.html" class="topbar-logo">
     <img src="logo.png" alt="Papaya Juice">
     <span>Papaya Juice</span>
   </a>
@@ -397,7 +398,7 @@ function resetOrders() {
 function logout() {
   sessionStorage.removeItem('papaya_auth');
   sessionStorage.removeItem('papaya_user');
-  window.location.href = '/dashboard';
+  window.location.href = 'dashboard.html';
 }
 
 function activateSound() {
@@ -544,6 +545,13 @@ function buildCard(order) {
   card.querySelector('[data-action="addition"]')?.addEventListener('click', () => printAddition(order));
 
   // ✅ Bouton Commencer / Terminer / Prêt
+  card.querySelector('[data-action="annuler"]')?.addEventListener('click', async () => {
+    if (confirm('Annuler cette commande ?')) {
+      stopOrderAlert(ordId);
+      await quickStatus(order.id, 'annule');
+    }
+  });
+
   card.querySelector('[data-action="commencer"]')?.addEventListener('click', async () => {
     let newStatus;
     if (order.status === 'pret') newStatus = 'termine';
@@ -560,13 +568,15 @@ function buildActions(order) {
   let btns = '';
 
   if (s !== 'annule' && s !== 'termine') {
+    let mainBtn = '';
     if (s === 'pret') {
-      btns += `<button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button>`;
+      mainBtn = `<button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button>`;
     } else if (s === 'en_preparation') {
-      btns += `<button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button>`;
+      mainBtn = `<button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button>`;
     } else {
-      btns += `<button class="action-btn btn-ready" data-action="commencer">▶️ Commencer</button>`;
+      mainBtn = `<button class="action-btn btn-ready" data-action="commencer">▶️ Commencer</button>`;
     }
+    btns += `<div class="btn-main-row">${mainBtn}<button class="btn-annule-x" data-action="annuler" title="Annuler">✕</button></div>`;
   }
 
   return btns;
