@@ -899,7 +899,7 @@ async function submitOrder() {
         window.print();
 
         // 4. Redirect + clear
-        setTimeout(() => { clearCart(); location.href = '/dashboard/commandes-live'; }, 800);
+        setTimeout(() => { clearCart(); location.href = '/commandes-live'; }, 800);
     } catch(err) {
         showToast('❌ Erreur: ' + err.message);
         btnOrder.disabled = false;
