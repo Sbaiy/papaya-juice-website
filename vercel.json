@@ -1,4 +1,9 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/dashboard/personnel", "destination": "/personnel.html" },
+    { "source": "/dashboard/commandes-live", "destination": "/commandes-live.html" },
+    { "source": "/dashboard/admin", "destination": "/admin.html" }
+  ]
 }
