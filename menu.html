@@ -765,7 +765,8 @@ async function loadMenuAndCategories() {
 
         applyProducts(products);
 
-    } catch {
+    } catch (err) {
+        console.error('❌ Menu error:', err);
         const old = localStorage.getItem(CACHE_KEY);
         if (old) { applyProducts(JSON.parse(old).data); return; }
         showError();
