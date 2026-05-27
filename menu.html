@@ -737,44 +737,29 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
 /* ════════════════════════
    LOAD PRODUCTS
 ════════════════════════ */
-const CACHE_KEY = 'papaya_menu_cache';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Cache en mémoire (évite les requêtes multiples dans la même session)
+let _menuCache = null;
 
 async function loadMenuAndCategories() {
+    // Si déjà chargé dans cette session, affiche direct
+    if (_menuCache) { applyProducts(_menuCache); return; }
+
     try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_TTL) {
-                applyProducts(data);
-                return;
-            }
-        }
-
         let { data: products, error } = await _supabase.from('products').select('*');
-        if (error) {
-            const old = localStorage.getItem(CACHE_KEY);
-            if (old) { applyProducts(JSON.parse(old).data); return; }
-            showError(); return;
+
+        // Retry automatique si erreur
+        if (error || !products) {
+            await new Promise(r => setTimeout(r, 2000));
+            const retry = await _supabase.from('products').select('*');
+            if (retry.error || !retry.data) { showError(); return; }
+            products = retry.data;
         }
 
-        // Save f cache SANS images (base64 tja3zu localStorage)
-        try {
-            const dataToCache = products.map(p => ({ ...p, image: '' }));
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                data: dataToCache,
-                timestamp: Date.now()
-            }));
-        } catch (e) {
-            console.warn('Cache skipped (quota):', e.message);
-        }
-
+        _menuCache = products;
         applyProducts(products);
 
     } catch (err) {
         console.error('Menu error:', err);
-        const old = localStorage.getItem(CACHE_KEY);
-        if (old) { applyProducts(JSON.parse(old).data); return; }
         showError();
     }
 }
