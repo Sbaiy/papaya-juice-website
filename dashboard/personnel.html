@@ -155,23 +155,21 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </head>
 <body>
 <script>
-// ── Auth Guard ──
 if (sessionStorage.getItem('papaya_auth') !== '1') {
     window.location.replace('/dashboard');
 }
 </script>
 
-
 <!-- TOPBAR -->
 <header class="topbar">
-  <a href="dashboard.html" class="nav-brand">
+  <a href="/dashboard" class="nav-brand">
     <div class="brand-icon">🍊</div>
     <span class="brand-name">Papaya Juice</span>
   </a>
   <div class="topbar-center">
     <div class="brand-logo-center">PAPAYA<br>JUICE</div>
   </div>
-  <a href="dashboard.html" class="btn-back">
+  <a href="/dashboard" class="btn-back">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     Dashboard
   </a>
