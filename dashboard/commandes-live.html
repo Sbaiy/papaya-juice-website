@@ -280,10 +280,17 @@ body {
 <script src="api.js"></script>
 </head>
 <body>
+<script>
+// ── Auth Guard ──
+if (sessionStorage.getItem('papaya_auth') !== '1') {
+    window.location.replace('/dashboard');
+}
+</script>
+
 
 <!-- TOPBAR -->
 <header class="topbar">
-  <a href="/dashboard" class="topbar-logo">
+  <a href="dashboard.html" class="topbar-logo">
     <img src="logo.png" alt="Papaya Juice">
     <span>Papaya Juice</span>
   </a>
@@ -392,7 +399,7 @@ function resetOrders() {
 function logout() {
   sessionStorage.removeItem('papaya_auth');
   sessionStorage.removeItem('papaya_user');
-  window.location.href = '/dashboard';
+  window.location.href = 'dashboard.html';
 }
 
 function activateSound() {
