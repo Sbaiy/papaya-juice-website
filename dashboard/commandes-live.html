@@ -459,11 +459,16 @@ async function loadOrders() {
     const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     const newOrders = data || [];
+   console.log('الطلبات الملغاة:', newOrders.filter(o => o.status === 'annule'));
     const resetTs = sessionStorage.getItem('live_reset_ts');
     const filtered_new = resetTs
       ? newOrders.filter(o => new Date(o.created_at) > new Date(resetTs))
       : newOrders;
-    checkAlerts(filtered_new);
+    allOrders = filtered_new;
+
+// ← زيد هاد السطر
+document.title = 'Annulées: ' + allOrders.filter(o => o.status === 'annule').length;
+      checkAlerts(filtered_new);
     allOrders = filtered_new;
     updateStats(); updateCounts(); renderOrders();
   } catch (e) {
