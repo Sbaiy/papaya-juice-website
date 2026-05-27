@@ -758,15 +758,21 @@ async function loadMenuAndCategories() {
             showError(); return;
         }
 
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data: products,
-            timestamp: Date.now()
-        }));
+        // Save f cache SANS images (base64 tja3zu localStorage)
+        try {
+            const dataToCache = products.map(p => ({ ...p, image: '' }));
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                data: dataToCache,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Cache skipped (quota):', e.message);
+        }
 
         applyProducts(products);
 
     } catch (err) {
-        console.error('❌ Menu error:', err);
+        console.error('Menu error:', err);
         const old = localStorage.getItem(CACHE_KEY);
         if (old) { applyProducts(JSON.parse(old).data); return; }
         showError();
