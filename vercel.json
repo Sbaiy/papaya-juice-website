@@ -1,0 +1,11 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/dashboard/personnel",             "destination": "/dashboard/personnel.html" },
+    { "source": "/dashboard/commandes-live",        "destination": "/dashboard/commandes-live.html" },
+    { "source": "/dashboard/admin",                 "destination": "/dashboard/admin.html" },
+    { "source": "/dashboard/kiosk",                 "destination": "/dashboard/kiosk.html" },
+    { "source": "/dashboard/parametres/impression", "destination": "/dashboard/parametres-impression.html" }
+  ]
+}

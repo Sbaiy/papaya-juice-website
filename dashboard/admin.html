@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+    --primary: #c0392b;
+    --dark-bg: #141d16;
+    --input-bg: rgba(255, 255, 255, 0.06);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body { 
+    margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; 
+    display: flex !important; justify-content: center !important; align-items: flex-start !important; 
+    background-color: var(--dark-bg) !important;
+    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
+    background-attachment: fixed;
+    color: #eceff1;
+}
+
+.dashboard-section { width: 100% !important; min-height: 100vh !important; box-sizing: border-box; padding: 30px 15px; }
+
+.dashboard-container { 
+    max-width: 1200px; width: 100%; margin: 0 auto; 
+    background: rgba(255, 255, 255, 0.05) !important; 
+    backdrop-filter: blur(15px) !important; 
+    border: 1px solid var(--border-color) !important; 
+    padding: 30px; border-radius: 24px; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+    box-sizing: border-box; 
+}
+
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+h1 { text-align: center; margin-bottom: 25px; color: #ffffff; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.form-grid input, .form-grid select { margin-bottom: 0; }
+
+input, select { 
+    width: 100%; padding: 12px 15px; margin-bottom: 15px; border-radius: 8px; 
+    border: 1px solid var(--border-color); background: var(--input-bg) !important; 
+    font-size: 14px; box-sizing: border-box; color: #ffffff !important; transition: all 0.3s ease;
+}
+input:focus, select:focus { outline: none; border-color: var(--primary) !important; background: rgba(255, 255, 255, 0.1) !important; }
+select option { background: #1a241c; color: #fff; }
+
+.main-btn { width: 100%; padding: 14px; border: none; background: var(--primary); color: white; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; transition: 0.3s ease; }
+.main-btn:hover { background: #a93226; }
+
+.back-btn { 
+    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; 
+    width: auto; padding: 8px 16px; font-size: 14px; border-radius: 6px; cursor: pointer; 
+    transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.back-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+
+.preview { width: 100px; height: 100px; object-fit: contain; margin-bottom: 15px; display: none; background: #fff; border-radius: 8px; padding: 5px; }
+.cancel-edit-btn { background: #566573; margin-top: 10px; display: none; width: 100%; padding: 14px; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.cancel-edit-btn:hover { background: #46515c; }
+
+.category-container { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; grid-column: span 2; }
+.category-container select { margin-bottom: 0 !important; flex: 1; }
+.cat-btn { padding: 12px 18px; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.add-cat-btn { background: #27ae60; } .add-cat-btn:hover { background: #219a52; }
+.del-cat-btn { background: #c0392b; } .del-cat-btn:hover { background: #a93226; }
+
+.white-table-container {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    margin-top: 35px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.table-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(192, 57, 43, 0.08);
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #eceff1;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.table-filter select {
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: #eceff1 !important;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    width: auto;
+    cursor: pointer;
+}
+
+.table-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.custom-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+    background: transparent;
+    color: #eceff1;
+    text-align: left;
+    font-size: 13px;
+}
+
+.custom-table th {
+    background: transparent;
+    padding: 15px 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    white-space: nowrap;
+}
+
+.custom-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+}
+
+.custom-table tr:hover { background: rgba(255,255,255,0.04); }
+
+.td-id {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.drag-icon { 
+    color: rgba(255,255,255,0.35); font-weight: bold; font-size: 18px; cursor: grab; 
+    user-select: none; padding: 4px; border-radius: 4px; transition: 0.2s;
+}
+.drag-icon:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08); }
+.custom-table tr.dragging { opacity: 0.4; background: rgba(192,57,43,0.15) !important; }
+.custom-table tr.drag-over { border-top: 2px solid #e74c3c !important; }
+.delete-icon { cursor: pointer; transition: 0.2s; display: flex; align-items: center;}
+.delete-icon:hover { transform: scale(1.1); }
+
+.td-img { position: relative; width: 45px; }
+.td-img img { width: 40px; height: 40px; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); cursor: pointer; transition: opacity 0.2s; }
+.td-img img:hover { opacity: 0.75; }
+.img-badge {
+    position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; width: 16px; height: 16px;
+    border-radius: 50%; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold;
+}
+
+.td-cat { font-weight: 600; color: #eceff1; white-space: nowrap; }
+.td-name, .td-desc { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #eceff1; cursor: pointer; }
+.td-desc { color: rgba(255,255,255,0.5); font-weight: 400; }
+.td-name:hover, .td-desc:hover { color: var(--primary); }
+
+.td-price { font-weight: 700; color: #ffffff !important; line-height: 1.2; cursor: pointer; white-space: nowrap; }
+.td-price:hover { color: #e67e22 !important; }
+.td-price .dh { color: rgba(255,255,255,0.35) !important; font-weight: 400; font-size: 11px; margin-left: 2px; }
+
+.custom-table tbody tr:hover {
+    background: rgba(230, 126, 34, 0.08) !important;
+    border-left: 3px solid #e67e22;
+}
+
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #2ecc71; }
+input:checked + .slider:before { transform: translateX(18px); }
+
+.inline-input {
+    width: 100%; padding: 5px 8px; border: 2px solid var(--primary);
+    border-radius: 6px; font-size: 13px; font-weight: 600; color: #ffffff;
+    background: rgba(255,255,255,0.1); outline: none; box-sizing: border-box;
+}
+.price-input {
+    width: 80px; padding: 4px 6px; border: 2px solid var(--primary);
+    border-radius: 6px; font-size: 13px; font-weight: 700; color: #ffffff;
+    background: rgba(255,255,255,0.1); text-align: center; outline: none;
+}
+
+tr.indisponible td { opacity: 0.45; }
+tr.indisponible .switch { opacity: 1 !important; }
+
+@media (max-width: 768px) {
+    .dashboard-section { padding: 15px 10px; }
+    .dashboard-container { padding: 15px 12px; border-radius: 16px; }
+    .admin-header { flex-direction: row; align-items: center; margin-bottom: 20px; }
+    .admin-header h1 { font-size: 17px; margin-bottom: 0; text-align: left; }
+    .form-grid { grid-template-columns: 1fr; }
+    .category-container { grid-column: span 1; }
+    .table-scroll-wrapper { border-radius: 0 0 12px 12px; }
+    .custom-table { font-size: 12px; }
+    .custom-table th { padding: 10px 12px; font-size: 10px; }
+    .custom-table td { padding: 10px 12px; }
+    .td-id { gap: 5px; font-size: 11px; }
+    .td-img img { width: 34px; height: 34px; }
+    .switch { width: 36px; height: 20px; }
+    .slider:before { height: 14px; width: 14px; }
+    input:checked + .slider:before { transform: translateX(16px); }
+}
+</style>
+<script src="api.js"></script>
+</head>
+<body>
+<script>
+if (sessionStorage.getItem('papaya_auth') !== '1') {
+    window.location.replace('/dashboard');
+}
+</script>
+
+<div id="dashboardSection" class="dashboard-section">
+    <div class="container dashboard-container">
+        <div class="admin-header">
+            <h1 style="margin-bottom: 0;">Menu Management</h1>
+            <a href="/dashboard" class="back-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Dashboard
+            </a>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h2 id="formTitle" style="margin-top:0; font-size:18px; color:#fff;">+ Add New Item</h2>
+            
+            <div class="form-grid">
+                <div class="category-container">
+                    <select id="categorySelect"></select>
+                    <button class="cat-btn add-cat-btn" onclick="addNewCategory()" type="button" title="Add new category">+</button>
+                    <button class="cat-btn del-cat-btn" onclick="deleteCurrentCategory()" type="button" title="Delete selected category">-</button>
+                </div>
+
+                <input type="text" id="title" placeholder="Item Name (e.g. Coca-Cola)">
+                <input type="text" id="description" placeholder="Short Description (Optional)">
+                <input type="text" id="price" placeholder="Price (DH) (e.g. 15.00)" style="grid-column: span 2;">
+            </div>
+            
+            <input type="file" id="imageInput" accept="image/*" style="padding: 9px; grid-column: span 2;">
+            <img id="preview" class="preview">
+
+            <button id="submitProductBtn" class="main-btn" onclick="handleSubmit()">+ Add Item</button>
+            <button id="cancelEditBtn" class="cancel-edit-btn" onclick="clearForm()">Cancel Edit</button>
+        </div>
+
+        <div id="productsList">Loading...</div>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const defaultCategories = [
+    "petit dejeuner", "juice", "crepe", "toast", "mojito", 
+    "juice detox", "tisanes", "boissons chaudes", "Pancakes", 
+    "milkshake", "smoothies", "restaurant", "ice coffee", 
+    "ice tea", "salade fruite", "pâtisserie"
+];
+
+let currentEditingProductId = null; 
+let globalProductsArray = []; 
+
+let dragSrcId = null;
+
+function startDrag(e, id) {
+    const row = document.getElementById('row-' + id);
+    dragSrcId = id;
+    row.setAttribute('draggable', 'true');
+    row.addEventListener('dragstart', onDragStart, { once: true });
+    row.addEventListener('dragend', onDragEnd, { once: true });
+}
+
+function onDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    this.classList.add('dragging');
+}
+
+function onDragEnd(e) {
+    this.classList.remove('dragging');
+    this.setAttribute('draggable', 'false');
+    document.querySelectorAll('.custom-table tr').forEach(r => r.classList.remove('drag-over'));
+    saveOrder();
+}
+
+document.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    const target = e.target.closest('tr[data-id]');
+    if (!target || target.dataset.id == dragSrcId) return;
+    document.querySelectorAll('.custom-table tr').forEach(r => r.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+    const tbody = target.parentNode;
+    const dragRow = document.getElementById('row-' + dragSrcId);
+    const rows = [...tbody.querySelectorAll('tr')];
+    const targetIdx = rows.indexOf(target);
+    const dragIdx = rows.indexOf(dragRow);
+    if (dragIdx < targetIdx) { tbody.insertBefore(dragRow, target.nextSibling); }
+    else { tbody.insertBefore(dragRow, target); }
+});
+
+async function saveOrder() {
+    const rows = document.querySelectorAll('.custom-table tbody tr[data-id]');
+    const orderedIds = [...rows].map(r => parseInt(r.dataset.id));
+    localStorage.setItem('productOrder', JSON.stringify(orderedIds));
+    const updates = orderedIds.map((id, index) => 
+        _supabase.from('products').update({ sort_order: index }).eq('id', id)
+    );
+    await Promise.all(updates);
+}
+
+function filterTableByCategory(category) {
+    const rows = document.querySelectorAll('.custom-table tbody tr');
+    rows.forEach(row => {
+        if (category === 'all') { row.style.display = ''; }
+        else {
+            const catCell = row.querySelector('.td-cat');
+            row.style.display = (catCell && catCell.textContent.trim() === category) ? '' : 'none';
+        }
+    });
+}
+
+function loadCategoriesSelect() {
+    const select = document.getElementById('categorySelect');
+    let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+    let allCategories = [...defaultCategories, ...customCategories];
+    select.innerHTML = "<option value='' disabled selected>Select a category</option>";
+    allCategories.forEach(cat => { select.innerHTML += `<option value="${cat}">${cat}</option>`; });
+}
+
+function addNewCategory() {
+    let newCat = prompt("Enter the name of the new category:");
+    if (newCat && newCat.trim() !== "") {
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        if (!defaultCategories.includes(newCat) && !customCategories.includes(newCat)) {
+            customCategories.push(newCat);
+            localStorage.setItem('customCategories', JSON.stringify(customCategories));
+            loadCategoriesSelect();
+            document.getElementById('categorySelect').value = newCat;
+        } else { alert("This category already exists!"); }
+    }
+}
+
+function deleteCurrentCategory() {
+    const selectedCat = document.getElementById('categorySelect').value;
+    if(!selectedCat) return;
+    if (defaultCategories.includes(selectedCat)) { alert("System category cannot be deleted!"); return; }
+    if (confirm(`Delete category "${selectedCat}"?`)) {
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        customCategories = customCategories.filter(cat => cat !== selectedCat);
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+        loadCategoriesSelect();
+    }
+}
+
+const imageInput = document.getElementById('imageInput'); 
+const preview = document.getElementById('preview'); 
+let imageData = "";
+
+imageInput.addEventListener('change', function(){
+    const file = this.files[0];
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = function(e){
+            const img = new Image(); img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas'); 
+                let width = img.width, height = img.height, maxSize = 800; 
+                if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
+                else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
+                canvas.width = width; canvas.height = height; 
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
+                imageData = canvas.toDataURL('image/png'); preview.src = imageData; preview.style.display = 'block';
+            }
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+async function handleSubmit() { if (currentEditingProductId === null) { await addProduct(); } else { await updateProduct(); } }
+
+async function addProduct(){ 
+    const title = document.getElementById('title').value; 
+    const description = document.getElementById('description').value || "-"; 
+    const price = document.getElementById('price').value; 
+    const category = document.getElementById('categorySelect').value; 
+    if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
+    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category, description, disponible: true }]); 
+    if(error) { alert('Error saving data'); } else { clearForm(); loadProducts(); } 
+}
+
+function startEdit(id) {
+    const product = globalProductsArray.find(p => p.id === id);
+    if (!product) return;
+    currentEditingProductId = id;
+    document.getElementById('formTitle').textContent = "Edit Item";
+    document.getElementById('submitProductBtn').textContent = "Save Changes";
+    document.getElementById('cancelEditBtn').style.display = "block";
+    document.getElementById('title').value = product.title;
+    document.getElementById('description').value = product.description || "";
+    document.getElementById('price').value = product.price;
+    let select = document.getElementById('categorySelect');
+    let options = Array.from(select.options).map(opt => opt.value);
+    if(!options.includes(product.category)) {
+        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+        customCategories.push(product.category);
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+        loadCategoriesSelect();
+    }
+    select.value = product.category;
+    imageData = product.image; preview.src = imageData; preview.style.display = 'block';
+    document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function updateProduct() {
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value || "-"; 
+    const price = document.getElementById('price').value;
+    const category = document.getElementById('categorySelect').value;
+    if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
+    const { error } = await _supabase.from('products').update({ title, price, image: imageData, category, description }).eq('id', currentEditingProductId);
+    if (error) { alert('Error updating data'); } else { clearForm(); loadProducts(); }
+}
+
+function clearForm() {
+    currentEditingProductId = null; 
+    document.getElementById('formTitle').textContent = "+ Add New Item"; 
+    document.getElementById('submitProductBtn').textContent = "+ Add Item"; 
+    document.getElementById('cancelEditBtn').style.display = "none";
+    document.getElementById('title').value = ''; 
+    document.getElementById('description').value = ''; 
+    document.getElementById('price').value = ''; 
+    document.getElementById('categorySelect').selectedIndex = 0;
+    document.getElementById('imageInput').value = ''; 
+    preview.style.display = 'none'; 
+    imageData = "";
+}
+
+async function deleteProduct(id){ 
+    if(confirm('Are you sure you want to delete this item?')) {
+        const { error } = await _supabase.from('products').delete().eq('id', id); 
+        if(!error) { if(currentEditingProductId === id) clearForm(); loadProducts(); } 
+        else { alert('Error deleting product'); }
+    }
+}
+
+async function loadProducts(){ 
+    const list = document.getElementById('productsList'); 
+    list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
+    let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); 
+    if(error) { 
+        list.innerHTML = `<div style='color:red; padding:20px; text-align:center;'><b>Failed to load data</b></div>`; 
+        return; 
+    } 
+    
+    globalProductsArray = products; 
+    
+    let tableHTML = `
+    <div class="white-table-container">
+        <div class="table-top-bar">
+            <div class="table-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                Menu Items (${products.length})
+            </div>
+            <div class="table-filter">
+                <select id="categoryFilterSelect" onchange="filterTableByCategory(this.value)">
+                    <option value="all">All Categories (${products.length})</option>
+                    ${[...new Set(products.map(p => p.category).filter(Boolean))].map(cat => {
+                        const count = products.filter(p => p.category === cat).length;
+                        return `<option value="${cat}">${cat} (${count})</option>`;
+                    }).join('')}
+                </select>
+            </div>
+        </div>
+        <div class="table-scroll-wrapper">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>IMAGE</th><th>CATEGORY</th><th>NAME</th><th>DESCRIPTION</th><th>PRICE</th><th>AVAIL.</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    products.forEach((product)=>{ 
+        let pencilIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+        let trashIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        let desc = product.description ? product.description : "-";
+        let isDisponible = product.disponible !== false;
+        let rowClass = isDisponible ? "" : "indisponible";
+
+        tableHTML += `
+            <tr id="row-${product.id}" class="${rowClass}" draggable="false" data-id="${product.id}">
+                <td>
+                    <div class="td-id">
+                        <span class="drag-icon" onmousedown="startDrag(event, ${product.id})" title="Drag to reorder">⠿</span>
+                        A0${product.id}
+                        <div class="delete-icon" onclick="deleteProduct(${product.id})">${trashIcon}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="td-img" onclick="changeProductImage(${product.id})">
+                        <img id="img-${product.id}" src="${product.image}" alt="${product.title}">
+                        <div class="img-badge">+</div>
+                    </div>
+                </td>
+                <td class="td-cat">${product.category}</td>
+                <td id="name-cell-${product.id}">
+                    <div class="td-name" onclick="makeFieldEditable(${product.id}, 'title', '${(product.title||'').replace(/'/g,"\\'")}')">
+                        ${pencilIcon} ${product.title}
+                    </div>
+                </td>
+                <td id="desc-cell-${product.id}">
+                    <div class="td-desc" onclick="makeFieldEditable(${product.id}, 'description', '${(desc === '-' ? '' : desc).replace(/'/g,"\\'")}')">
+                        ${pencilIcon} ${desc}
+                    </div>
+                </td>
+                <td id="price-cell-${product.id}" onclick="makePriceEditable(${product.id}, '${product.price}')">
+                    <div class="td-price">${product.price} <span class="dh">DH</span></div>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" ${isDisponible ? 'checked' : ''} onchange="toggleDisponibilite(${product.id}, this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </td>
+            </tr>`; 
+    }); 
+    
+    tableHTML += `</tbody></table></div></div>`;
+    list.innerHTML = tableHTML;
+}
+
+function makeFieldEditable(id, field, currentVal) {
+    const cellId = field === 'title' ? 'name-cell-' + id : 'desc-cell-' + id;
+    const cell = document.getElementById(cellId);
+    if (cell.querySelector('input')) return;
+    const isDesc = field === 'description';
+    cell.innerHTML = `<input class="inline-input" id="finput-${field}-${id}" type="text" value="${currentVal}" autofocus>`;
+    const input = document.getElementById(`finput-${field}-${id}`);
+    input.focus(); input.select();
+    const pencilIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+    let isSaving = false;
+    async function saveField() {
+        if (isSaving) return; isSaving = true;
+        const newVal = input.value.trim() || (isDesc ? '-' : currentVal);
+        const updateData = {}; updateData[field] = newVal;
+        const { error } = await _supabase.from('products').update(updateData).eq('id', id);
+        if (error) { alert('Error: ' + (error.message || JSON.stringify(error))); isSaving = false; return; }
+        let p = globalProductsArray.find(p => p.id === id);
+        if (p) p[field] = newVal;
+        const cssClass = isDesc ? 'td-desc' : 'td-name';
+        cell.innerHTML = `<div class="${cssClass}" onclick="makeFieldEditable(${id}, '${field}', '${newVal.replace(/'/g, "\\'")}')">${pencilIcon} ${newVal || '-'}</div>`;
+    }
+    input.addEventListener('blur', saveField);
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') {
+            const cssClass = isDesc ? 'td-desc' : 'td-name';
+            cell.innerHTML = `<div class="${cssClass}" onclick="makeFieldEditable(${id}, '${field}', '${currentVal.replace(/'/g, "\\'")}')">${pencilIcon} ${currentVal || '-'}</div>`;
+        }
+    });
+}
+
+async function toggleDisponibilite(id, isChecked) {
+    const row = document.getElementById('row-' + id);
+    if (isChecked) { row.classList.remove('indisponible'); } 
+    else { row.classList.add('indisponible'); }
+    await _supabase.from('products').update({ disponible: isChecked }).eq('id', id);
+}
+
+function makePriceEditable(id, currentPrice) {
+    const cell = document.getElementById('price-cell-' + id);
+    if (cell.querySelector('input')) return;
+    cell.onclick = null;
+    cell.innerHTML = `<input class="price-input" id="pinput-${id}" type="number" step="0.01" value="${currentPrice}" autofocus>`;
+    const input = document.getElementById('pinput-' + id);
+    input.focus(); input.select();
+    async function savePrice() {
+        const newPrice = parseFloat(input.value);
+        if (isNaN(newPrice) || newPrice < 0) { 
+            cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`;
+        } else {
+            const { error } = await _supabase.from('products').update({ price: newPrice }).eq('id', id);
+            if (error) { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; }
+            else { 
+                cell.innerHTML = `<div class="td-price">${newPrice} <span class="dh">DH</span></div>`;
+                let p = globalProductsArray.find(p => p.id === id);
+                if (p) p.price = newPrice;
+            }
+        }
+        cell.onclick = () => makePriceEditable(id, newPrice || currentPrice);
+    }
+    input.addEventListener('blur', savePrice);
+    input.addEventListener('keydown', e => { 
+        if (e.key === 'Enter') input.blur(); 
+        if (e.key === 'Escape') { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; cell.onclick = () => makePriceEditable(id, currentPrice); } 
+    });
+}
+
+const hiddenImageInput = document.createElement('input');
+hiddenImageInput.type = 'file'; hiddenImageInput.accept = 'image/*'; hiddenImageInput.style.display = 'none';
+document.body.appendChild(hiddenImageInput);
+let targetImageProductId = null;
+
+function changeProductImage(id) { targetImageProductId = id; hiddenImageInput.click(); }
+
+hiddenImageInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file || targetImageProductId === null) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image(); img.src = e.target.result;
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height, maxSize = 800;
+            if (w > h) { if (w > maxSize) { h *= maxSize/w; w = maxSize; } }
+            else { if (h > maxSize) { w *= maxSize/h; h = maxSize; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+            const newImageData = canvas.toDataURL('image/png');
+            _supabase.from('products').update({ image: newImageData }).eq('id', targetImageProductId).then(({ error }) => {
+                if (!error) {
+                    const imgEl = document.getElementById('img-' + targetImageProductId);
+                    if (imgEl) imgEl.src = newImageData;
+                    let p = globalProductsArray.find(p => p.id === targetImageProductId);
+                    if (p) p.image = newImageData;
+                }
+            });
+        };
+    };
+    reader.readAsDataURL(file);
+    hiddenImageInput.value = '';
+});
+
+loadCategoriesSelect();
+loadProducts();
+</script>
+</body>
+</html>
