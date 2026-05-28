@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestion du Personnel – Papaya Juice</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #1b2e1e;
+  --orange: #f97316;
+  --orange2: #ea6a0a;
+  --glass: rgba(255,255,255,0.06);
+  --glass-hov: rgba(255,255,255,0.10);
+  --border: rgba(255,255,255,0.10);
+  --border-hov: rgba(249,115,22,0.35);
+  --shadow: 0 8px 32px rgba(0,0,0,0.35);
+  --white: #ffffff;
+  --muted: rgba(255,255,255,0.50);
+  --blur: blur(18px);
+  --green: #22c55e;
+  --red: #ef4444;
+}
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--white);
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  margin: 14px 18px 0;
+  background: var(--glass);
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border); border-radius: 999px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px 8px 14px;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#f97316,#b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+.topbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+.brand-logo-center { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg,#f97316,#b45309); display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 800; color: white; text-align: center; line-height: 1.3; border: 2px solid rgba(249,115,22,.4); }
+.btn-back { display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .15s; }
+.btn-back:hover { color: white; border-color: rgba(255,255,255,.3); background: var(--glass-hov); }
+
+/* MAIN */
+.main { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+
+/* PAGE HEADER */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+.page-title { font-size: 28px; font-weight: 700; color: white; font-family: 'Playfair Display', serif; display: flex; align-items: center; gap: 12px; }
+.page-title svg { color: var(--orange); }
+.page-subtitle { font-size: 13px; color: var(--muted); margin-top: 5px; }
+.btn-primary { background: var(--orange); color: white; border: none; border-radius: 999px; padding: 12px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 18px rgba(249,115,22,.4); transition: background .15s, transform .1s; display: inline-flex; align-items: center; gap: 7px; }
+.btn-primary:hover { background: var(--orange2); }
+.btn-primary:active { transform: scale(.97); }
+
+/* GLASS CARD */
+.glass-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+
+/* SECTION TITLE */
+.section-title { font-size: 16px; font-weight: 700; color: white; padding: 18px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.section-title svg { color: var(--orange); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+thead th { padding: 12px 20px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; text-align: left; border-bottom: 1px solid var(--border); }
+tbody td { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,0.03); }
+
+.td-name { font-weight: 700; color: white; }
+.td-email { color: var(--muted); }
+.role-badge { display: inline-flex; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.role-Serveur      { background: rgba(99,102,241,.2);  color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+.role-Cuisinier    { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+.role-Caissier     { background: rgba(52,168,83,.2);   color: #7de09a; border: 1px solid rgba(52,168,83,.3); }
+.role-Gérant       { background: rgba(168,85,247,.2);  color: #d8b4fe; border: 1px solid rgba(168,85,247,.3); }
+.role-Comptable    { background: rgba(20,184,166,.2);  color: #5eead4; border: 1px solid rgba(20,184,166,.3); }
+.role-Autre        { background: rgba(100,116,139,.2); color: #94a3b8; border: 1px solid rgba(100,116,139,.3); }
+
+/* TOGGLE */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: #374151; border-radius: 34px; transition: .3s; }
+.slider::before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
+.switch input:checked + .slider { background: var(--green); }
+.switch input:checked + .slider::before { transform: translateX(20px); }
+
+/* ACTION BTNS */
+.action-btns { display: flex; align-items: center; gap: 8px; }
+.action-btn { width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity .2s, transform .15s; }
+.action-btn:hover { opacity: .8; transform: scale(1.08); }
+.btn-edit   { background: rgba(99,102,241,.2);  color: #a5b4fc; }
+.btn-delete { background: rgba(239,68,68,.2);   color: #fca5a5; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+.empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.active { display: flex; }
+.modal { background: #1e3121; border: 1px solid var(--border); border-radius: 20px; padding: 28px; width: 100%; max-width: 420px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); animation: modalIn .25s ease; }
+@keyframes modalIn { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+.modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: white; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; display: block; }
+.form-input, .form-select { width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 10px; color: white; font-family: inherit; font-size: 14px; outline: none; transition: border-color .2s; }
+.form-input:focus, .form-select:focus { border-color: rgba(249,115,22,.6); }
+.form-input::placeholder { color: var(--muted); }
+.form-select option { background: #1b2e1e; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-cancel { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; transition: all .15s; }
+.btn-cancel:hover { color: white; background: var(--glass-hov); }
+.btn-confirm { flex: 2; padding: 11px; border-radius: 10px; border: none; background: var(--orange); color: white; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; transition: background .15s; }
+.btn-confirm:hover { background: var(--orange2); }
+
+/* SALARY SECTION */
+.salary-form { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.salary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.salary-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.salary-btn { background: var(--orange); color: white; border: none; border-radius: 10px; padding: 12px 24px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; transition: background .15s; }
+.salary-btn:hover { background: var(--orange2); }
+
+.paid-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.badge-paid   { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.badge-unpaid { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+
+.spinner-wrap { text-align: center; padding: 30px; }
+.spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,.1); border-top-color: var(--orange); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 700px) {
+  .topbar, .masquer-bar { margin-left: 10px; margin-right: 10px; }
+  .page-header { flex-direction: column; }
+  .salary-grid { grid-template-columns: 1fr; }
+  .salary-grid2 { grid-template-columns: 1fr; }
+}
+</style>
+<script src="api.js"></script>
+</head>
+<body>
+<script>
+if (sessionStorage.getItem('papaya_auth') !== '1') {
+    window.location.replace('/dashboard');
+}
+</script>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a href="/dashboard" class="nav-brand">
+    <div class="brand-icon">🍊</div>
+    <span class="brand-name">Papaya Juice</span>
+  </a>
+  <div class="topbar-center">
+    <div class="brand-logo-center">PAPAYA<br>JUICE</div>
+  </div>
+  <a href="/dashboard" class="btn-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Dashboard
+  </a>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Gestion du Personnel
+      </div>
+      <p class="page-subtitle">Ajoutez et gérez le personnel : gérant, serveurs, cuisiniers, caissiers, comptables</p>
+    </div>
+    <button class="btn-primary" onclick="openModal()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter un employé
+    </button>
+  </div>
+
+  <!-- EMPLOYEES TABLE -->
+  <div class="glass-card" style="margin-bottom: 24px;">
+    <div class="section-title">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Employés
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employeesBody">
+          <tr><td colspan="5"><div class="spinner-wrap"><div class="spinner"></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SALAIRES -->
+  <div class="glass-card">
+    <div class="section-title">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Salaires du personnel
+    </div>
+    <div class="salary-form">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Chaque salaire ajoute automatiquement une dépense catégorie SALARY.</p>
+      <div class="salary-grid">
+        <div>
+          <label class="form-label">Employé</label>
+          <select class="form-select" id="salaryEmployee">
+            <option value="">Sélectionner un employé</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Montant (DH)</label>
+          <input class="form-input" type="number" id="salaryAmount" placeholder="0" min="0">
+        </div>
+        <div>
+          <label class="form-label">Période</label>
+          <select class="form-select" id="salaryPeriod">
+            <option value="Mensuel">Mensuel</option>
+            <option value="Hebdomadaire">Hebdomadaire</option>
+            <option value="Journalier">Journalier</option>
+            <option value="Avance">Avance</option>
+          </select>
+        </div>
+      </div>
+      <div class="salary-grid2">
+        <div>
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="salaryDate">
+        </div>
+        <div>
+          <label class="form-label">Note</label>
+          <input class="form-input" type="text" id="salaryNote" placeholder="Note (optionnel)">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <input type="checkbox" id="salaryPaid" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;">
+        <label for="salaryPaid" style="font-size:13px; color:var(--muted); cursor:pointer; font-weight:600;">Marquer comme payé</label>
+      </div>
+      <button class="salary-btn" onclick="addSalary()">Ajouter salaire</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Employé</th>
+            <th>Période</th>
+            <th>Montant</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="salariesBody">
+          <tr><td colspan="6"><div class="spinner-wrap"><div class="spinner"></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL ADD/EDIT EMPLOYEE -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <h3 id="modalTitle">Ajouter un employé</h3>
+    <div class="form-group">
+      <label class="form-label">Nom complet</label>
+      <input class="form-input" id="empName" placeholder="Ex: Ahmed Karim">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="empEmail" type="email" placeholder="exemple@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" id="empPassword" type="password" placeholder="Mot de passe de connexion">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Rôle</label>
+      <select class="form-select" id="empRole">
+        <option value="Serveur">Serveur</option>
+        <option value="Cuisinier">Cuisinier</option>
+        <option value="Caissier">Caissier</option>
+        <option value="Gérant">Gérant</option>
+        <option value="Comptable">Comptable</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-confirm" onclick="saveEmployee()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let editingId = null;
+let employees = [];
+
+/* ══════════════════════
+   EMPLOYEES
+══════════════════════ */
+async function loadEmployees() {
+  const { data, error } = await db.from('personnel').select('*').order('id', { ascending: true });
+  if (error) {
+    document.getElementById('employeesBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">⚠️ Table "personnel" introuvable dans Supabase.<br><small>Créez une table nommée <b>personnel</b> avec les colonnes : id, name, email, role, active, created_at</small></div></td></tr>`;
+    return;
+  }
+  employees = data || [];
+  renderEmployees();
+  populateSalarySelect();
+}
+
+function renderEmployees() {
+  const tbody = document.getElementById('employeesBody');
+  if (!employees.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="empty-icon">👤</span>Aucun employé enregistré.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = employees.map(emp => `
+    <tr>
+      <td class="td-name">${emp.name || '–'}</td>
+      <td class="td-email">${emp.email || '–'}</td>
+      <td><span class="role-badge role-${emp.role || 'Autre'}">${emp.role || 'Autre'}</span></td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${emp.active !== false ? 'checked' : ''} onchange="toggleActive(${emp.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <div class="action-btns">
+          <button class="action-btn btn-edit" onclick="openEdit(${emp.id})" title="Modifier">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="action-btn btn-delete" onclick="deleteEmployee(${emp.id})" title="Supprimer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function populateSalarySelect() {
+  const sel = document.getElementById('salaryEmployee');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Sélectionner un employé</option>';
+  employees.forEach(e => {
+    sel.innerHTML += `<option value="${e.id}" ${val == e.id ? 'selected' : ''}>${e.name}</option>`;
+  });
+}
+
+async function toggleActive(id, val) {
+  await db.from('personnel').update({ active: val }).eq('id', id);
+}
+
+async function deleteEmployee(id) {
+  if (!confirm('Supprimer cet employé ?')) return;
+  await db.from('personnel').delete().eq('id', id);
+  loadEmployees();
+}
+
+/* ══════════════════════
+   MODAL
+══════════════════════ */
+function openModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Ajouter un employé';
+  document.getElementById('empName').value = '';
+  document.getElementById('empEmail').value = '';
+  document.getElementById('empPassword').value = '';
+  document.getElementById('empRole').value = 'Serveur';
+  document.getElementById('empModal').classList.add('active');
+}
+
+function openEdit(id) {
+  const emp = employees.find(e => e.id === id);
+  if (!emp) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Modifier l\'employé';
+  document.getElementById('empName').value = emp.name || '';
+  document.getElementById('empEmail').value = emp.email || '';
+  document.getElementById('empPassword').value = '';
+  document.getElementById('empRole').value = emp.role || 'Serveur';
+  document.getElementById('empModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('empModal').classList.remove('active');
+}
+
+async function saveEmployee() {
+  const name     = document.getElementById('empName').value.trim();
+  const email    = document.getElementById('empEmail').value.trim();
+  const password = document.getElementById('empPassword').value.trim();
+  const role     = document.getElementById('empRole').value;
+  if (!name) { alert('Le nom est obligatoire'); return; }
+
+  if (editingId) {
+    const update = { name, email, role };
+    if (password) update.password = password; // mise à jour password seulement si rempli
+    await db.from('personnel').update(update).eq('id', editingId);
+  } else {
+    if (!password) { alert('Le mot de passe est obligatoire'); return; }
+    await db.from('personnel').insert([{ name, email, password, role, active: true }]);
+  }
+  closeModal();
+  loadEmployees();
+}
+
+document.getElementById('empModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('empModal')) closeModal();
+});
+
+/* ══════════════════════
+   SALARIES
+══════════════════════ */
+async function loadSalaries() {
+  const { data, error } = await db.from('salaries').select('*').order('created_at', { ascending: false });
+  if (error) {
+    document.getElementById('salariesBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">⚠️ Table "salaries" introuvable.<br><small>Créez une table nommée <b>salaries</b> avec les colonnes : id, employee_id, employee_name, amount, period, date, note, paid, created_at</small></div></td></tr>`;
+    return;
+  }
+  renderSalaries(data || []);
+}
+
+function renderSalaries(salaries) {
+  const tbody = document.getElementById('salariesBody');
+  if (!salaries.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">💰</span>Aucun salaire enregistré.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = salaries.map(s => {
+    const date = s.date ? new Date(s.date).toLocaleDateString('fr-FR') : '–';
+    const paidBadge = s.paid
+      ? `<span class="paid-badge badge-paid">✅ Payé</span>`
+      : `<span class="paid-badge badge-unpaid">⏳ En attente</span>`;
+    return `<tr>
+      <td style="color:var(--muted)">${date}</td>
+      <td style="font-weight:600">${s.employee_name || '–'}</td>
+      <td><span style="color:var(--muted);font-size:13px">${s.period || '–'}</span></td>
+      <td style="font-weight:800;color:var(--orange)">${parseFloat(s.amount||0).toFixed(2)} DH</td>
+      <td>${paidBadge}</td>
+      <td>
+        <button class="action-btn btn-delete" onclick="deleteSalary(${s.id})" title="Supprimer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function addSalary() {
+  const empId   = document.getElementById('salaryEmployee').value;
+  const amount  = document.getElementById('salaryAmount').value;
+  const period  = document.getElementById('salaryPeriod').value;
+  const date    = document.getElementById('salaryDate').value;
+  const note    = document.getElementById('salaryNote').value;
+  const paid    = document.getElementById('salaryPaid').checked;
+
+  if (!empId || !amount) { alert('Sélectionnez un employé et entrez un montant'); return; }
+
+  const emp = employees.find(e => e.id == empId);
+  await db.from('salaries').insert([{
+    employee_id: empId,
+    employee_name: emp ? emp.name : '',
+    amount: parseFloat(amount),
+    period, date: date || null, note, paid
+  }]);
+
+  document.getElementById('salaryAmount').value = '';
+  document.getElementById('salaryNote').value = '';
+  document.getElementById('salaryDate').value = '';
+  loadSalaries();
+}
+
+async function deleteSalary(id) {
+  if (!confirm('Supprimer ce salaire ?')) return;
+  await db.from('salaries').delete().eq('id', id);
+  loadSalaries();
+}
+
+/* ══════════════════════
+   INIT
+══════════════════════ */
+// Set today's date as default
+document.getElementById('salaryDate').value = new Date().toISOString().split('T')[0];
+
+loadEmployees();
+loadSalaries();
+</script>
+</body>
+</html>
