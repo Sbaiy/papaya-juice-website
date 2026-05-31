@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+   <link rel="icon" href="logo.icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
@@ -281,12 +284,23 @@ const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const defaultCategories = [
-    "petit dejeuner", "juice", "crepe", "toast", "mojito", 
-    "juice detox", "tisanes", "boissons chaudes", "Pancakes", 
-    "milkshake", "smoothies", "restaurant", "ice coffee", 
-    "ice tea", "salade fruite", "pâtisserie"
-];
+// ─── Cloudinary Upload ──────────────────────────────────────
+const CLOUDINARY_CLOUD = "ddo0srqrv";
+const CLOUDINARY_PRESET = "papaya_products"; // unsigned preset — créer dans Cloudinary dashboard
+
+async function uploadToCloudinary(file) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", CLOUDINARY_PRESET);
+    fd.append("folder", "papaya-juice/products");
+    const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Cloudinary upload failed");
+    return data.secure_url;
+}
+// ────────────────────────────────────────────────────────────
+
+let dbCategories = []; // loaded from categories table
 
 let currentEditingProductId = null; 
 let globalProductsArray = []; 
@@ -349,61 +363,47 @@ function filterTableByCategory(category) {
     });
 }
 
-function loadCategoriesSelect() {
+async function loadCategoriesSelect(keepValue) {
     const select = document.getElementById('categorySelect');
-    let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-    let allCategories = [...defaultCategories, ...customCategories];
-    select.innerHTML = "<option value='' disabled selected>Select a category</option>";
-    allCategories.forEach(cat => { select.innerHTML += `<option value="${cat}">${cat}</option>`; });
+    const prev = keepValue || select.value;
+    const { data, error } = await _supabase.from('categories').select('*').order('sort_order', { ascending: true });
+    if (!error && data) { dbCategories = data; }
+    select.innerHTML = "<option value='' disabled selected>Sélectionner une catégorie</option>";
+    dbCategories.forEach(cat => {
+        const label = cat.name_fr || cat.name_en || cat.name_ar || 'Sans nom';
+        select.innerHTML += `<option value="${label}">${label}</option>`;
+    });
+    if (prev) select.value = prev;
 }
 
 function addNewCategory() {
-    let newCat = prompt("Enter the name of the new category:");
-    if (newCat && newCat.trim() !== "") {
-        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-        if (!defaultCategories.includes(newCat) && !customCategories.includes(newCat)) {
-            customCategories.push(newCat);
-            localStorage.setItem('customCategories', JSON.stringify(customCategories));
-            loadCategoriesSelect();
-            document.getElementById('categorySelect').value = newCat;
-        } else { alert("This category already exists!"); }
+    if (confirm('Pour gérer les catégories, vous serez redirigé vers la page Catégories.')) {
+        window.open('/dashboard/categories', '_blank');
     }
 }
 
 function deleteCurrentCategory() {
-    const selectedCat = document.getElementById('categorySelect').value;
-    if(!selectedCat) return;
-    if (defaultCategories.includes(selectedCat)) { alert("System category cannot be deleted!"); return; }
-    if (confirm(`Delete category "${selectedCat}"?`)) {
-        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-        customCategories = customCategories.filter(cat => cat !== selectedCat);
-        localStorage.setItem('customCategories', JSON.stringify(customCategories));
-        loadCategoriesSelect();
-    }
+    alert('Pour supprimer une catégorie, utilisez la page Catégories (/dashboard/categories).');
 }
 
 const imageInput = document.getElementById('imageInput'); 
 const preview = document.getElementById('preview'); 
 let imageData = "";
 
-imageInput.addEventListener('change', function(){
+imageInput.addEventListener('change', async function(){
     const file = this.files[0];
-    if(file) {
-        const reader = new FileReader();
-        reader.onload = function(e){
-            const img = new Image(); img.src = e.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas'); 
-                let width = img.width, height = img.height, maxSize = 800; 
-                if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } }
-                else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
-                canvas.width = width; canvas.height = height; 
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height);
-                imageData = canvas.toDataURL('image/png'); preview.src = imageData; preview.style.display = 'block';
-            }
-        }
-        reader.readAsDataURL(file);
+    if (!file) return;
+    preview.src = URL.createObjectURL(file); preview.style.display = 'block';
+    try {
+        document.getElementById('submitProductBtn').disabled = true;
+        document.getElementById('submitProductBtn').textContent = "⏳ Uploading…";
+        imageData = await uploadToCloudinary(file);
+    } catch(err) {
+        alert('❌ Image upload failed: ' + err.message);
+        imageData = "";
+    } finally {
+        document.getElementById('submitProductBtn').disabled = false;
+        document.getElementById('submitProductBtn').textContent = currentEditingProductId ? "Save Changes" : "+ Add Item";
     }
 });
 
@@ -419,7 +419,7 @@ async function addProduct(){
     if(error) { alert('Error saving data'); } else { clearForm(); loadProducts(); } 
 }
 
-function startEdit(id) {
+async function startEdit(id) {
     const product = globalProductsArray.find(p => p.id === id);
     if (!product) return;
     currentEditingProductId = id;
@@ -429,15 +429,7 @@ function startEdit(id) {
     document.getElementById('title').value = product.title;
     document.getElementById('description').value = product.description || "";
     document.getElementById('price').value = product.price;
-    let select = document.getElementById('categorySelect');
-    let options = Array.from(select.options).map(opt => opt.value);
-    if(!options.includes(product.category)) {
-        let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
-        customCategories.push(product.category);
-        localStorage.setItem('customCategories', JSON.stringify(customCategories));
-        loadCategoriesSelect();
-    }
-    select.value = product.category;
+    await loadCategoriesSelect(product.category);
     imageData = product.image; preview.src = imageData; preview.style.display = 'block';
     document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
 }
@@ -477,7 +469,7 @@ async function deleteProduct(id){
 async function loadProducts(){ 
     const list = document.getElementById('productsList'); 
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
-    let { data: products, error } = await _supabase.from('products').select('*').order('id', { ascending: false }); 
+    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('id', { ascending: false }); 
     if(error) { 
         list.innerHTML = `<div style='color:red; padding:20px; text-align:center;'><b>Failed to load data</b></div>`; 
         return; 
@@ -634,32 +626,23 @@ let targetImageProductId = null;
 
 function changeProductImage(id) { targetImageProductId = id; hiddenImageInput.click(); }
 
-hiddenImageInput.addEventListener('change', function() {
+hiddenImageInput.addEventListener('change', async function() {
     const file = this.files[0];
     if (!file || targetImageProductId === null) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image(); img.src = e.target.result;
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let w = img.width, h = img.height, maxSize = 800;
-            if (w > h) { if (w > maxSize) { h *= maxSize/w; w = maxSize; } }
-            else { if (h > maxSize) { w *= maxSize/h; h = maxSize; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
-            const newImageData = canvas.toDataURL('image/png');
-            _supabase.from('products').update({ image: newImageData }).eq('id', targetImageProductId).then(({ error }) => {
-                if (!error) {
-                    const imgEl = document.getElementById('img-' + targetImageProductId);
-                    if (imgEl) imgEl.src = newImageData;
-                    let p = globalProductsArray.find(p => p.id === targetImageProductId);
-                    if (p) p.image = newImageData;
-                }
-            });
-        };
-    };
-    reader.readAsDataURL(file);
+    try {
+        const imgEl = document.getElementById('img-' + targetImageProductId);
+        if (imgEl) { imgEl.style.opacity = '0.4'; }
+        const newUrl = await uploadToCloudinary(file);
+        _supabase.from('products').update({ image: newUrl }).eq('id', targetImageProductId).then(({ error }) => {
+            if (!error) {
+                if (imgEl) { imgEl.src = newUrl; imgEl.style.opacity = '1'; }
+                let p = globalProductsArray.find(p => p.id === targetImageProductId);
+                if (p) p.image = newUrl;
+            }
+        });
+    } catch(err) {
+        alert('❌ Image upload failed: ' + err.message);
+    }
     hiddenImageInput.value = '';
 });
 

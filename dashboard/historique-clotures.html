@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+   <link rel="icon" href="logo.icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historique Clôtures — Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --card: #1c2128;
+      --border: rgba(255,255,255,0.07);
+      --orange: #f97316; --orange2: #ea6c0a;
+      --text: #e6edf3; --muted: #8b949e;
+      --green: #3fb950; --red: #f85149;
+      --glass: rgba(22,27,34,0.85);
+      --blur: blur(20px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
+
+    /* NAV */
+    nav { background: var(--glass); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; backdrop-filter: var(--blur); }
+    .nav-logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--orange); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 50%; }
+    .nav-back { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); transition: all .15s; }
+    .nav-back:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    /* MAIN */
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+    /* STATS */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--orange); }
+
+    /* FILTERS */
+    .filters-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+    .filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .filter-select, .filter-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .filter-select:focus, .filter-input:focus { border-color: rgba(249,115,22,.5); }
+    .filter-select option { background: var(--card); }
+    /* Style the date input calendar icon */
+    .filter-input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
+    }
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      align-self: flex-end;
+    }
+    .btn-reset:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    /* RESULTS COUNT */
+    .results-info {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      padding-left: 2px;
+    }
+    .results-info span { color: var(--orange); font-weight: 600; }
+
+    /* CLOTURES LIST */
+    .cloture-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: border-color .15s; }
+    .cloture-card:hover { border-color: rgba(249,115,22,.3); }
+    .cloture-num { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+    .cloture-date { font-size: 13px; font-weight: 600; color: var(--text); }
+    .cloture-caissier { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+    .avatar { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, var(--orange), #b45309); display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; }
+    .cloture-right { text-align: right; }
+    .cloture-total { font-size: 18px; font-weight: 800; color: var(--orange); }
+    .cloture-cmds { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-text { font-size: 14px; }
+
+    /* LOADING */
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .filters-bar { flex-direction: column; }
+      .filter-group { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/dashboard" class="nav-logo">
+    <img src="/logo.png" alt="logo">
+    Papaya Juice
+  </a>
+  <a href="/dashboard" class="nav-back">← Tableau de bord</a>
+</nav>
+
+<main>
+  <div class="page-title">📊 Historique des Clôtures</div>
+  <div class="page-sub">Toutes les clôtures de caisse enregistrées</div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total clôtures</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Revenu total</div>
+      <div class="stat-value" id="statRevenu">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Commandes total</div>
+      <div class="stat-value" id="statCommandes">—</div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <div class="filter-label">🧑‍💼 Serveur / Caissier</div>
+      <select class="filter-select" id="filterCaissier">
+        <option value="">Tous les serveurs</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">📅 Date</div>
+      <input type="date" class="filter-input" id="filterDate" />
+    </div>
+    <button class="btn-reset" id="btnReset">✕ Réinitialiser</button>
+  </div>
+
+  <div class="results-info" id="resultsInfo" style="display:none"></div>
+
+  <div id="clotures-list">
+    <div class="loading">Chargement...</div>
+  </div>
+</main>
+
+<script src="api.js"></script>
+<script>
+const BACKEND_URL = 'https://papaya-juice-backend-production.up.railway.app';
+
+// Auth check
+if (!localStorage.getItem('papaya_token')) {
+  window.location.replace('/dashboard');
+}
+
+let allClotures = [];
+
+async function loadClotures() {
+  const list = document.getElementById('clotures-list');
+  try {
+    const token = localStorage.getItem('papaya_token');
+    const res = await fetch(BACKEND_URL + '/api/clotures', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Erreur serveur');
+    allClotures = await res.json();
+
+    // Populate caissier dropdown with unique names
+    const caissiers = [...new Set(allClotures.map(c => c.caissier).filter(Boolean))].sort();
+    const select = document.getElementById('filterCaissier');
+    caissiers.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+
+    renderClotures();
+
+  } catch (e) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><div class="empty-text">Erreur: ${e.message}</div></div>`;
+  }
+}
+
+function renderClotures() {
+  const list        = document.getElementById('clotures-list');
+  const resultsInfo = document.getElementById('resultsInfo');
+  const caissier    = document.getElementById('filterCaissier').value;
+  const dateVal     = document.getElementById('filterDate').value; // "YYYY-MM-DD"
+
+  // Apply filters
+  let filtered = allClotures.filter(c => {
+    const matchCaissier = !caissier || c.caissier === caissier;
+
+    let matchDate = true;
+    if (dateVal) {
+      const cDate = new Date(c.created_at);
+      const y = cDate.getFullYear();
+      const m = String(cDate.getMonth() + 1).padStart(2, '0');
+      const d = String(cDate.getDate()).padStart(2, '0');
+      matchDate = `${y}-${m}-${d}` === dateVal;
+    }
+
+    return matchCaissier && matchDate;
+  });
+
+  // Update stats based on filtered results
+  const totalRevenu = filtered.reduce((s, c) => s + parseFloat(c.total || 0), 0);
+  const totalCmds   = filtered.reduce((s, c) => s + parseInt(c.nbr_commandes || 0), 0);
+  document.getElementById('statTotal').textContent     = filtered.length;
+  document.getElementById('statRevenu').textContent    = totalRevenu.toFixed(2) + ' DH';
+  document.getElementById('statCommandes').textContent = totalCmds;
+
+  // Results info bar
+  const isFiltered = caissier || dateVal;
+  if (isFiltered) {
+    resultsInfo.style.display = 'block';
+    resultsInfo.innerHTML = `<span>${filtered.length}</span> clôture${filtered.length !== 1 ? 's' : ''} trouvée${filtered.length !== 1 ? 's' : ''}${caissier ? ` · Serveur: <span>${caissier}</span>` : ''}${dateVal ? ` · Date: <span>${new Date(dateVal + 'T00:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'})}</span>` : ''}`;
+  } else {
+    resultsInfo.style.display = 'none';
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Aucune clôture trouvée pour ce filtre</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((c, i) => {
+    const date = new Date(c.created_at).toLocaleString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    const initials = (c.caissier || 'S').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const num = allClotures.indexOf(c) + 1;
+    return `
+    <div class="cloture-card">
+      <div>
+        <div class="cloture-num">Clôture #${allClotures.length - allClotures.indexOf(c)}</div>
+        <div class="cloture-date">📅 ${date}</div>
+        <div class="cloture-caissier">
+          <span class="avatar">${initials}</span>
+          ${c.caissier}
+        </div>
+      </div>
+      <div class="cloture-right">
+        <div class="cloture-total">${parseFloat(c.total).toFixed(2)} DH</div>
+        <div class="cloture-cmds">${c.nbr_commandes} commandes</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Event listeners
+document.getElementById('filterCaissier').addEventListener('change', renderClotures);
+document.getElementById('filterDate').addEventListener('change', renderClotures);
+document.getElementById('btnReset').addEventListener('click', () => {
+  document.getElementById('filterCaissier').value = '';
+  document.getElementById('filterDate').value = '';
+  renderClotures();
+});
+
+loadClotures();
+</script>
+
+</body>
+</html>

@@ -9,20 +9,23 @@
  *   const products = await API.menu.getAll();
  */
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : 'https://papaya-juice-backend-production.up.railway.app/api';
 
 // ── Token helpers ──
 const Auth = {
-  getToken: () => sessionStorage.getItem('papaya_token'),
-  setToken: (t) => sessionStorage.setItem('papaya_token', t),
-  removeToken: () => sessionStorage.removeItem('papaya_token'),
-  getUser: () => JSON.parse(sessionStorage.getItem('papaya_user') || 'null'),
-  setUser: (u) => sessionStorage.setItem('papaya_user', JSON.stringify(u)),
-  isLoggedIn: () => !!sessionStorage.getItem('papaya_token'),
+  getToken: () => localStorage.getItem('papaya_token'),
+  setToken: (t) => localStorage.setItem('papaya_token', t),
+  removeToken: () => localStorage.removeItem('papaya_token'),
+  getUser: () => JSON.parse(localStorage.getItem('papaya_user') || 'null'),
+  setUser: (u) => localStorage.setItem('papaya_user', JSON.stringify(u)),
+  isLoggedIn: () => !!localStorage.getItem('papaya_token'),
   logout: () => {
-    sessionStorage.removeItem('papaya_token');
-    sessionStorage.removeItem('papaya_user');
-    location.reload();
+    localStorage.removeItem('papaya_token');
+    localStorage.removeItem('papaya_user');
+    sessionStorage.clear();
+    location.href = '/dashboard';
   }
 };
 
@@ -36,6 +39,7 @@ async function apiFetch(path, options = {}) {
   const json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    if (res.status === 401) { Auth.removeToken(); }
     throw new Error(json.error || `Erreur ${res.status}`);
   }
   return json;
@@ -71,6 +75,20 @@ const MenuAPI = {
   },
   getById: (id) => apiFetch(`/menu/products/${id}`),
   getCategories: () => apiFetch('/menu/categories'),
+  getCategoryById: (id) => apiFetch(`/menu/categories/${id}`),
+  createCategory: (cat) => apiFetch('/menu/categories', {
+    method: 'POST',
+    body: JSON.stringify(cat)
+  }),
+  updateCategory: (id, updates) => apiFetch(`/menu/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  }),
+  deleteCategory: (id) => apiFetch(`/menu/categories/${id}`, { method: 'DELETE' }),
+  reorderCategories: (ids) => apiFetch('/menu/categories/reorder', {
+    method: 'PUT',
+    body: JSON.stringify({ ids })
+  }),
 
   create: (product) => apiFetch('/menu/products', {
     method: 'POST',

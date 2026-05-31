@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+   <link rel="icon" href="logo.icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tableau de bord - Papaya Juice</title>
@@ -112,6 +115,29 @@
   .flash-update { animation: flashUpdate 0.8s ease-out; }
   @media (max-width: 1000px) { .stats-grid-4 { grid-template-columns: repeat(2,1fr); } .quick-grid { grid-template-columns: repeat(2,1fr); } .quick-grid-3 { grid-template-columns: repeat(2,1fr); } }
   @media (max-width: 600px) { .stats-grid-4,.stats-grid-3 { grid-template-columns: 1fr; } .quick-grid,.quick-grid-3 { grid-template-columns: 1fr; } .topbar,.masquer-bar,.nav-tabs { margin-left:10px; margin-right:10px; } .page-header { flex-direction: column; gap: 14px; } .topbar-center { position: static; transform: none; } }
+  /* ── Recent Orders ── */
+  .recent-orders-section { margin-top: 24px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 17px; font-weight: 700; color: white; }
+  .section-link { font-size: 13px; color: var(--orange); font-weight: 600; text-decoration: none; opacity: .85; transition: opacity .15s; }
+  .section-link:hover { opacity: 1; }
+  .orders-list { display: flex; flex-direction: column; gap: 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+  .order-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background .15s; gap: 12px; }
+  .order-row:last-child { border-bottom: none; }
+  .order-row:hover { background: rgba(255,255,255,0.04); }
+  .order-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .order-items { font-size: 14px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 480px; }
+  .order-meta { font-size: 12px; color: var(--muted); }
+  .order-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .order-price { font-size: 14px; font-weight: 700; color: white; }
+  .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .badge-pending  { background: rgba(234,179,8,.15);  color: #fde68a; border: 1px solid rgba(234,179,8,.3); }
+  .badge-ready    { background: rgba(52,168,83,.15);  color: #86efac; border: 1px solid rgba(52,168,83,.3); }
+  .badge-done     { background: rgba(66,133,244,.15); color: #93c5fd; border: 1px solid rgba(66,133,244,.3); }
+  .badge-cancelled{ background: rgba(239,68,68,.12);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+  .badge-other    { background: rgba(255,255,255,.08); color: var(--muted); border: 1px solid var(--border); }
+  .orders-empty { padding: 32px; text-align: center; color: var(--muted); font-size: 14px; }
+  .orders-skeleton .order-row { opacity: .4; }
   .login-overlay { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 20px; }
   .login-overlay::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.10) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.08) 0%, transparent 65%); pointer-events: none; }
   .login-box { position: relative; z-index: 1; width: 100%; max-width: 380px; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 24px; padding: 36px 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); animation: loginIn .35s ease; }
@@ -126,6 +152,29 @@
   .login-btn:hover { background: var(--orange2); }
   .login-btn:active { transform: scale(.97); }
   .login-error { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; font-size: 13px; font-weight: 500; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; display: none; text-align: center; }
+  .login-field-wrap { position: relative; margin-bottom: 14px; }
+  .login-field-wrap .login-field { margin-bottom: 0; padding-right: 44px; }
+  .toggle-pass { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #888; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color .15s; z-index: 2; }
+  .toggle-pass:hover { color: #f97316; }
+
+  /* ── Virtual Keyboard ── */
+  .kb-toggle-btn { margin-top: 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; color: rgba(255,255,255,0.6); padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: inherit; transition: background .15s, color .15s, border-color .15s; }
+  .kb-toggle-btn:hover { background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.4); color: white; }
+  .kb-toggle-btn.active { background: rgba(249,115,22,0.18); border-color: rgba(249,115,22,0.5); color: var(--orange); }
+  .vkeyboard { display: none; margin-top: 12px; background: rgba(20,35,22,0.97); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 12px 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); width: 100%; max-width: 420px; animation: kbFadeIn .2s ease; }
+  .vkeyboard.open { display: block; }
+  @keyframes kbFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .vkb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+  .vkb-row:last-child { margin-bottom: 0; }
+  .vkb-key { min-width: 32px; height: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: white; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .1s, transform .08s, border-color .1s; flex: 1; max-width: 38px; padding: 0; }
+  .vkb-key:hover { background: rgba(249,115,22,0.25); border-color: rgba(249,115,22,0.5); }
+  .vkb-key:active { transform: scale(.92); background: rgba(249,115,22,0.4); }
+  .vkb-wide { max-width: 52px; font-size: 13px; }
+  .vkb-shift, .vkb-sym { max-width: 48px; font-size: 12px; }
+  .vkb-shift.on { background: rgba(249,115,22,0.3); border-color: rgba(249,115,22,0.6); color: var(--orange); }
+  .vkb-space { flex: 3; max-width: 160px; font-size: 12px; color: rgba(255,255,255,0.5); }
+  .vkb-enter { max-width: 52px; background: rgba(249,115,22,0.25); border-color: rgba(249,115,22,0.4); color: #fdba74; font-size: 16px; }
+  .vkb-enter:hover { background: rgba(249,115,22,0.45); }
 </style>
 <script src="api.js"></script>
 </head>
@@ -133,23 +182,57 @@
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <div class="login-logo"><img src="logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+    <div class="login-logo"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
     <div class="login-title">Papaya Juice</div>
     <div class="login-sub">Connectez-vous pour accéder au tableau de bord</div>
     <div class="login-error" id="loginError">Identifiants incorrects</div>
     <input class="login-field" type="text" id="loginUser" placeholder="Nom d'utilisateur" autocomplete="off">
-    <input class="login-field" type="password" id="loginPass" placeholder="Mot de passe">
+    <div class="login-field-wrap">
+      <input class="login-field" type="password" id="loginPass" placeholder="Mot de passe">
+      <button type="button" class="toggle-pass" onclick="togglePassword()" id="togglePassBtn" title="Afficher / Masquer le mot de passe">
+        <svg id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <button class="login-btn" onclick="doLogin()">Se connecter</button>
+  </div>
+  <!-- Keyboard toggle button -->
+  <button class="kb-toggle-btn" id="kbToggleBtn" onclick="toggleKeyboard()" title="Clavier virtuel">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="6" width="20" height="13" rx="2"/>
+      <line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/>
+      <line x1="6" y1="14" x2="6" y2="14"/><line x1="10" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="18" y1="14" x2="18" y2="14"/>
+      <line x1="8" y1="17" x2="16" y2="17"/>
+    </svg>
+  </button>
+  <!-- Virtual Keyboard -->
+  <div class="vkeyboard" id="vKeyboard">
+    <div class="vkb-row">
+      <button class="vkb-key" onclick="vkbType('1')">1</button><button class="vkb-key" onclick="vkbType('2')">2</button><button class="vkb-key" onclick="vkbType('3')">3</button><button class="vkb-key" onclick="vkbType('4')">4</button><button class="vkb-key" onclick="vkbType('5')">5</button><button class="vkb-key" onclick="vkbType('6')">6</button><button class="vkb-key" onclick="vkbType('7')">7</button><button class="vkb-key" onclick="vkbType('8')">8</button><button class="vkb-key" onclick="vkbType('9')">9</button><button class="vkb-key" onclick="vkbType('0')">0</button><button class="vkb-key vkb-wide" onclick="vkbBackspace()">&#x232B;</button>
+    </div>
+    <div class="vkb-row">
+      <button class="vkb-key" onclick="vkbType('q')">q</button><button class="vkb-key" onclick="vkbType('w')">w</button><button class="vkb-key" onclick="vkbType('e')">e</button><button class="vkb-key" onclick="vkbType('r')">r</button><button class="vkb-key" onclick="vkbType('t')">t</button><button class="vkb-key" onclick="vkbType('y')">y</button><button class="vkb-key" onclick="vkbType('u')">u</button><button class="vkb-key" onclick="vkbType('i')">i</button><button class="vkb-key" onclick="vkbType('o')">o</button><button class="vkb-key" onclick="vkbType('p')">p</button>
+    </div>
+    <div class="vkb-row">
+      <button class="vkb-key" onclick="vkbType('a')">a</button><button class="vkb-key" onclick="vkbType('s')">s</button><button class="vkb-key" onclick="vkbType('d')">d</button><button class="vkb-key" onclick="vkbType('f')">f</button><button class="vkb-key" onclick="vkbType('g')">g</button><button class="vkb-key" onclick="vkbType('h')">h</button><button class="vkb-key" onclick="vkbType('j')">j</button><button class="vkb-key" onclick="vkbType('k')">k</button><button class="vkb-key" onclick="vkbType('l')">l</button>
+    </div>
+    <div class="vkb-row">
+      <button class="vkb-key vkb-shift" id="vkbShiftBtn" onclick="vkbToggleShift()">&#x21E7;</button><button class="vkb-key" onclick="vkbType('z')">z</button><button class="vkb-key" onclick="vkbType('x')">x</button><button class="vkb-key" onclick="vkbType('c')">c</button><button class="vkb-key" onclick="vkbType('v')">v</button><button class="vkb-key" onclick="vkbType('b')">b</button><button class="vkb-key" onclick="vkbType('n')">n</button><button class="vkb-key" onclick="vkbType('m')">m</button><button class="vkb-key" onclick="vkbType('.')">.</button><button class="vkb-key" onclick="vkbType('@')">@</button>
+    </div>
+    <div class="vkb-row">
+      <button class="vkb-key vkb-sym" id="vkbSymBtn" onclick="vkbToggleSym()">!#1</button>
+      <button class="vkb-key vkb-space" onclick="vkbType(' ')">espace</button>
+      <button class="vkb-key vkb-enter" onclick="doLogin()">&#x21B5;</button>
+    </div>
   </div>
 </div>
 
 <header class="topbar">
   <div class="nav-brand">
-    <div class="brand-icon"><img src="logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
     <span class="brand-name">Papaya Juice</span>
   </div>
   <div class="topbar-center">
-    <div class="brand-logo-center">PAPAYA<br>JUICE</div>
+    
   </div>
   <div class="topbar-right">
     <button class="btn-icon">
@@ -216,14 +299,17 @@
     </button>
     <div class="dropdown-menu" id="dropdownMenu">
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>Paramètres</a>
-<a class="dd-item" href="/dashboard/parametres/impression"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Impression</a>
-      <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Heures d'ouverture</a>
+<a class="dd-item" href="/dashboard/parametres-impression"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Impression</a>
+      <a class="dd-item" href="/dashboard/historique-clotures"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historique clôtures</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Stock</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notifications</a>
       <!-- Personnel item — lien vers personnel.html -->
       <a class="dd-item" href="/dashboard/personnel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Personnel</a>
+      <!-- Catégories item -->
+      <a class="dd-item" href="/dashboard/categories"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Catégories</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Code QR</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Fidélité</a>
+      <a class="dd-item" href="/dashboard/reclamations"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Réclamations</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Réservations</a>
       <a class="dd-item" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Autocollants QR</a>
     </div>
@@ -324,7 +410,7 @@
       </div>
     </a>
 
-    <div class="glass-card quick-card">
+    <a href="/dashboard/qr-tables" class="glass-card quick-card">
       <div class="quick-card-icon indigo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       </div>
@@ -332,7 +418,7 @@
         <div class="quick-card-title">QR Tables</div>
         <div class="quick-card-sub">Codes QR par table</div>
       </div>
-    </div>
+    </a>
 
     <!-- Personnel card — maintenant un lien vers personnel.html -->
     <a href="/dashboard/personnel" class="glass-card quick-card">
@@ -344,6 +430,30 @@
         <div class="quick-card-sub">Gérer le personnel</div>
       </div>
     </a>
+    <!-- Catégories card -->
+    <a href="/dashboard/categories" class="glass-card quick-card">
+      <div class="quick-card-icon" style="background:rgba(249,115,22,.2);color:#fdba74;border:1px solid rgba(249,115,22,.3);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div>
+        <div class="quick-card-title">Catégories</div>
+        <div class="quick-card-sub">Gérer les catégories</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── Recent Orders ── -->
+  <div class="recent-orders-section">
+    <div class="section-header">
+      <div class="section-title">Recent Orders</div>
+      <a href="/dashboard/commandes-live" class="section-link">Voir tout →</a>
+    </div>
+    <div class="orders-list orders-skeleton" id="recentOrdersList">
+      <!-- skeleton placeholders -->
+      <div class="order-row"><div class="order-left"><div class="order-items" style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:220px"> </div><div class="order-meta" style="background:rgba(255,255,255,.05);border-radius:4px;height:11px;width:150px;margin-top:4px"> </div></div><div class="order-right"><div style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:60px"> </div></div></div>
+      <div class="order-row"><div class="order-left"><div class="order-items" style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:180px"> </div><div class="order-meta" style="background:rgba(255,255,255,.05);border-radius:4px;height:11px;width:130px;margin-top:4px"> </div></div><div class="order-right"><div style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:60px"> </div></div></div>
+      <div class="order-row"><div class="order-left"><div class="order-items" style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:260px"> </div><div class="order-meta" style="background:rgba(255,255,255,.05);border-radius:4px;height:11px;width:160px;margin-top:4px"> </div></div><div class="order-right"><div style="background:rgba(255,255,255,.08);border-radius:6px;height:14px;width:60px"> </div></div></div>
+    </div>
   </div>
 </main>
 
@@ -386,14 +496,17 @@ async function loadStats() {
     const { data: todayOrders, error: e1 } = await db.from('orders').select('total, status').gte('created_at', start).lte('created_at', end);
     if (!e1 && todayOrders) {
       const count = todayOrders.length;
-      const revenue = todayOrders.filter(o => o.status !== 'annule').reduce((s, o) => s + parseFloat(o.total || 0), 0);
+      const _cancelled = new Set(['annule','annulé','cancelled']);
+      const revenue = todayOrders.filter(o => !_cancelled.has(o.status)).reduce((s, o) => s + parseFloat(o.total || 0), 0);
       setVal('val-commandes-jour', count, 'card-commandes-jour');
       setVal('val-revenus-jour', revenue.toFixed(2) + ' DH', 'card-revenus-jour');
     }
-    const { data: allOrders, error: e2 } = await db.from('orders').select('total, status');
+    const _monthStart = new Date(); _monthStart.setDate(1); _monthStart.setHours(0,0,0,0);
+    const { data: allOrders, error: e2 } = await db.from('orders').select('total, status').gte('created_at', _monthStart.toISOString());
     if (!e2 && allOrders) {
-      const totalCount = allOrders.length;
-      const totalRev = allOrders.filter(o => o.status !== 'annule').reduce((s, o) => s + parseFloat(o.total || 0), 0);
+      const _cancelled2 = new Set(['annule','annulé','cancelled']);
+      const totalCount = allOrders.filter(o => !_cancelled2.has(o.status)).length;
+      const totalRev = allOrders.filter(o => !_cancelled2.has(o.status)).reduce((s, o) => s + parseFloat(o.total || 0), 0);
       setVal('val-total-commandes', totalCount, 'card-total-commandes');
       setVal('val-revenu-total', totalRev.toFixed(2) + ' DH', 'card-revenu-total');
     }
@@ -416,8 +529,101 @@ async function loadStats() {
   }
 }
 
-db.channel('dashboard-orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { loadStats(); }).subscribe();
-setInterval(() => { if (sessionStorage.getItem('papaya_auth') === '1') loadStats(); }, 1000);
+async function loadRecentOrders() {
+  try {
+    const { data: orders, error } = await db
+      .from('orders')
+      .select('id, items, total, status, created_at, table_number')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    const list = document.getElementById('recentOrdersList');
+    if (!list) return;
+    list.classList.remove('orders-skeleton');
+
+    if (error || !orders || orders.length === 0) {
+      list.innerHTML = '<div class="orders-empty">Aucune commande pour l\'instant</div>';
+      return;
+    }
+
+    list.innerHTML = orders.map(order => {
+      // Formater les items
+      let itemsLabel = '–';
+      try {
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        if (Array.isArray(items) && items.length > 0) {
+          itemsLabel = items.map(i => `${i.qty || i.quantity || 1}x ${i.title || i.name || '?'}`).join(', ');
+        } else if (typeof items === 'object') {
+          itemsLabel = Object.entries(items).map(([k, v]) => `${v}x ${k}`).join(', ');
+        }
+      } catch(e) { itemsLabel = String(order.items || '–'); }
+
+      // Date
+      const d = new Date(order.created_at);
+      const dateStr = d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })
+        + ', ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+
+      // ID court
+      const shortId = order.id ? 'Order #' + String(order.id).slice(0, 8) : '';
+      const tableStr = order.table_number ? ' · Table ' + order.table_number : '';
+
+      // Badge statut
+      const statusMap = {
+        'pending'  : ['badge-pending',   'Pending'],
+        'en attente':['badge-pending',   'Pending'],
+        'ready'    : ['badge-ready',     'Ready'],
+        'prêt'     : ['badge-ready',     'Ready'],
+        'done'     : ['badge-done',      'Done'],
+        'terminé'  : ['badge-done',      'Done'],
+        'cancelled' : ['badge-cancelled','Cancelled'],
+        'annule'   : ['badge-cancelled', 'Cancelled'],
+        'annulé'   : ['badge-cancelled', 'Cancelled'],
+      };
+      const s = (order.status || '').toLowerCase();
+      const [badgeClass, badgeLabel] = statusMap[s] || ['badge-other', order.status || '–'];
+
+      return `
+        <div class="order-row">
+          <div class="order-left">
+            <div class="order-items">${itemsLabel}</div>
+            <div class="order-meta">${shortId}${tableStr} · ${dateStr}</div>
+          </div>
+          <div class="order-right">
+            <div class="order-price">${parseFloat(order.total || 0).toFixed(2)} DH</div>
+            <span class="badge ${badgeClass}">${badgeLabel}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    console.error('Erreur recent orders:', err);
+  }
+}
+
+// Broadcast listener — بدل postgres_changes + setInterval
+const _dashChannel = db.channel('papaya-broadcast');
+
+// Debounce — إذا جاو 10 orders في نفس الوقت، loadStats تتعاود مرة وحدة بعد 3 ثواني
+let _statsDebounce = null;
+let _ordersDebounce = null;
+function _debouncedLoadStats() {
+  clearTimeout(_statsDebounce);
+  _statsDebounce = setTimeout(() => { if (localStorage.getItem('papaya_token')) loadStats(); }, 3000);
+}
+function _debouncedLoadOrders() {
+  clearTimeout(_ordersDebounce);
+  _ordersDebounce = setTimeout(() => { if (localStorage.getItem('papaya_token')) loadRecentOrders(); }, 3000);
+}
+
+_dashChannel
+  .on('broadcast', { event: 'new_order' }, () => {
+    _debouncedLoadStats();
+    _debouncedLoadOrders();
+  })
+  .on('broadcast', { event: 'update_order' }, () => {
+    _debouncedLoadStats();
+  })
+  .subscribe();
 
 document.querySelectorAll('.nav-tab:not(.dropdown-trigger)').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -453,11 +659,90 @@ masquerBtn.addEventListener('click', () => {
     : 'Masquer <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>';
 });
 
-function logout() { sessionStorage.removeItem('papaya_auth'); location.reload(); }
+function logout() { sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user'); localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user'); location.reload(); }
 
-// ── Credentials admin (hardcoded) ──
-const OWNER_USER = "sbaiy";
-const OWNER_PASS = "2030";
+
+// ── Virtual Keyboard ──
+let vkbShift = false;
+let vkbSym = false;
+let vkbActiveField = null;
+
+const symMap = {'1':'!','2':'@','3':'#','4':'$','5':'%','6':'^','7':'&','8':'*','9':'(','0':')', 'q':'-','w':'_','e':'=','r':'+','t':'[','y':']','u':'{','i':'}','o':'|','p':'/', 'a':';','s':':','d':',','f':'<','g':'>','h':'?','j':'~','k':'`','l':'|', 'z':'!','x':'@','c':'#','v':'$','b':'%','n':'^','m':'&','.':'*','@':'_'};
+
+function toggleKeyboard() {
+  const kb = document.getElementById('vKeyboard');
+  const btn = document.getElementById('kbToggleBtn');
+  const isOpen = kb.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  if (isOpen) {
+    vkbActiveField = document.getElementById('loginPass');
+  }
+}
+
+function vkbType(char) {
+  const field = vkbActiveField || document.getElementById('loginPass');
+  if (!field) return;
+  let ch = char;
+  if (vkbSym && symMap[char]) ch = symMap[char];
+  else if (vkbShift) ch = char.toUpperCase();
+  const start = field.selectionStart;
+  const end = field.selectionEnd;
+  field.value = field.value.slice(0, start) + ch + field.value.slice(end);
+  field.selectionStart = field.selectionEnd = start + 1;
+  if (vkbShift) { vkbShift = false; document.getElementById('vkbShiftBtn').classList.remove('on'); updateVkbLabels(); }
+  field.focus();
+}
+
+function vkbBackspace() {
+  const field = vkbActiveField || document.getElementById('loginPass');
+  if (!field) return;
+  const start = field.selectionStart;
+  if (start > 0) {
+    field.value = field.value.slice(0, start - 1) + field.value.slice(start);
+    field.selectionStart = field.selectionEnd = start - 1;
+  }
+  field.focus();
+}
+
+function vkbToggleShift() {
+  vkbShift = !vkbShift;
+  document.getElementById('vkbShiftBtn').classList.toggle('on', vkbShift);
+  updateVkbLabels();
+}
+
+function vkbToggleSym() {
+  vkbSym = !vkbSym;
+  document.getElementById('vkbSymBtn').textContent = vkbSym ? 'ABC' : '!#1';
+  updateVkbLabels();
+}
+
+function updateVkbLabels() {
+  document.querySelectorAll('.vkb-key[onclick^="vkbType"]').forEach(btn => {
+    const match = btn.getAttribute('onclick').match(/vkbType\('(.+)'\)/);
+    if (!match) return;
+    const base = match[1];
+    if (base.length === 1 && base.match(/[a-z]/)) {
+      btn.textContent = vkbSym && symMap[base] ? symMap[base] : (vkbShift ? base.toUpperCase() : base);
+    }
+  });
+}
+
+// Focus tracking
+document.addEventListener('focusin', e => {
+  if (e.target.id === 'loginUser' || e.target.id === 'loginPass') {
+    vkbActiveField = e.target;
+  }
+});
+
+function togglePassword() {
+  const field = document.getElementById('loginPass');
+  const icon  = document.getElementById('eyeIcon');
+  const show  = field.type === 'password';
+  field.type  = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
 
 async function doLogin() {
   const u   = document.getElementById('loginUser').value.trim();
@@ -468,50 +753,48 @@ async function doLogin() {
   if (!u || !p) { err.textContent = 'Remplissez tous les champs'; err.style.display = 'block'; return; }
   btn.textContent = '...'; btn.disabled = true;
 
-  // Vérification owner
-  if (u === OWNER_USER && p === OWNER_PASS) {
-    sessionStorage.setItem('papaya_auth', '1');
-    sessionStorage.setItem('papaya_user', JSON.stringify({ name: 'Papaya Owner', role: 'Propriétaire' }));
-    document.getElementById('loginOverlay').style.display = 'none';
-    loadStats();
-    btn.textContent = 'Se connecter'; btn.disabled = false;
-    return;
-  }
+  try {
+    // ✅ Login via backend — kaytkhzen JWT f localStorage automatiquement
+    const data = await API.auth.login(u, p);
 
-  // Vérification personnel via Supabase
-  const { data, error } = await db.from('personnel').select('*').eq('password', p).eq('active', true).or(`email.eq.${u},name.eq.${u}`).limit(1);
-  btn.textContent = 'Se connecter'; btn.disabled = false;
-
-  if (!error && data && data.length > 0) {
-    const emp = data[0];
     sessionStorage.setItem('papaya_auth', '1');
-    sessionStorage.setItem('papaya_user', JSON.stringify({ name: emp.name, role: emp.role }));
-    if (emp.role && emp.role.toLowerCase() === 'cuisinier') {
-      window.location.href = '/dashboard/commandes-live';
-      return;
-    }
+    sessionStorage.setItem('papaya_user', JSON.stringify(data.user));
+
+    if (data.redirect) { window.location.href = data.redirect; return; }
+
     document.getElementById('loginOverlay').style.display = 'none';
-    document.querySelector('.user-name').textContent = emp.name;
-    document.querySelector('.user-role').textContent = emp.role;
+    if (data.user?.name) document.querySelector('.user-name').textContent = data.user.name;
+    if (data.user?.role) document.querySelector('.user-role').textContent = data.user.role;
     loadStats();
-  } else {
-    err.textContent = 'Identifiants incorrects';
+    loadRecentOrders();
+
+  } catch (e) {
+    err.textContent = e.message || 'Identifiants incorrects';
     err.style.display = 'block';
     document.getElementById('loginPass').value = '';
   }
+
+  btn.textContent = 'Se connecter'; btn.disabled = false;
 }
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') doLogin();
 });
 
-if (sessionStorage.getItem('papaya_auth') === '1') {
-  const savedUser = JSON.parse(sessionStorage.getItem('papaya_user') || '{}');
-  if (savedUser.role && savedUser.role.toLowerCase() === 'cuisinier') {
-    window.location.href = '/dashboard/commandes-live';
+if (localStorage.getItem('papaya_token')) {
+  sessionStorage.setItem('papaya_auth', '1');
+  const savedUser = API.Auth.getUser();
+  const savedRole = savedUser?.role?.toLowerCase();
+  if (savedRole === 'cuisinier') {
+    window.location.replace('/dashboard/commandes-live');
+  } else if (savedRole === 'serveur') {
+    window.location.replace('/dashboard/kiosk');
   } else {
+    if (savedUser?.name) document.querySelector('.user-name').textContent = savedUser.name;
+    if (savedUser?.role) document.querySelector('.user-role').textContent = savedUser.role;
     document.getElementById('loginOverlay').style.display = 'none';
     loadStats();
+    loadRecentOrders();
   }
 }
 </script>

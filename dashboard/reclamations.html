@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+   <link rel="icon" href="logo.icon">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Réclamations - Papaya Juice</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #1b2e1e;
+    --orange:    #f97316;
+    --orange2:   #ea6a0a;
+    --glass:     rgba(255,255,255,0.06);
+    --glass-hov: rgba(255,255,255,0.10);
+    --border:    rgba(255,255,255,0.10);
+    --border-hov:rgba(249,115,22,0.35);
+    --shadow:    0 8px 32px rgba(0,0,0,0.35);
+    --white:     #ffffff;
+    --muted:     rgba(255,255,255,0.50);
+    --blur:      blur(18px);
+  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
+  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+
+  /* ── TOPBAR ── */
+  .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .user-pill { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; background: transparent; cursor: pointer; transition: border-color .15s; }
+  .user-pill:hover { border-color: rgba(249,115,22,.4); }
+  .user-name { font-size: 13px; font-weight: 700; color: white; }
+  .user-role { font-size: 11px; font-weight: 600; color: var(--orange); }
+
+  /* ── NAV TABS ── */
+  .nav-tabs { position: relative; z-index: 10; margin: 10px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 6px 10px; gap: 4px; }
+  .nav-tab { display: flex; align-items: center; gap: 6px; padding: 9px 18px; font-size: 14px; font-weight: 500; color: var(--muted); border: none; background: none; cursor: pointer; border-radius: 999px; transition: color .15s, background .15s; font-family: inherit; text-decoration: none; }
+  .nav-tab:hover { color: white; background: rgba(255,255,255,.06); }
+  .nav-tab.active { color: var(--orange); background: rgba(249,115,22,.12); font-weight: 700; }
+  .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; animation: pulseDot 1.6s infinite; }
+  @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── MAIN ── */
+  .main { position: relative; z-index: 5; max-width: 1280px; margin: 0 auto; padding: 32px 24px 48px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; flex-wrap: wrap; gap: 14px; }
+  .page-title { font-size: 30px; font-weight: 700; color: white; font-family: 'Playfair Display', serif; }
+  .page-title span { color: var(--orange); font-style: italic; }
+  .page-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--glass); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+  .filter-btn:hover { border-color: rgba(249,115,22,.4); color: white; background: var(--glass-hov); }
+  .filter-btn.active { background: rgba(249,115,22,.15); border-color: rgba(249,115,22,.5); color: var(--orange); }
+  .search-wrap { position: relative; }
+  .search-input { background: var(--glass); border: 1px solid var(--border); border-radius: 999px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; padding: 9px 16px 9px 36px; outline: none; transition: border-color .2s; width: 220px; }
+  .search-input:focus { border-color: rgba(249,115,22,.5); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .refresh-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--glass); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all .15s; }
+  .refresh-btn:hover { border-color: rgba(249,115,22,.4); color: var(--orange); background: var(--glass-hov); }
+  .btn-tout { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(249,115,22,.35); background: rgba(249,115,22,.08); color: var(--orange); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .btn-tout:hover { background: rgba(249,115,22,.18); }
+  .btn-tout.loading { opacity: .6; pointer-events: none; }
+  .refresh-btn.spinning svg { animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── STATS ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-mini { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; transition: transform .2s, border-color .2s; }
+  .stat-mini:hover { transform: translateY(-3px); border-color: var(--border-hov); }
+  .stat-mini-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .stat-mini-val { font-size: 26px; font-weight: 800; color: white; line-height: 1; }
+  .stat-mini-val.red { color: #fca5a5; }
+  .stat-mini-val.yellow { color: #fde68a; }
+  .stat-mini-val.green { color: #86efac; }
+
+  /* ── RECLAMATION CARDS ── */
+  .recl-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .recl-card {
+    background: var(--glass);
+    backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    transition: transform .22s, box-shadow .22s, border-color .22s;
+    display: flex; gap: 16px; align-items: flex-start;
+    animation: cardIn .3s ease both;
+  }
+  @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .recl-card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.45); border-color: var(--border-hov); }
+  .recl-card.unread { border-left: 3px solid #ef4444; }
+  .recl-card.read { opacity: 0.7; }
+
+  .recl-avatar { width: 44px; height: 44px; border-radius: 50%; background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.3); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .recl-body { flex: 1; min-width: 0; }
+  .recl-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .recl-name { font-size: 15px; font-weight: 700; color: white; }
+  .recl-name.anon { color: var(--muted); font-style: italic; }
+  .recl-table { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.25); white-space: nowrap; }
+  .recl-date { font-size: 11px; color: var(--muted); margin-left: auto; white-space: nowrap; }
+  .recl-message { font-size: 14px; color: rgba(255,255,255,.85); line-height: 1.65; word-break: break-word; }
+  .recl-img-thumb { margin-top: 12px; max-width: 200px; max-height: 140px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; transition: transform .2s; display: block; }
+  .recl-img-thumb:hover { transform: scale(1.03); border-color: rgba(249,115,22,.4); }
+
+  .recl-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .action-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all .15s; }
+  .action-btn:hover { background: var(--glass-hov); color: white; border-color: rgba(255,255,255,.25); }
+  .action-btn.mark-read:hover { color: #86efac; border-color: rgba(52,168,83,.4); background: rgba(52,168,83,.1); }
+  .action-btn.delete:hover { color: #fca5a5; border-color: rgba(239,68,68,.4); background: rgba(239,68,68,.1); }
+  .badge-new { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(239,68,68,.2); color: #fca5a5; border: 1px solid rgba(239,68,68,.35); white-space: nowrap; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; display: block; margin-bottom: 16px; }
+  .empty-text { font-size: 16px; font-weight: 600; color: white; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+
+  /* ── LOADING SKELETON ── */
+  .skeleton-card { background: var(--glass); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; display: flex; gap: 16px; }
+  .skel { background: rgba(255,255,255,.07); border-radius: 8px; animation: shimmer 1.4s infinite; }
+  @keyframes shimmer { 0%,100%{opacity:.5} 50%{opacity:1} }
+  .skel-circle { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; }
+  .skel-body { flex:1; display:flex; flex-direction:column; gap:8px; }
+  .skel-line { height: 13px; }
+
+  /* ── IMAGE LIGHTBOX ── */
+  .lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.88); display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+  .lightbox.active { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 16px; box-shadow: 0 20px 80px rgba(0,0,0,.8); }
+  .lightbox-close { position: fixed; top: 20px; right: 24px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 20px; transition: background .15s; }
+  .lightbox-close:hover { background: rgba(239,68,68,.4); }
+
+  /* ── CONFIRM MODAL ── */
+  .confirm-overlay { position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,.65); display: none; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  .confirm-overlay.active { display: flex; }
+  .confirm-box { background: rgba(27,46,30,.97); border: 1px solid var(--border); border-radius: 20px; padding: 28px 28px 24px; max-width: 340px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.6); text-align: center; animation: popIn .25s cubic-bezier(0.4,0,0.2,1); }
+  @keyframes popIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+  .confirm-icon { font-size: 36px; margin-bottom: 12px; }
+  .confirm-title { font-size: 17px; font-weight: 800; color: white; margin-bottom: 6px; }
+  .confirm-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-cancel { flex:1; padding:12px; border-radius:12px; background:rgba(255,255,255,.07); border:1px solid var(--border); color:var(--muted); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+  .confirm-delete { flex:2; padding:12px; border-radius:12px; background:rgba(239,68,68,.9); border:none; color:white; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s; }
+  .confirm-delete:hover { background:#dc2626; }
+
+
+
+  @media (max-width: 800px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .page-header { flex-direction: column; }
+    .toolbar { flex-wrap: wrap; }
+    .search-input { width: 160px; }
+  }
+  @media (max-width: 480px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .recl-card { flex-wrap: wrap; }
+    .topbar, .nav-tabs { margin-left: 10px; margin-right: 10px; }
+  }
+</style>
+<script src="api.js"></script>
+</head>
+<body>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="photo réclamation">
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Supprimer la réclamation ?</div>
+    <div class="confirm-sub">Cette action est irréversible.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Annuler</button>
+      <button class="confirm-delete" id="confirmDeleteBtn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="nav-brand">
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='🍹'"></div>
+    <span class="brand-name">Papaya Juice</span>
+  </div>
+  <div class="topbar-right">
+    <div class="user-pill">
+      <div style="display:flex;flex-direction:column;">
+        <span class="user-name" id="userName">Admin</span>
+        <span class="user-role" id="userRole">Manager</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <a class="nav-tab" href="/dashboard">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Tableau de bord
+  </a>
+  <a class="nav-tab" href="/dashboard/commandes-live">
+    <span class="nav-dot"></span>
+    Commandes Live
+  </a>
+  <a class="nav-tab active" href="/dashboard/reclamations">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Réclamations
+    <span id="unreadBadge" style="display:none;background:rgba(239,68,68,.25);color:#fca5a5;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid rgba(239,68,68,.4);"></span>
+  </a>
+  <a class="nav-tab" href="/dashboard/admin">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+    Admin
+  </a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Réclamations <span>clients</span></h1>
+      <p class="page-subtitle" id="pageSubtitle">Chargement…</p>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" type="text" id="searchInput" placeholder="Rechercher…" oninput="applyFilters()">
+      </div>
+      <button class="filter-btn active" id="filterAll" onclick="setFilter('all')">Toutes</button>
+      <button class="filter-btn" id="filterUnread" onclick="setFilter('unread')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Non lues
+      </button>
+      <button class="filter-btn" id="filterRead" onclick="setFilter('read')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Lues
+      </button>
+      <button class="btn-tout" id="btnTout" onclick="loadAll()" title="Charger tout">📋 Tout afficher</button>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadReclamations()" title="Actualiser">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-mini"><div class="stat-mini-label">Total</div><div class="stat-mini-val" id="statTotal">–</div></div>
+    <div class="stat-mini"><div class="stat-mini-label">Non lues</div><div class="stat-mini-val red" id="statUnread">–</div></div>
+    <div class="stat-mini"><div class="stat-mini-label">Lues</div><div class="stat-mini-val green" id="statRead">–</div></div>
+    <div class="stat-mini"><div class="stat-mini-label">Avec photo</div><div class="stat-mini-val yellow" id="statWithPhoto">–</div></div>
+  </div>
+
+  <!-- RECLAMATION LIST -->
+  <div class="recl-grid" id="reclGrid">
+    <!-- skeleton -->
+    <div class="skeleton-card"><div class="skel skel-circle"></div><div class="skel-body"><div class="skel skel-line" style="width:40%"></div><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:60%"></div></div></div>
+    <div class="skeleton-card"><div class="skel skel-circle"></div><div class="skel-body"><div class="skel skel-line" style="width:30%"></div><div class="skel skel-line" style="width:90%"></div><div class="skel skel-line" style="width:55%"></div></div></div>
+    <div class="skeleton-card"><div class="skel skel-circle"></div><div class="skel-body"><div class="skel skel-line" style="width:50%"></div><div class="skel skel-line" style="width:75%"></div></div></div>
+  </div>
+</main>
+
+<script>
+if (sessionStorage.getItem('papaya_auth') !== '1') {
+  window.location.replace('/dashboard');
+}
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allReclamations = [];
+let currentFilter   = 'all';
+let pendingDeleteId = null;
+
+/* ── INIT ── */
+loadReclamations();
+subscribeRealtime();
+
+/* ── LOAD ALL (sans limite de date) ── */
+async function loadAll() {
+  const btn = document.getElementById('btnTout');
+  const refreshBtn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Chargement…';
+  refreshBtn.classList.add('spinning');
+  try {
+    const { data, error } = await db
+      .from('reclamations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    allReclamations = data || [];
+    updateStats();
+    applyFilters();
+    btn.textContent = `✅ ${allReclamations.length} total`;
+    setTimeout(() => { btn.textContent = '📋 Tout afficher'; btn.classList.remove('loading'); }, 3000);
+  } catch(err) {
+    btn.textContent = '❌ Erreur';
+    btn.classList.remove('loading');
+    setTimeout(() => { btn.textContent = '📋 Tout afficher'; }, 2000);
+  } finally {
+    refreshBtn.classList.remove('spinning');
+  }
+}
+
+/* ── LOAD RECLAMATIONS ── */
+async function loadReclamations() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const { data, error } = await db
+      .from('reclamations')
+      .select('*')
+      .gte('created_at', since.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    allReclamations = data || [];
+    updateStats();
+    applyFilters();
+  } catch(err) {
+    console.error('Erreur chargement réclamations:', err);
+    document.getElementById('reclGrid').innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">⚠️</span>
+        <div class="empty-text">Erreur de chargement</div>
+        <div class="empty-sub">${err.message || 'Vérifiez votre connexion'}</div>
+      </div>`;
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+/* ── STATS ── */
+function updateStats() {
+  const total    = allReclamations.length;
+  const unread   = allReclamations.filter(r => !r.read).length;
+  const read     = allReclamations.filter(r => r.read).length;
+  const withPic  = allReclamations.filter(r => r.image_url || r.image_url_2 || r.image_url_3).length;
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statUnread').textContent   = unread;
+  document.getElementById('statRead').textContent     = read;
+  document.getElementById('statWithPhoto').textContent = withPic;
+  // Update nav badge
+  const badge = document.getElementById('unreadBadge');
+  if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline'; }
+  else { badge.style.display = 'none'; }
+  document.getElementById('pageSubtitle').textContent = `${total} réclamation${total !== 1 ? 's' : ''} au total · ${unread} non lue${unread !== 1 ? 's' : ''}`;
+}
+
+/* ── FILTER ── */
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('filter' + f.charAt(0).toUpperCase() + f.slice(1)).classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let list = [...allReclamations];
+
+  if (currentFilter === 'unread') list = list.filter(r => !r.read);
+  else if (currentFilter === 'read') list = list.filter(r => r.read);
+
+  if (q) {
+    list = list.filter(r =>
+      (r.message || '').toLowerCase().includes(q) ||
+      (r.name || '').toLowerCase().includes(q) ||
+      (r.table_number || '').toString().toLowerCase().includes(q)
+    );
+  }
+
+  renderReclamations(list);
+}
+
+/* ── RENDER ── */
+function renderReclamations(list) {
+  const grid = document.getElementById('reclGrid');
+  if (!list.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">💬</span>
+        <div class="empty-text">Aucune réclamation trouvée</div>
+        <div class="empty-sub">Les réclamations soumises depuis le menu apparaîtront ici</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map((r, i) => {
+    const isUnread = !r.read;
+    const name = r.name ? escapeHtml(r.name) : null;
+    const date = formatDate(r.created_at);
+    const msg  = escapeHtml(r.message || '');
+    const photos = [r.image_url, r.image_url_2, r.image_url_3].filter(Boolean);
+    const imgs = photos.length
+      ? `<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          ${photos.map(url => `<img class="recl-img-thumb" src="${escapeHtml(url)}" alt="photo" onclick="openLightbox('${escapeHtml(url)}')" loading="lazy" style="width:90px;height:70px;object-fit:cover;">`).join('')}
+         </div>` : '';
+
+    return `
+    <div class="recl-card ${isUnread ? 'unread' : 'read'}" id="card-${r.id}" style="animation-delay:${i * 40}ms">
+      <div class="recl-avatar">${name ? name.charAt(0).toUpperCase() : '?'}</div>
+      <div class="recl-body">
+        <div class="recl-header">
+          ${name
+            ? `<span class="recl-name">${name}</span>`
+            : `<span class="recl-name anon">Client anonyme</span>`
+          }
+          ${r.table_number ? `<span class="recl-table">🪑 Table ${escapeHtml(String(r.table_number))}</span>` : ''}
+          ${isUnread ? `<span class="badge-new">Nouveau</span>` : ''}
+          <span class="recl-date">${date}</span>
+        </div>
+        <div class="recl-message">${msg}</div>
+        ${imgs}
+      </div>
+      <div class="recl-actions">
+        ${isUnread
+          ? `<button class="action-btn mark-read" title="Marquer comme lu" onclick="markAsRead(${r.id})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>`
+          : `<button class="action-btn" title="Déjà lu" style="cursor:default;opacity:.4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>`
+        }
+        <button class="action-btn delete" title="Supprimer" onclick="confirmDelete(${r.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── MARK AS READ ── */
+async function markAsRead(id) {
+  try {
+    await db.from('reclamations').update({ read: true }).eq('id', id);
+    const rec = allReclamations.find(r => r.id === id);
+    if (rec) rec.read = true;
+    updateStats();
+    applyFilters();
+  } catch(err) {
+    console.error('Erreur markAsRead:', err);
+  }
+}
+
+/* ── DELETE ── */
+function confirmDelete(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirmOverlay').classList.add('active');
+  document.getElementById('confirmDeleteBtn').onclick = () => deleteReclamation(id);
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('active');
+  pendingDeleteId = null;
+}
+async function deleteReclamation(id) {
+  closeConfirm();
+  try {
+    await db.from('reclamations').delete().eq('id', id);
+    allReclamations = allReclamations.filter(r => r.id !== id);
+    updateStats();
+    applyFilters();
+    // Animate card out
+    const card = document.getElementById('card-' + id);
+    if (card) { card.style.transition = 'opacity .3s, transform .3s'; card.style.opacity = '0'; card.style.transform = 'translateX(20px)'; setTimeout(() => card.remove(), 300); }
+  } catch(err) {
+    alert('❌ Erreur suppression: ' + (err.message || ''));
+  }
+}
+
+/* ── LIGHTBOX ── */
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+
+/* ── HELPERS ── */
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'À l\'instant';
+  if (diff < 3600) return `Il y a ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `Il y a ${Math.floor(diff/3600)}h`;
+  if (diff < 172800) return 'Hier · ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) + ' · ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── REAL-TIME SUBSCRIPTION ── */
+function subscribeRealtime() {
+  db.channel('reclamations-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reclamations' }, payload => {
+      allReclamations.unshift(payload.new);
+      updateStats();
+      applyFilters();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reclamations' }, payload => {
+      const idx = allReclamations.findIndex(r => r.id === payload.new.id);
+      if (idx !== -1) allReclamations[idx] = payload.new;
+      updateStats();
+      applyFilters();
+    })
+    .subscribe();
+}
+
+
+</script>
+</body>
+</html>

@@ -2,10 +2,49 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/dashboard/personnel",             "destination": "/dashboard/personnel.html" },
-    { "source": "/dashboard/commandes-live",        "destination": "/dashboard/commandes-live.html" },
-    { "source": "/dashboard/admin",                 "destination": "/dashboard/admin.html" },
-    { "source": "/dashboard/kiosk",                 "destination": "/dashboard/kiosk.html" },
-    { "source": "/dashboard/parametres/impression", "destination": "/dashboard/parametres-impression.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://papaya-juice-backend-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/dashboard/personnel",
+      "destination": "/dashboard/personnel.html"
+    },
+    {
+      "source": "/dashboard/commandes-live",
+      "destination": "/dashboard/commandes-live.html"
+    },
+    {
+      "source": "/dashboard/admin",
+      "destination": "/dashboard/admin.html"
+    },
+    {
+      "source": "/dashboard/kiosk",
+      "destination": "/dashboard/kiosk.html"
+    },
+    {
+      "source": "/dashboard/parametres-impression",
+      "destination": "/dashboard/parametres-impression.html"
+    },
+    {
+      "source": "/dashboard/qr-tables",
+      "destination": "/dashboard/qr-tables.html"
+    },
+    {
+      "source": "/dashboard/historique-clotures",
+      "destination": "/dashboard/historique-clotures.html"
+    },
+    {
+      "source": "/dashboard/reclamations",
+      "destination": "/dashboard/reclamations.html"
+    },
+    {
+      "source": "/dashboard/categories",
+      "destination": "/dashboard/categories.html"
+    }
   ]
 }

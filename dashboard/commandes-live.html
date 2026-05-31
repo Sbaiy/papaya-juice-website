@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+   <link rel="icon" href="logo.icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Commandes Live – Papaya Juice</title>
@@ -8,36 +11,52 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --primary:   #ff6200;
-  --dark-bg:   #141d16;
+  --primary:   #f97316;
+  --dark-bg:   #1b2e1e;
   --green:     #22c55e;
   --blue:      #6366f1;
   --purple:    #a855f7;
   --yellow:    #f59e0b;
   --red:       #ef4444;
   --gray:      #64748b;
-  --card-bg:   #ffffff;
-  --page-bg:   #f1f5f0;
-  --text:      #1e2d22;
-  --muted:     #6b7280;
-  --border:    #e5e7eb;
+  --card-bg:   rgba(255,255,255,0.06);
+  --page-bg:   #1b2e1e;
+  --text:      #ffffff;
+  --muted:     rgba(255,255,255,0.50);
+  --border:    rgba(255,255,255,0.10);
   --radius:    16px;
-  --shadow:    0 2px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+  --shadow:    0 8px 32px rgba(0,0,0,0.35);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.45);
+  --orange:    #f97316;
+  --orange2:   #ea6a0a;
+  --glass:     rgba(255,255,255,0.06);
+  --glass-hov: rgba(255,255,255,0.10);
+  --blur:      blur(18px);
 }
-* { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: 'Poppins', sans-serif;
   background: var(--page-bg);
   color: var(--text);
   min-height: 100vh;
 }
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
+  pointer-events: none;
+}
 .topbar {
-  background: var(--dark-bg);
-  padding: 14px 28px;
+  background: var(--glass);
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  margin: 14px 18px 0;
+  padding: 10px 20px;
   display: flex; align-items: center; justify-content: space-between;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 14px; z-index: 100;
 }
 .topbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .topbar-logo img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
@@ -79,13 +98,13 @@ body {
 }
 .sound-banner-btn:hover { opacity: 0.85; }
 .sound-banner.hidden { display: none; }
-.page { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+.page { max-width: 1400px; margin: 0 auto; padding: 24px 20px; position: relative; z-index: 1; }
 .stats-banner {
   background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%);
   border-radius: var(--radius); padding: 24px 28px; margin-bottom: 20px;
   box-shadow: 0 8px 32px rgba(99,102,241,0.35);
 }
-.stats-row { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 18px; margin-bottom: 18px; }
+.stats-row { display: flex; gap: 0; padding-bottom: 0; margin-bottom: 0; }
 .stat-item { flex: 1; text-align: center; border-right: 1px solid rgba(255,255,255,0.15); }
 .stat-item:last-child { border-right: none; }
 .stat-num { font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
@@ -135,9 +154,9 @@ body {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 16px; border-radius: 30px; border: none; cursor: pointer;
   font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
-  background: #f3f4f6; color: var(--muted); transition: all 0.2s;
+  background: rgba(255,255,255,0.07); color: var(--muted); transition: all 0.2s;
 }
-.filter-tab:hover { background: #e5e7eb; color: var(--text); }
+.filter-tab:hover { background: rgba(255,255,255,0.13); color: var(--text); }
 .filter-tab.active { color: #fff; }
 .filter-tab .tab-count {
   background: rgba(255,255,255,0.25); color: inherit;
@@ -167,13 +186,71 @@ body {
   animation: cardIn 0.35s ease;
 }
 @keyframes cardIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
-.order-card:hover { box-shadow: var(--shadow-lg); }
+.order-card.from-menu {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.35), var(--shadow-lg);
+  background: linear-gradient(145deg, rgba(99,102,241,0.10) 0%, rgba(30,27,75,0.18) 100%);
+}
+.order-card.from-menu .card-head {
+  background: linear-gradient(90deg, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0.06) 100%);
+  border-bottom: 1px solid rgba(99,102,241,0.25);
+}
+.order-card.from-menu .card-divider {
+  border-color: rgba(99,102,241,0.2);
+}
+/* Ticket-style dashed separator for menu orders */
+.order-card.from-menu .ticket-tear {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  margin: 0 0 0 0;
+  color: rgba(99,102,241,0.5);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.order-card.from-menu .ticket-tear::before,
+.order-card.from-menu .ticket-tear::after {
+  content: '';
+  flex: 1;
+  border-top: 2px dashed rgba(99,102,241,0.3);
+}
+.menu-source-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.5);
+  color: #a5b4fc;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.kiosk-source-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.4);
+  color: #fcd34d;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .order-card.status-paiement  { border-color: var(--yellow); }
 .order-card.status-payee     { border-color: var(--green); }
 .order-card.status-en_preparation { border-color: var(--blue); }
 .order-card.status-pret      { border-color: #10b981; }
 .order-card.status-termine   { border-color: var(--gray); opacity: 0.7; }
-.order-card.status-annule    { border-color: var(--red); background: #fef2f2; }
+.order-card.status-annule    { border-color: var(--red); background: rgba(239,68,68,0.07); }
 .order-card.new-flash { animation: newFlash 0.8s ease; }
 @keyframes newFlash {
   0%,100% { box-shadow: var(--shadow); }
@@ -195,18 +272,18 @@ body {
   border: 2px solid; display: flex; align-items: center; gap: 5px;
 }
 .badge-paiement   { background: #fffbeb; color: #92400e; border-color: var(--yellow); }
-.badge-payee      { background: #f0fdf4; color: #166534; border-color: var(--green); }
-.badge-en_preparation { background: #eff6ff; color: #1e40af; border-color: var(--blue); }
-.badge-pret       { background: #ecfdf5; color: #065f46; border-color: #10b981; }
-.badge-termine    { background: #f9fafb; color: #374151; border-color: var(--gray); }
-.badge-annule     { background: #fef2f2; color: #991b1b; border-color: var(--red); }
+.badge-payee      { background: rgba(34,197,94,0.15); color: #4ade80; border-color: var(--green); }
+.badge-en_preparation { background: rgba(99,102,241,0.15); color: #a5b4fc; border-color: var(--blue); }
+.badge-pret       { background: rgba(16,185,129,0.15); color: #6ee7b7; border-color: #10b981; }
+.badge-termine    { background: rgba(255,255,255,0.07); color: var(--muted); border-color: var(--border); }
+.badge-annule     { background: rgba(239,68,68,0.15); color: #f87171; border-color: var(--red); }
 .card-time { padding: 0 16px 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
 .card-divider { border: none; border-top: 1px solid var(--border); margin: 0 16px; }
 .card-articles { padding: 12px 16px; }
 .articles-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .article-row {
   display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 7px 10px; background: #f9fafb; border-radius: 8px; margin-bottom: 6px;
+  padding: 7px 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 6px;
 }
 .article-left .qty { font-size: 12px; font-weight: 700; color: var(--primary); }
 .article-left .name { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -251,7 +328,7 @@ body {
 }
 .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
 .status-modal {
-  background: #fff; border-radius: 20px; padding: 28px; width: min(380px,90vw);
+  background: #1c2e20; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px; width: min(380px,90vw);
   box-shadow: 0 30px 80px rgba(0,0,0,0.3); animation: modalIn 0.3s ease;
 }
 @keyframes modalIn { from { opacity:0; transform: scale(0.9); } to { opacity:1; transform: scale(1); } }
@@ -261,15 +338,15 @@ body {
   padding: 12px; border-radius: 12px; border: 2px solid var(--border);
   cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; transition: all 0.2s;
 }
-.status-option:hover { border-color: var(--primary); background: #fff5f0; }
-.status-option.selected { border-color: var(--primary); background: #fff5f0; color: var(--primary); }
+.status-option:hover { border-color: var(--primary); background: rgba(249,115,22,0.1); }
+.status-option.selected { border-color: var(--primary); background: rgba(249,115,22,0.1); color: var(--primary); }
 .modal-actions { display: flex; gap: 10px; }
-.modal-cancel { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: #f9fafb; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: var(--muted); }
+.modal-cancel { flex: 1; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.06); cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: var(--muted); }
 .modal-confirm { flex: 2; padding: 11px; border-radius: 10px; border: none; background: var(--primary); color: #fff; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; }
 .loading-spinner {
   grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 60px;
 }
-.spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.12); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 640px) {
   .topbar { padding: 12px 16px; }
@@ -295,7 +372,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 <!-- TOPBAR -->
 <header class="topbar">
   <a href="/dashboard" class="topbar-logo">
-    <img src="logo.png" alt="Papaya Juice">
+    <img src="/logo.png" alt="Papaya Juice">
     <span>Papaya Juice</span>
   </a>
   <div class="topbar-title">
@@ -303,6 +380,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
     Commandes Live
   </div>
   <div class="topbar-right">
+    <button class="sound-banner-btn" id="soundBtn" onclick="activateSound()" style="padding:7px 16px;border-radius:20px;font-size:13px;">🔊 Activer le son</button>
     <button class="refresh-btn" onclick="loadOrders()">
       🔄 Actualiser
     </button>
@@ -311,8 +389,8 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
   </div>
 </header>
 
-<!-- SOUND BANNER -->
-<div class="sound-banner" id="soundBanner">
+<!-- SOUND BANNER (hidden) -->
+<div class="sound-banner hidden" id="soundBanner">
   <span>🔔 Cliquez pour activer les notifications sonores</span>
   <button class="sound-banner-btn" onclick="activateSound()">🔊 Activer le son</button>
 </div>
@@ -326,12 +404,6 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
       <div class="stat-item"><div class="stat-num" id="statAttente">–</div><div class="stat-label">En attente</div></div>
       <div class="stat-item"><div class="stat-num" id="statEnCours">–</div><div class="stat-label">En cours</div></div>
       <div class="stat-item"><div class="stat-num" id="statPret">–</div><div class="stat-label">Prêtes</div></div>
-    </div>
-    <div class="stats-servers">
-      <div class="stats-servers-title">Par serveur :</div>
-      <div id="serverCards" style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
-        <div style="color:rgba(255,255,255,0.5);font-size:13px;">Chargement…</div>
-      </div>
     </div>
   </div>
   <div class="controls-row">
@@ -385,44 +457,67 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Broadcast channel
+const _liveChannel = db.channel("papaya-broadcast");
+let _liveReady = false;
+_liveChannel.subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
+async function _broadcastUpdate(event, orderData) {
+  if (!_liveReady) await new Promise(r => setTimeout(r, 1000));
+  try { await _liveChannel.send({ type: "broadcast", event, payload: orderData }); }
+  catch(e) { console.warn("Broadcast failed:", e); }
+}
 let allOrders = [];
 let activeFilter = 'all';
 let soundEnabled = false;
+
+// Auto-activer au premier geste (click/touch/key) sans besoin de cliquer le bouton
+function _autoActivateSound() {
+  if (!soundEnabled) {
+    soundEnabled = true;
+    document.getElementById('soundBanner').classList.add('hidden');
+  }
+}
+['click','touchstart','keydown'].forEach(e => document.addEventListener(e, _autoActivateSound, { once: true }));
 let editingOrderId = null;
 let selectedNewStatus = null;
 let alertingOrders = new Map();
 
 function resetOrders() {
   if (!confirm('Réinitialiser la vue ? Les commandes resteront dans le dashboard.')) return;
-  sessionStorage.setItem('live_reset_ts', new Date().toISOString());
+  localStorage.setItem('live_reset_ts', new Date().toISOString());
   loadOrders();
 }
 
 function logout() {
-  sessionStorage.removeItem('papaya_auth');
-  sessionStorage.removeItem('papaya_user');
+  sessionStorage.clear();
+  localStorage.removeItem('papaya_token');
+  localStorage.removeItem('papaya_user');
   window.location.href = '/dashboard';
 }
 
 function activateSound() {
   soundEnabled = true;
   document.getElementById('soundBanner').classList.add('hidden');
+  const btn = document.getElementById('soundBtn');
+  if (btn) btn.style.display = 'none';
   playBeep();
 }
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [0, 0.22].forEach(delay => {
+    // 3 bips rapides style alarme
+    [0, 0.16, 0.32].forEach(delay => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(900, ctx.currentTime + delay);
-      osc.frequency.setValueAtTime(720, ctx.currentTime + delay + 0.08);
-      gain.gain.setValueAtTime(0.55, ctx.currentTime + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(960, ctx.currentTime + delay);
+      osc.frequency.setValueAtTime(720, ctx.currentTime + delay + 0.07);
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.13);
       osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.35);
+      osc.stop(ctx.currentTime + delay + 0.13);
     });
   } catch {}
 }
@@ -433,7 +528,7 @@ function startOrderAlert(orderId) {
     if (soundEnabled) playBeep();
     const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
     if (card) { card.classList.remove('new-flash'); void card.offsetWidth; card.classList.add('new-flash'); }
-  }, 4000);
+  }, 2000);
   const timeout = setTimeout(() => stopOrderAlert(orderId), 60000);
   alertingOrders.set(orderId, { interval, timeout });
   setTimeout(() => {
@@ -451,55 +546,80 @@ function checkAlerts(newOrders) {
   newOrders.forEach(o => { if (!prevIds.has(String(o.id)) && o.status === 'paiement') startOrderAlert(String(o.id)); });
   alertingOrders.forEach((_, id) => {
     const order = newOrders.find(o => String(o.id) === id);
-    if (!order || order.status !== 'paiement') stopOrderAlert(id);
+    // Sot yt7yd ghir mlli status ywsl l 'pret' ola l fug
+    if (!order || (order.status !== 'paiement' && order.status !== 'en_preparation')) stopOrderAlert(id);
   });
 }
 async function loadOrders() {
   try {
-    const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const { data, error } = await db.from('orders')
+      .select('id, items, total, status, created_at, table_number, updated_at')
+      .gte('created_at', todayStart.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(200);
     if (error) throw error;
     const newOrders = data || [];
-   console.log('الطلبات الملغاة:', newOrders.filter(o => o.status === 'annule'));
-    const resetTs = sessionStorage.getItem('live_reset_ts');
-    const filtered_new = resetTs
+    // Normaliser les statuts venant du kiosk vers le format commandes-live
+    const STATUS_NORM = {
+      'cancelled':  'annule',
+      'annulé':     'annule',
+      'annule':     'annule',
+      'canceled':   'annule',
+      'paid':       'paiement',
+      'pending':    'paiement',
+      'preparing':  'en_preparation',
+      'ready':      'pret',
+      'done':       'termine',
+      'delivered':  'termine',
+    };
+    newOrders.forEach(o => {
+      o._rawStatus = o.status;
+      if (STATUS_NORM[o.status]) o.status = STATUS_NORM[o.status];
+      // Normaliser tout status contenant "annul" (ex: "annulé par client")
+      else if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'annule';
+    });
+    const resetTs = localStorage.getItem('live_reset_ts');
+    const filtered_new = (resetTs
       ? newOrders.filter(o => new Date(o.created_at) > new Date(resetTs))
-      : newOrders;
+      : newOrders
+    // Masquer commandes non encore confirmées (pending = avant confirme kiosk)
+    ).filter(o => o._rawStatus !== 'pending' && o._rawStatus !== 'paid');
+    checkAlerts(filtered_new);
     allOrders = filtered_new;
-
-// ← زيد هاد السطر
-document.title = 'Annulées: ' + allOrders.filter(o => o.status === 'annule').length;
-      checkAlerts(filtered_new);
-    allOrders = filtered_new;
-    updateStats(); updateCounts(); renderOrders();
+    updateStats(); updateCounts();
   } catch (e) {
     console.error('Erreur chargement:', e);
     document.getElementById('ordersGrid').innerHTML = `<div class="no-orders"><span class="no-icon">⚠️</span>Impossible de charger les commandes.<br><small style="color:#9ca3af;margin-top:8px;display:block;">Vérifiez le nom de votre table Supabase.</small></div>`;
+    return;
   }
+  try { renderOrders(); } catch(e) { console.error('Erreur renderOrders:', e); }
 }
 function updateStats() {
+  const nonAnnule = allOrders.filter(o => o.status !== 'annule');
   document.getElementById('statTotal').textContent   = allOrders.length;
-  document.getElementById('statTermine').textContent  = allOrders.filter(o => o.status === 'termine').length;
-  document.getElementById('statAttente').textContent  = allOrders.filter(o => o.status === 'paiement').length;
-  document.getElementById('statEnCours').textContent  = allOrders.filter(o => o.status === 'en_preparation').length;
-  document.getElementById('statPret').textContent    = allOrders.filter(o => o.status === 'pret').length;
+  document.getElementById('statTermine').textContent  = nonAnnule.filter(o => o.status === 'termine').length;
+  document.getElementById('statAttente').textContent  = nonAnnule.filter(o => o.status === 'paiement').length;
+  document.getElementById('statEnCours').textContent  = nonAnnule.filter(o => o.status === 'en_preparation').length;
+  document.getElementById('statPret').textContent    = nonAnnule.filter(o => o.status === 'pret').length;
   const servers = {};
-  allOrders.forEach(o => {
+  nonAnnule.forEach(o => {
     const s = o.serveur || o.server || 'Inconnu';
     if (!servers[s]) servers[s] = { total: 0, termine: 0, montant: 0 };
     servers[s].total++;
     if (o.status === 'termine' || o.status === 'payee') servers[s].termine++;
     servers[s].montant += parseFloat(o.total || 0);
   });
-  const sc = document.getElementById('serverCards');
-  if (!Object.keys(servers).length) { sc.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:13px;">Aucun serveur</div>'; return; }
-  sc.innerHTML = Object.entries(servers).map(([name, s]) => `<div class="server-card"><div class="server-name">${name}</div><div class="server-stats">Total: <b>${s.total}</b> &nbsp;|&nbsp; ✓ <b>${s.termine}</b><span style="margin-top:4px;display:block;">💰 <b>${s.montant.toFixed(0)} DH</b></span></div></div>`).join('');
   const occupied = new Set(allOrders.filter(o => o.status !== 'termine' && o.status !== 'payee' && o.status !== 'annule' && o.table_number).map(o => o.table_number)).size;
   document.getElementById('tablesOccupees').textContent = occupied;
   document.getElementById('tablesVides').textContent = Math.max(0, 60 - occupied);
 }
 function updateCounts() {
   ['all','paiement','payee','en_preparation','pret','termine','annule'].forEach(s => {
-    const count = s === 'all' ? allOrders.length : allOrders.filter(o => o.status === s).length;
+    let count;
+    if (s === 'all') count = allOrders.length;
+    else if (s === 'annule') count = allOrders.filter(o => o.status === 'annule' || o._rawStatus === 'cancelled' || o._rawStatus === 'annulé').length;
+    else count = allOrders.filter(o => o.status === s && o._rawStatus !== 'cancelled' && o._rawStatus !== 'annulé').length;
     const el = document.getElementById('cnt-' + s);
     if (el) el.textContent = count;
   });
@@ -510,15 +630,37 @@ document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.classList.add('active'); activeFilter = tab.dataset.status; renderOrders();
   });
 });
+
+// Activer le filtre depuis URL param (ex: ?filter=en_preparation)
+(function() {
+  const urlFilter = new URLSearchParams(window.location.search).get('filter');
+  if (urlFilter) {
+    const tab = document.querySelector(`.filter-tab[data-status="${urlFilter}"]`);
+    if (tab) {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = urlFilter;
+    }
+    // Nettoyer l'URL sans recharger
+    history.replaceState(null, '', window.location.pathname);
+  }
+})();
+// Signature d'une commande pour détecter les changements
+function orderSignature(order) {
+  return JSON.stringify({ status: order.status, total: order.total, items: order.items, note: order.note, table_number: order.table_number });
+}
+
 function renderOrders() {
   const hideFinished = document.getElementById('hideFinished').checked;
   let filtered = [...allOrders];
 
   if (activeFilter !== 'annule') {
-    filtered = filtered.filter(o => o.status !== 'annule');
+    filtered = filtered.filter(o => o.status !== 'annule' && o._rawStatus !== 'cancelled' && o._rawStatus !== 'annulé');
+  } else {
+    filtered = filtered.filter(o => o.status === 'annule' || o._rawStatus === 'cancelled' || o._rawStatus === 'annulé');
   }
 
-  if (activeFilter !== 'all') {
+  if (activeFilter !== 'all' && activeFilter !== 'annule') {
     filtered = filtered.filter(o => o.status === activeFilter);
   }
 
@@ -527,16 +669,63 @@ function renderOrders() {
   }
 
   const grid = document.getElementById('ordersGrid');
+
+  // Retirer le spinner initial et le message "aucune commande" si présents
+  grid.querySelector('.loading-spinner')?.remove();
+  grid.querySelector('.no-orders')?.remove();
+
   if (!filtered.length) {
     grid.innerHTML = `<div class="no-orders"><span class="no-icon">📋</span>Aucune commande à afficher.</div>`;
     return;
   }
-  grid.innerHTML = '';
-  filtered.forEach(order => { grid.appendChild(buildCard(order)); });
+
+  const filteredIds = new Set(filtered.map(o => String(o.id)));
+
+  // Supprimer les cards qui ne sont plus dans la liste filtrée
+  grid.querySelectorAll('.order-card').forEach(card => {
+    if (!filteredIds.has(card.dataset.id)) card.remove();
+  });
+
+  filtered.forEach((order, index) => {
+    const id = String(order.id);
+    const sig = orderSignature(order);
+    const existing = grid.querySelector(`.order-card[data-id="${id}"]`);
+
+    if (existing) {
+      if (existing.dataset.sig !== sig) {
+        const newCard = buildCard(order);
+        newCard.dataset.sig = sig;
+        newCard.style.animation = 'none';
+        existing.replaceWith(newCard);
+      }
+      const cards = [...grid.querySelectorAll('.order-card')];
+      const currentIndex = cards.findIndex(c => c.dataset.id === id);
+      if (currentIndex !== index) {
+        const target = cards[index];
+        const cardEl = grid.querySelector(`.order-card[data-id="${id}"]`);
+        if (target && target !== cardEl) grid.insertBefore(cardEl, target);
+        else if (!target) grid.appendChild(cardEl);
+      }
+    } else {
+      const newCard = buildCard(order);
+      newCard.dataset.sig = sig;
+      const cards = [...grid.querySelectorAll('.order-card')];
+      if (cards[index]) grid.insertBefore(newCard, cards[index]);
+      else grid.appendChild(newCard);
+    }
+  });
 }
 function buildCard(order) {
   const card = document.createElement('div');
-  card.className = `order-card status-${order.status || 'paiement'}`;
+  const rawS = (order._rawStatus || '').toLowerCase();
+  const normS = (order.status || '').toLowerCase();
+  const isAnnule = normS === 'annule' || normS.includes('annul') || rawS === 'cancelled' || rawS.includes('annul') || rawS === 'annule';
+  const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
+  const src = (order.source || '').toLowerCase().trim();
+  const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
+  // Menu orders explicitly set source: 'menu'
+  const isFromMenu = !isFromKiosk && ['menu', 'online', 'web', 'client'].includes(src);
+  card.className = `order-card status-${cssStatus}${isFromMenu ? ' from-menu' : ''}`;
   card.dataset.id = order.id;
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
   let items = [];
@@ -546,12 +735,28 @@ function buildCard(order) {
   const tableNum = order.table_number || order.table || '';
   const note = order.note || order.notes || '';
   const orderNum = order.order_number || order.numero || ('#' + String(order.id).slice(-6));
+
+  // Source badge
+  let sourceBadge = '';
+  if (isFromMenu) {
+    sourceBadge = '<span class="menu-source-tag">📱 Menu Client</span>';
+  } else if (isFromKiosk) {
+    sourceBadge = '<span class="kiosk-source-tag">🖥️ Kiosk</span>';
+  }
+
+  // Ticket dashed tear for menu orders
+  const ticketTear = isFromMenu ? '<div class="ticket-tear">commande en ligne</div>' : '';
+
   card.innerHTML = `
     <div class="card-head">
-      <div class="order-num"><span class="order-icon">📦</span>${tableNum ? `Table ${tableNum} · ` : ''}${orderNum}</div>
-      <div class="status-badge badge-${order.status || 'paiement'}">${statusName(order.status)}</div>
+      <div class="order-num"><span class="order-icon">${isFromMenu ? '📱' : isFromKiosk ? '🖥️' : '📦'}</span>${tableNum ? `Table ${tableNum} · ` : ''}${orderNum}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${sourceBadge}
+        <div class="status-badge badge-${cssStatus}">${isAnnule ? '🚫 Annulé' : statusName(order.status)}</div>
+      </div>
     </div>
     <div class="card-time">🕐 ${time}</div>
+    ${ticketTear}
     <hr class="card-divider">
     <div class="card-articles"><div class="articles-title">Articles :</div>${itemsHTML || '<div style="color:#9ca3af;font-size:13px;padding:6px 0;">Aucun article</div>'}</div>
     <div class="card-total"><span class="total-label">Total :</span><span class="total-amount">${parseFloat(order.total || 0).toFixed(2)} DH</span></div>
@@ -577,8 +782,7 @@ function buildCard(order) {
   card.querySelector('[data-action="commencer"]')?.addEventListener('click', async () => {
     let newStatus;
     if (order.status === 'pret') newStatus = 'termine';
-    else if (order.status === 'en_preparation') newStatus = 'pret';
-    else newStatus = 'en_preparation';
+    else newStatus = 'pret'; // paiement ou en_preparation → pret directement
     stopOrderAlert(ordId);
     await quickStatus(order.id, newStatus);
   });
@@ -587,15 +791,16 @@ function buildCard(order) {
 }
 function buildActions(order) {
   const s = order.status;
+  const raw = order._rawStatus || '';
+  const src = (order.source || '').toLowerCase().trim();
+  const isMenuOrder = ['menu', 'online', 'web', 'client'].includes(src);
   let btns = '';
 
-  if (s !== 'annule' && s !== 'termine') {
+  if (s !== 'annule' && s !== 'termine' && raw !== 'cancelled' && raw !== 'annulé' && raw !== 'annule') {
     if (s === 'pret') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
-    } else if (s === 'en_preparation') {
+    } else if ((s === 'en_preparation' || s === 'paiement') && !isMenuOrder) {
       btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
-    } else {
-      btns += `<div class="btn-main-row"><button class="action-btn btn-ready" data-action="commencer">▶️ Commencer</button><button class="btn-annule-x" data-action="annuler" title="Annuler">✕</button></div>`;
     }
   }
 
@@ -606,7 +811,11 @@ function statusName(s) {
   return map[s] || s || '–';
 }
 async function quickStatus(orderId, newStatus) {
-  try { await db.from('orders').update({ status: newStatus }).eq('id', orderId); await loadOrders(); } catch (e) { console.error(e); }
+  try {
+    const { data } = await db.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId).select().single();
+    if (data) await _broadcastUpdate('update_order', data);
+    await loadOrders();
+  } catch (e) { console.error(e); }
 }
 function openStatusModal(orderId, currentStatus) {
   editingOrderId = orderId; selectedNewStatus = currentStatus;
@@ -622,15 +831,71 @@ document.getElementById('statusModal').addEventListener('click', (e) => { if (e.
 function printTicket(order) {
   let items = []; try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
   const w = window.open('', '_blank', 'width=400,height=600');
-  w.document.write(`<html><head><title>Ticket</title><style>body{font-family:monospace;font-size:14px;padding:20px;max-width:280px}h2{text-align:center;font-size:18px}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between}.total{font-size:16px;font-weight:bold}.center{text-align:center}</style></head><body><h2>🧃 Papaya Juice</h2><div class="center">Commande #${order.order_number || order.id}</div><div class="center">${new Date(order.created_at).toLocaleString('fr-FR')}</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>TOTAL</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div>${order.serveur ? `<div class="center" style="margin-top:10px">Serveur: ${order.serveur}</div>` : ''}<div class="center" style="margin-top:20px">Merci de votre visite ! 🙏</div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
+  w.document.write(`<html><head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png"><title>Ticket</title><style>body{font-family:monospace;font-size:14px;padding:20px;max-width:280px}h2{text-align:center;font-size:18px}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between}.total{font-size:16px;font-weight:bold}.center{text-align:center}</style></head><body><h2>🧃 Papaya Juice</h2><div class="center">Commande #${order.order_number || order.id}</div><div class="center">${new Date(order.created_at).toLocaleString('fr-FR')}</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>TOTAL</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div>${order.serveur ? `<div class="center" style="margin-top:10px">Serveur: ${order.serveur}</div>` : ''}<div class="center" style="margin-top:20px">Merci de votre visite ! 🙏</div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
 }
 function printAddition(order) {
   let items = []; try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
   const w = window.open('', '_blank', 'width=400,height=600');
-  w.document.write(`<html><head><title>Addition</title><style>body{font-family:monospace;font-size:13px;padding:20px;max-width:280px}h2{text-align:center}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between;padding:3px 0}.total{font-size:15px;font-weight:bold;margin-top:8px}.center{text-align:center}</style></head><body><h2>ADDITION</h2><div class="center">Papaya Juice</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>À PAYER</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
+  w.document.write(`<html><head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png"><title>Addition</title><style>body{font-family:monospace;font-size:13px;padding:20px;max-width:280px}h2{text-align:center}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between;padding:3px 0}.total{font-size:15px;font-weight:bold;margin-top:8px}.center{text-align:center}</style></head><body><h2>ADDITION</h2><div class="center">Papaya Juice</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>À PAYER</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
 }
-db.channel('orders-live').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { loadOrders(); }).subscribe();
-setInterval(loadOrders, 5000);
+// ── Realtime : mise à jour locale sans re-fetch ──────────────────────────
+function _normalizeOrder(o) {
+  const STATUS_NORM = {
+    'cancelled':'annule','annulé':'annule','annule':'annule','canceled':'annule',
+    'paid':'paiement','pending':'paiement','preparing':'en_preparation',
+    'ready':'pret','done':'termine','delivered':'termine',
+  };
+  o._rawStatus = o.status;
+  if (STATUS_NORM[o.status]) o.status = STATUS_NORM[o.status];
+  else if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'annule';
+  return o;
+}
+function _shouldShowOrder(o) {
+  const resetTs = localStorage.getItem('live_reset_ts');
+  if (resetTs && new Date(o.created_at) <= new Date(resetTs)) return false;
+  return o._rawStatus !== 'pending' && o._rawStatus !== 'paid';
+}
+
+// Broadcast listener — يسمع إشارات من kiosk/menu
+_liveChannel
+  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+    const o = _normalizeOrder({ ...payload });
+    if (!_shouldShowOrder(o)) return;
+    checkAlerts([o]);
+    allOrders = [o, ...allOrders];
+    updateStats(); updateCounts(); renderOrders();
+  })
+  .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+    const o = _normalizeOrder({ ...payload });
+    const idx = allOrders.findIndex(x => x.id === o.id);
+    if (idx !== -1) {
+      allOrders[idx] = o;
+    } else if (_shouldShowOrder(o)) {
+      allOrders = [o, ...allOrders];
+    }
+    checkAlerts(allOrders);
+    updateStats(); updateCounts(); renderOrders();
+  })
+  .on('broadcast', { event: 'delete_order' }, ({ payload }) => {
+    allOrders = allOrders.filter(o => o.id !== payload.id);
+    updateStats(); updateCounts(); renderOrders();
+  });
+
+// ── Fallback: si onglet redevient visible après inactivité → resync ──
+let _lastVisible = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const away = Date.now() - _lastVisible;
+    if (away > 30000) loadOrders(); // resync si absent +30s
+  } else {
+    _lastVisible = Date.now();
+  }
+});
+
 window.onload = loadOrders;
 </script>
 </body>
