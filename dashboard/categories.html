@@ -9,6 +9,7 @@
 <title>Catégories - Papaya Juice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -97,6 +98,7 @@
   /* Cells */
   .td-drag { cursor: grab; color: var(--muted); width: 28px; }
   .td-drag:active { cursor: grabbing; }
+  .sortable-ghost { opacity: 0.4; background: rgba(249,115,22,0.08) !important; }
   .td-id { font-size: 12px; font-weight: 700; color: var(--muted); font-family: monospace; width: 70px; }
   .td-img { width: 60px; }
   .cat-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: rgba(255,255,255,0.08); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -352,6 +354,7 @@ async function loadCategories() {
   if (error) { showToast('Erreur de chargement', 'error'); return; }
   allCategories = data || [];
   renderTable(allCategories);
+  initSortable();
 }
 
 function renderTable(cats) {
@@ -392,6 +395,47 @@ function renderTable(cats) {
         </td>
       </tr>`;
   }).join('');
+}
+
+// ── Drag & Drop (SortableJS) ──
+let sortableInstance = null;
+
+function initSortable() {
+  const tbody = document.getElementById('categoriesTbody');
+  if (sortableInstance) sortableInstance.destroy();
+  sortableInstance = Sortable.create(tbody, {
+    handle: '.td-drag',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onEnd: async function() {
+      const rows = tbody.querySelectorAll('tr[data-id]');
+      const updates = [];
+      rows.forEach((row, index) => {
+        updates.push({ id: parseInt(row.dataset.id), sort_order: index });
+      });
+      await saveNewOrder(updates);
+    }
+  });
+}
+
+async function saveNewOrder(updates) {
+  showToast('⏳ Sauvegarde de l\'ordre…', 'success');
+  const promises = updates.map(({ id, sort_order }) =>
+    db.from('categories').update({ sort_order }).eq('id', id)
+  );
+  const results = await Promise.all(promises);
+  const hasError = results.some(r => r.error);
+  if (hasError) {
+    showToast('❌ Erreur lors de la sauvegarde', 'error');
+  } else {
+    // Update local allCategories order to match
+    updates.forEach(({ id, sort_order }) => {
+      const cat = allCategories.find(c => c.id === id);
+      if (cat) cat.sort_order = sort_order;
+    });
+    allCategories.sort((a, b) => a.sort_order - b.sort_order);
+    showToast('✅ Ordre sauvegardé', 'success');
+  }
 }
 
 function filterTable() {
