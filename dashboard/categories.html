@@ -560,7 +560,7 @@ function promptImageUrl() {
 async function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Image trop lourde (max 5MB)', 'error'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('Image trop lourde (max 10MB)', 'error'); return; }
   setPreviewImage(URL.createObjectURL(file));
   try {
     showToast('⏳ Upload en cours…', 'success');
