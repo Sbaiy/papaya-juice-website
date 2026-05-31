@@ -602,6 +602,7 @@ let currentCategory = '';
 let searchQuery = '';
 let cart = [];
 let categoryMap = {};
+let categoriesOrder = []; // ordered list from API
 
 if (sessionStorage.getItem('papaya_auth') !== '1' && !localStorage.getItem('papaya_token')) {
     window.location.replace('/dashboard');
@@ -657,8 +658,12 @@ function closeClotureModal() { document.getElementById('clotureModal').style.dis
 // ── PRODUCTS ──
 async function loadProducts() {
     try {
-        const data = await API.menu.getAll();
+        const [data, cats] = await Promise.all([
+            API.menu.getAll(),
+            API.menu.getCategories()
+        ]);
         allProducts = data || [];
+        categoriesOrder = (cats || []).map(c => c.name_fr || c.name_en || c.name_ar).filter(Boolean);
         categoryMap = {};
         allProducts.forEach(p => { categoryMap[p.category] = (categoryMap[p.category] || 0) + 1; });
         document.getElementById('count-all').textContent = allProducts.length;
@@ -679,7 +684,16 @@ function buildCategoryNav() {
     const firstItem = nav.querySelector('.nav-item');
     nav.innerHTML = '';
     nav.appendChild(firstItem);
-    Object.keys(categoryMap).sort().forEach(cat => {
+    // Sort by API order (sort_order), fallback to alphabetical for unknown categories
+    const sortedCats = Object.keys(categoryMap).sort((a, b) => {
+        const ia = categoriesOrder.indexOf(a);
+        const ib = categoriesOrder.indexOf(b);
+        if (ia === -1 && ib === -1) return a.localeCompare(b);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+    });
+    sortedCats.forEach(cat => {
         const item = document.createElement('div');
         item.className = 'nav-item'; item.dataset.cat = cat;
         item.onclick = () => filterCategory(item, cat);
