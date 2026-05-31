@@ -418,16 +418,21 @@ function initSortable() {
   });
 }
 
+let isSaving = false;
+
 async function saveNewOrder(updates) {
+  isSaving = true;
   showToast('⏳ Sauvegarde de l\'ordre…', 'success');
   const promises = updates.map(({ id, sort_order }) =>
     db.from('categories').update({ sort_order }).eq('id', id)
   );
   const results = await Promise.all(promises);
+  isSaving = false;
   const failed = results.filter(r => r.error);
   if (failed.length > 0) {
     console.error('Reorder errors:', failed.map(r => r.error));
     showToast('❌ Erreur: ' + failed[0].error.message, 'error');
+    loadCategories(); // reload correct state on error
   } else {
     updates.forEach(({ id, sort_order }) => {
       const cat = allCategories.find(c => String(c.id) === String(id));
@@ -571,7 +576,9 @@ async function handleFileUpload(e) {
 
 // ── Realtime ──
 db.channel('categories-page')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => loadCategories())
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+    if (!isSaving) loadCategories();
+  })
   .subscribe();
 
 // ── Load on startup ──
