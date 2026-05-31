@@ -411,7 +411,7 @@ function initSortable() {
       const rows = tbody.querySelectorAll('tr[data-id]');
       const updates = [];
       rows.forEach((row, index) => {
-        updates.push({ id: parseInt(row.dataset.id), sort_order: index });
+        updates.push({ id: row.dataset.id, sort_order: index });
       });
       await saveNewOrder(updates);
     }
@@ -424,13 +424,13 @@ async function saveNewOrder(updates) {
     db.from('categories').update({ sort_order }).eq('id', id)
   );
   const results = await Promise.all(promises);
-  const hasError = results.some(r => r.error);
-  if (hasError) {
-    showToast('❌ Erreur lors de la sauvegarde', 'error');
+  const failed = results.filter(r => r.error);
+  if (failed.length > 0) {
+    console.error('Reorder errors:', failed.map(r => r.error));
+    showToast('❌ Erreur: ' + failed[0].error.message, 'error');
   } else {
-    // Update local allCategories order to match
     updates.forEach(({ id, sort_order }) => {
-      const cat = allCategories.find(c => c.id === id);
+      const cat = allCategories.find(c => String(c.id) === String(id));
       if (cat) cat.sort_order = sort_order;
     });
     allCategories.sort((a, b) => a.sort_order - b.sort_order);
