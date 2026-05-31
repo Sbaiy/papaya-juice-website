@@ -1256,21 +1256,24 @@ async function validerCloture() {
         const padL = (str, len) => String(str).padStart(len);
 
         let ticketZ = '\n';
-        ticketZ += '      CLOTURE GLOBALE\n';
+        ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
-        // Numéro de clôture basé sur timestamp
         const nCloture = Math.floor(Date.now() / 1000) % 10000;
-        ticketZ += `N CLOTURE  : ${nCloture}\n`;
+        ticketZ += `N CLOTURE : ${nCloture}\n`;
         const clotureTime = localStorage.getItem('papaya_cloture_time');
         const deStr = clotureTime
             ? new Date(clotureTime).toLocaleString('fr-FR').replace(',','')
             : dateStr + ' 00:00:00';
-        ticketZ += `DE         : ${deStr}\n`;
-        ticketZ += `A          : ${dateStr} ${timeStr}\n`;
+        ticketZ += `DE        : ${deStr}\n`;
+        ticketZ += `A         : ${dateStr} ${timeStr}\n`;
         ticketZ += sep;
 
-        // ── Colonnes entête ──
-        ticketZ += `${pad('Article', 18)} ${'Qté'.padStart(4)}  ${'TOTAL_NET'.padStart(9)}\n`;
+        // W=42: Article=28, Qte=4, space=1, TOTAL=9 => 42 chars exact
+        const C_ART = 28, C_QTY = 4, C_TOT = 9;
+        const artLine = (name, qty, total) =>
+            pad(name, C_ART) + padL(String(qty), C_QTY) + ' ' + padL(String(total), C_TOT);
+
+        ticketZ += artLine('Article', 'Qte', 'TOTAL_NET') + '\n';
         ticketZ += sep;
 
         let grandTotal = 0;
@@ -1282,24 +1285,24 @@ async function validerCloture() {
             let catQty   = 0;
             Object.keys(categoryMap[cat]).sort().forEach(name => {
                 const { qty, total } = categoryMap[cat][name];
-                const shortName = '  ' + name.substring(0, 16);
-                ticketZ += `${pad(shortName, 18)} ${padL(qty, 4)}  ${padL(total.toFixed(0), 9)}\n`;
+                const shortName = '  ' + name.substring(0, C_ART - 2);
+                ticketZ += artLine(shortName, qty, total.toFixed(0)) + '\n';
                 catTotal += total;
                 catQty   += qty;
             });
-            ticketZ += `${pad('* TOTAL FAMILLE *', 18)} ${padL('*'+catQty+'*', 4)}  ${padL('*'+catTotal.toFixed(0)+'*', 9)}\n`;
+            ticketZ += artLine('* TOTAL FAMILLE *', '*'+catQty+'*', '*'+catTotal.toFixed(0)+'*') + '\n';
             ticketZ += sep;
             grandTotal += catTotal;
         });
 
         ticketZ += sep2;
-        ticketZ += `TOTAL NET:  ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
+        ticketZ += `TOTAL NET: ${padL(grandTotal.toFixed(2) + ' DH', 20)}\n`;
         ticketZ += sep2;
-        ticketZ += `ESPECES :${padL(grandTotal.toFixed(2) + ' DH', 22)}\n`;
+        ticketZ += `ESPECES : ${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
         ticketZ += sep;
         ticketZ += `CAISSIER : ${userName}\n`;
         ticketZ += sep;
-        ticketZ += `SUR PLACE :${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
+        ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
         ticketZ += sep;
         await printViaPrintNode(ticketZ, 'cash');
         try {
