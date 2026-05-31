@@ -1228,58 +1228,86 @@ async function validerCloture() {
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
         } catch(e) {}
-        const now = new Date().toLocaleString('fr-FR');
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('fr-FR');
+        const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         const userName = document.getElementById('userName').textContent || 'Serveur';
-        const sep = '--------------------------------\n';
-        let ticketZ = '\n       PAPAYA JUICE\n';
-        ticketZ += '   RAPPORT DE CLOTURE (Z)\n';
-        ticketZ += sep;
-        ticketZ += `Date     : ${now}\n`;
-        ticketZ += `Caissier : ${userName}\n`;
-        ticketZ += sep;
-        ticketZ += `DETAIL COMMANDES (${nbrCommandes})\n`;
-        ticketZ += sep;
-        clotureOrders.forEach((o, idx) => {
+        const sep  = '--------------------------------\n';
+        const sep2 = '================================\n';
+
+        // ── Grouper tous les articles par catégorie ──
+        const categoryMap = {};
+        clotureOrders.forEach(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items||'[]') : (o.items||[]);
-            const orderTime = o.created_at ? new Date(o.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) : '';
-            const total = parseFloat(o.total||0).toFixed(2);
-            ticketZ += `#${idx+1} ${orderTime}  T${o.table_number||'?'}  ${total} DH\n`;
-            // Grouper les articles: jusqu'à 3 par ligne si les noms sont courts
-            let i2 = 0;
-            while (i2 < items.length) {
-                const a = items[i2];
-                const b = items[i2+1];
-                const c = items[i2+2];
-                const sa = `${a.qty}x ${(a.title||'').substring(0,10)}`;
-                const sb = b ? `${b.qty}x ${(b.title||'').substring(0,10)}` : null;
-                const sc = c ? `${c.qty}x ${(c.title||'').substring(0,10)}` : null;
-                const aShort = (a.title||'').length <= 10;
-                const bShort = b && (b.title||'').length <= 10;
-                const cShort = c && (c.title||'').length <= 10;
-                if (aShort && bShort && cShort) {
-                    ticketZ += `  - ${sa}  ${sb}  ${sc}\n`;
-                    i2 += 3;
-                } else if (aShort && bShort) {
-                    ticketZ += `  - ${sa}  ${sb}\n`;
-                    i2 += 2;
-                } else {
-                    ticketZ += `  - ${sa}\n`;
-                    i2 += 1;
-                }
-            }
+            items.forEach(item => {
+                const cat = (item.category || item.categorie || 'AUTRES').toUpperCase();
+                const name = (item.title || item.name || '').toUpperCase();
+                const qty  = parseInt(item.qty || item.quantity || 1);
+                const price = parseFloat(item.price || item.prix || 0) * qty;
+                if (!categoryMap[cat]) categoryMap[cat] = {};
+                if (!categoryMap[cat][name]) categoryMap[cat][name] = { qty: 0, total: 0 };
+                categoryMap[cat][name].qty   += qty;
+                categoryMap[cat][name].total += price;
+            });
         });
+
+        // ── Header style CLOTURE GLOBALE ──
+        const pad = (str, len) => String(str).padEnd(len);
+        const padL = (str, len) => String(str).padStart(len);
+
+        let ticketZ = '\n';
+        ticketZ += '      CLOTURE GLOBALE\n';
+        ticketZ += sep2;
+        // Numéro de clôture basé sur timestamp
+        const nCloture = Math.floor(Date.now() / 1000) % 10000;
+        ticketZ += `N CLOTURE  : ${nCloture}\n`;
+        const clotureTime = localStorage.getItem('papaya_cloture_time');
+        const deStr = clotureTime
+            ? new Date(clotureTime).toLocaleString('fr-FR').replace(',','')
+            : dateStr + ' 00:00:00';
+        ticketZ += `DE         : ${deStr}\n`;
+        ticketZ += `A          : ${dateStr} ${timeStr}\n`;
         ticketZ += sep;
-        ticketZ += `TOTAL JOURNEE: ${totalJournee.toFixed(2)} DH\n`;
+
+        // ── Colonnes entête ──
+        ticketZ += `${pad('Article', 18)} ${'Qté'.padStart(4)}  ${'TOTAL_NET'.padStart(9)}\n`;
         ticketZ += sep;
-        ticketZ += '      Fin de service\n';
-        ticketZ += '        A bientot !\n';
+
+        let grandTotal = 0;
+
+        // ── Catégories et articles ──
+        Object.keys(categoryMap).sort().forEach(cat => {
+            ticketZ += `${cat}\n`;
+            let catTotal = 0;
+            let catQty   = 0;
+            Object.keys(categoryMap[cat]).sort().forEach(name => {
+                const { qty, total } = categoryMap[cat][name];
+                const shortName = '  ' + name.substring(0, 16);
+                ticketZ += `${pad(shortName, 18)} ${padL(qty, 4)}  ${padL(total.toFixed(0), 9)}\n`;
+                catTotal += total;
+                catQty   += qty;
+            });
+            ticketZ += `${pad('* TOTAL FAMILLE *', 18)} ${padL('*'+catQty+'*', 4)}  ${padL('*'+catTotal.toFixed(0)+'*', 9)}\n`;
+            ticketZ += sep;
+            grandTotal += catTotal;
+        });
+
+        ticketZ += sep2;
+        ticketZ += `TOTAL NET:  ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
+        ticketZ += sep2;
+        ticketZ += `ESPECES :${padL(grandTotal.toFixed(2) + ' DH', 22)}\n`;
+        ticketZ += sep;
+        ticketZ += `CAISSIER : ${userName}\n`;
+        ticketZ += sep;
+        ticketZ += `SUR PLACE :${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
+        ticketZ += sep;
         await printViaPrintNode(ticketZ, 'cash');
         try {
             const token = localStorage.getItem('papaya_token');
             await fetch(BACKEND_URL + '/api/clotures', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: totalJournee.toFixed(2) })
+                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
             });
         } catch(e) { console.warn('Cloture non sauvegardée:', e); }
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
