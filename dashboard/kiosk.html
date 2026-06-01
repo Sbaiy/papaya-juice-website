@@ -664,7 +664,10 @@ async function loadProducts() {
         ]);
         allProducts = data || [];
         categoriesOrder = (cats || []).map(c => c.name_fr || c.name_en || c.name_ar).filter(Boolean);
+        categoriesData = {};
+        (cats || []).forEach(c => { const name = c.name_fr || c.name_en || c.name_ar; if (name) categoriesData[name] = c; });
         categoryMap = {};
+        if (!window.categoriesData) window.categoriesData = {};
         allProducts.forEach(p => { categoryMap[p.category] = (categoryMap[p.category] || 0) + 1; });
         document.getElementById('count-all').textContent = allProducts.length;
         buildCategoryNav();
@@ -678,6 +681,11 @@ async function loadProducts() {
 
 const CATEGORY_ICONS = {'Boissons Chaudes':'☕','Café':'☕','Jus Nature':'🥤','Jus':'🍊','Restaurant':'🍽️','Petits Déjeuners':'🥐','Déjeuner':'🥗','Dîner':'🍴','Desserts':'🍰','Snacks':'🥨','Sandwichs':'🥪','Pizzas':'🍕','Burgers':'🍔','Salades':'🥗','Boissons Froides':'🧊','Smoothies':'🫙','Milkshakes':'🥛'};
 function getCatIcon(cat) { return CATEGORY_ICONS[cat] || '🍴'; }
+function getCatImg(cat) {
+    const data = (window.categoriesData || {})[cat];
+    if (data && data.image) return `<img src="${data.image}" style="width:22px;height:22px;border-radius:5px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<span>${getCatIcon(cat)}</span>'">`;
+    return `<span class="nav-emoji">${getCatIcon(cat)}</span>`;
+}
 
 function buildCategoryNav() {
     const nav = document.getElementById('categoryNav');
@@ -697,7 +705,7 @@ function buildCategoryNav() {
         const item = document.createElement('div');
         item.className = 'nav-item'; item.dataset.cat = cat;
         item.onclick = () => filterCategory(item, cat);
-        item.innerHTML = `<span class="nav-emoji">${getCatIcon(cat)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat}</span><span class="nav-count">${categoryMap[cat]}</span>`;
+        item.innerHTML = `${getCatImg(cat)}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:8px;">${cat}</span><span class="nav-count">${categoryMap[cat]}</span>`;
         nav.appendChild(item);
     });
 }
