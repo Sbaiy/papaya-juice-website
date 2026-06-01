@@ -463,7 +463,7 @@ const _liveChannel = db.channel("papaya-broadcast");
 let _liveReady = false;
 _liveChannel.subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
 async function _broadcastUpdate(event, orderData) {
-  if (!_liveReady) await new Promise(r => setTimeout(r, 1000));
+  if (!_liveReady) await new Promise(r => setTimeout(r, 150));
   try { await _liveChannel.send({ type: "broadcast", event, payload: orderData }); }
   catch(e) { console.warn("Broadcast failed:", e); }
 }
