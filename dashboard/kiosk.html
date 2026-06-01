@@ -588,6 +588,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Broadcast channel — يبعت ويسمع إشارات بدون ما يقرا من DB
+const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
 // ════ Tous les listeners broadcast centralisés ici, AVANT subscribe() ════
@@ -1370,7 +1371,7 @@ let _nopPendingOrders = [];  // orders à afficher dans le popup courant
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
-const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
+// déplacé avant le channel broadcast (voir ligne ~593)
 
 function _nopSaveSeen() {
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
