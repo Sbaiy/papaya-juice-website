@@ -795,15 +795,12 @@ function buildCard(order) {
 function buildActions(order) {
   const s = order.status;
   const raw = order._rawStatus || '';
-  const src = (order.source || '').toLowerCase().trim();
-  const isMenuOrder = ['menu', 'online', 'web', 'client'].includes(src) ||
-    (!src && order._rawStatus === 'paiement');
   let btns = '';
 
   if (s !== 'annule' && s !== 'termine' && raw !== 'cancelled' && raw !== 'annulé' && raw !== 'annule') {
     if (s === 'pret') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
-    } else if ((s === 'en_preparation' || s === 'paiement') && !isMenuOrder) {
+    } else if (s === 'en_preparation' || s === 'paiement' || s === 'pending') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
     }
   }
