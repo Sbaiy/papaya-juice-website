@@ -1256,7 +1256,13 @@ async function validerCloture() {
         clotureOrders.forEach(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items||'[]') : (o.items||[]);
             items.forEach(item => {
-                const cat = (item.category || item.categorie || 'AUTRES').toUpperCase();
+                // Chercher la vraie catégorie dans allProducts si manquante
+                let cat = item.category || item.categorie || '';
+                if (!cat || cat.trim() === '') {
+                    const found = allProducts.find(p => p.id === item.id || p.title === item.title);
+                    cat = found ? (found.category || '') : '';
+                }
+                cat = cat.toUpperCase() || 'NON CLASSÉ';
                 const name = (item.title || item.name || '').toUpperCase();
                 const qty  = parseInt(item.qty || item.quantity || 1);
                 const price = parseFloat(item.price || item.prix || 0) * qty;
@@ -1274,7 +1280,9 @@ async function validerCloture() {
         let ticketZ = '\n';
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
-        const nCloture = Math.floor(Date.now() / 1000) % 10000;
+        // ── Numéro de clôture séquentiel ──
+        const nCloture = (parseInt(localStorage.getItem('papaya_cloture_num') || '0') + 1);
+        localStorage.setItem('papaya_cloture_num', String(nCloture));
         ticketZ += `N CLOTURE : ${nCloture}\n`;
         const clotureTime = localStorage.getItem('papaya_cloture_time');
         const deStr = clotureTime
