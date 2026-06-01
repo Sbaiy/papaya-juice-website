@@ -1134,9 +1134,7 @@ async function loadHistoriqueOrders() {
         const token = localStorage.getItem('papaya_token');
         const res = await fetch(BACKEND_URL + '/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
         if (!res.ok) throw new Error('Erreur serveur ' + res.status);
-        const json = await res.json();
-        // Support pagination response { data: [...], total } OR legacy array
-        const newOrders = Array.isArray(json) ? json : (json.data || []);
+        const newOrders = await res.json();
         // Merge avec les orders déjà reçus via Realtime (éviter doublons)
         const fetchedNorm = _histNormalizeOrders(newOrders);
         const realtimeOnly = histAllOrders.filter(r => !fetchedNorm.find(f => f.id === r.id));
@@ -1231,7 +1229,7 @@ async function validerCloture() {
                 const raw = await res.json();
                 const orders = Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.commandes || []);
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret'];
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret', 'completed', 'payé', 'paye', 'paid'];
                 clotureOrders = clotureTime
                     ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
                     : orders.filter(o => STATUS_DONE.includes(o.status));
@@ -1239,8 +1237,6 @@ async function validerCloture() {
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
         } catch(e) { console.error('ERREUR ORDERS:', e); }
-        console.log('STATUTS:', [...new Set(orders.map(o=>o.status))]);
-        console.log('NB ORDERS:', orders?.length, '| NB FILTRE:', clotureOrders.length);
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
