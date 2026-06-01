@@ -241,6 +241,33 @@ tr.indisponible .switch { opacity: 1 !important; }
 if (sessionStorage.getItem('papaya_auth') !== '1') {
     window.location.replace('/dashboard');
 }
+// ── Vérification token expiré ──
+(function checkTokenExpiry() {
+  const token = localStorage.getItem('papaya_token');
+  if (!token) return;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // Token expiré
+    if (payload.exp && Date.now() / 1000 > payload.exp) {
+      localStorage.removeItem('papaya_token');
+      localStorage.removeItem('papaya_user');
+      sessionStorage.removeItem('papaya_auth');
+      sessionStorage.removeItem('papaya_user');
+      alert('Votre session a expiré. Veuillez vous reconnecter.');
+      window.location.replace('/dashboard');
+      return;
+    }
+    // Pas propriétaire
+    if (payload.role && payload.role !== 'owner') {
+      alert('⚠️ Accès refusé — cette page est réservée au propriétaire.\nVeuillez vous connecter avec le compte propriétaire.');
+      localStorage.removeItem('papaya_token');
+      localStorage.removeItem('papaya_user');
+      sessionStorage.removeItem('papaya_auth');
+      sessionStorage.removeItem('papaya_user');
+      window.location.replace('/dashboard');
+    }
+  } catch(e) {}
+})();
 </script>
 
 <div id="dashboardSection" class="dashboard-section">
@@ -356,8 +383,21 @@ document.addEventListener('dragover', function(e) {
 async function saveOrder() {
     const rows = document.querySelectorAll('.custom-table tbody tr[data-id]');
     const orderedIds = [...rows].map(r => parseInt(r.dataset.id));
-    localStorage.setItem('productOrder', JSON.stringify(orderedIds));
-    try { await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds }); } catch(e) { console.error(e); }
+    try {
+        await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds });
+        localStorage.setItem('productOrder', JSON.stringify(orderedIds));
+    } catch(e) {
+        if (e.message && e.message.includes('propriétaire')) {
+            if (confirm('⚠️ Session expirée — veuillez vous reconnecter pour sauvegarder l\'ordre.')) {
+                localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user');
+                sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user');
+                window.location.replace('/dashboard');
+            }
+        } else {
+            alert('Erreur sauvegarde ordre: ' + e.message);
+        }
+        loadProducts(); // reset visually to DB order
+    }
 }
 
 function filterTableByCategory(category) {
@@ -466,7 +506,15 @@ function clearForm() {
 
 async function deleteProduct(id){ 
     if(confirm('Are you sure you want to delete this item?')) {
-        try { await apiCall('DELETE', '/api/menu/products/' + id); localStorage.removeItem('papaya_menu_cache'); if(currentEditingProductId === id) clearForm(); loadProducts(); } catch(e) { alert('Error deleting product: ' + e.message); }
+        try { await apiCall('DELETE', '/api/menu/products/' + id); localStorage.removeItem('papaya_menu_cache'); if(currentEditingProductId === id) clearForm(); loadProducts(); } catch(e) {
+          if (e.message && e.message.includes('propriétaire')) {
+            if (confirm('⚠️ Accès refusé : seul le propriétaire peut supprimer.\n\nVotre session a peut-être expiré. Voulez-vous vous reconnecter ?')) {
+              localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user');
+              sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user');
+              window.location.replace('/dashboard');
+            }
+          } else { alert('Erreur suppression : ' + e.message); }
+        }
     }
 }
 

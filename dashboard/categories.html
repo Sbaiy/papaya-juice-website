@@ -309,6 +309,31 @@
 if (sessionStorage.getItem('papaya_auth') !== '1') {
   window.location.replace('/dashboard');
 }
+// ── Vérification token expiré ──
+(function checkTokenExpiry() {
+  const token = localStorage.getItem('papaya_token');
+  if (!token) return;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() / 1000 > payload.exp) {
+      localStorage.removeItem('papaya_token');
+      localStorage.removeItem('papaya_user');
+      sessionStorage.removeItem('papaya_auth');
+      sessionStorage.removeItem('papaya_user');
+      alert('Votre session a expiré. Veuillez vous reconnecter.');
+      window.location.replace('/dashboard');
+      return;
+    }
+    if (payload.role && payload.role !== 'owner') {
+      alert('⚠️ Accès refusé — cette page est réservée au propriétaire.');
+      localStorage.removeItem('papaya_token');
+      localStorage.removeItem('papaya_user');
+      sessionStorage.removeItem('papaya_auth');
+      sessionStorage.removeItem('papaya_user');
+      window.location.replace('/dashboard');
+    }
+  } catch(e) {}
+})();
 // ══════════════════════════════════════════
 //  Config Supabase (direct pour realtime)
 // ══════════════════════════════════════════
@@ -433,7 +458,15 @@ async function saveNewOrder(updates) {
       method: 'PUT', headers: apiHeaders(),
       body: JSON.stringify({ ids: updates.map(u => u.id) })
     });
-    if (!res.ok) throw new Error((await res.json()).error || 'Erreur');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      if (errData.error && errData.error.includes('propriétaire')) {
+        showToast('❌ Session expirée — reconnectez-vous', 'error');
+      } else {
+        throw new Error(errData.error || 'Erreur');
+      }
+      loadCategories(); isSaving = false; return;
+    }
     updates.forEach(({ id, sort_order }) => {
       const cat = allCategories.find(c => String(c.id) === String(id));
       if (cat) cat.sort_order = sort_order;
@@ -542,7 +575,17 @@ async function confirmDelete() {
       method: 'DELETE', headers: apiHeaders()
     });
     closeDeleteModal();
-    if (!res.ok) { const e = await res.json(); showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); return; }
+    if (!res.ok) {
+      const e = await res.json();
+      if (e.error && e.error.includes('propriétaire')) {
+        if (confirm('⚠️ Accès refusé : seul le propriétaire peut supprimer.\n\nVotre session a peut-être expiré. Voulez-vous vous reconnecter ?')) {
+          localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user');
+          sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user');
+          window.location.replace('/dashboard');
+        }
+      } else { showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); }
+      return;
+    }
     showToast('Catégorie supprimée');
   } catch(e) { closeDeleteModal(); showToast('Erreur: ' + e.message, 'error'); return; }
   loadCategories();
