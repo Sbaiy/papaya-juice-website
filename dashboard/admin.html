@@ -521,7 +521,7 @@ async function deleteProduct(id){
 async function loadProducts(){ 
     const list = document.getElementById('productsList'); 
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
-    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('id', { ascending: false }); 
+    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('sort_order', { ascending: true }); 
     if(error) { 
         list.innerHTML = `<div style='color:red; padding:20px; text-align:center;'><b>Failed to load data</b></div>`; 
         return; 
