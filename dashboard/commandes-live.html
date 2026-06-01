@@ -786,7 +786,8 @@ function buildCard(order) {
   card.querySelector('[data-action="commencer"]')?.addEventListener('click', async () => {
     let newStatus;
     if (order.status === 'pret') newStatus = 'termine';
-    else newStatus = 'pret'; // paiement ou en_preparation → pret directement
+    else if (order.status === 'paiement') newStatus = 'en_preparation';
+    else newStatus = 'pret'; // en_preparation → pret
     stopOrderAlert(ordId);
     await quickStatus(order.id, newStatus);
   });
@@ -801,8 +802,10 @@ function buildActions(order) {
   if (s !== 'annule' && s !== 'termine' && raw !== 'cancelled' && raw !== 'annulé' && raw !== 'annule') {
     if (s === 'pret') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
-    } else if (s === 'en_preparation' || s === 'paiement' || s === 'pending') {
+    } else if (s === 'en_preparation') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
+    } else if (s === 'paiement' || s === 'pending') {
+      btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">⚡ Accepter</button></div>`;
     }
   }
 
