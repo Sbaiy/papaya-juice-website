@@ -554,7 +554,7 @@ async function loadOrders() {
   try {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     const { data, error } = await db.from('orders')
-      .select('id, items, total, status, created_at, table_number, updated_at, source, serveur, note, order_number')
+      .select('id, items, total, status, created_at, table_number, updated_at, serveur, note, order_number')
       .gte('created_at', todayStart.toISOString())
       .order('created_at', { ascending: false })
       .limit(200);
