@@ -1228,7 +1228,8 @@ async function validerCloture() {
             const token = localStorage.getItem('papaya_token');
             const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.ok) {
-                const orders = await res.json();
+                const raw = await res.json();
+                const orders = Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.commandes || []);
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
                 const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret'];
                 clotureOrders = clotureTime
