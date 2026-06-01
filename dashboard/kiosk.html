@@ -590,7 +590,45 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel — يبعت ويسمع إشارات بدون ما يقرا من DB
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
-// NOTE: subscribe() يتسمى بعد .on() فـ _nopStartPolling
+// ════ Tous les listeners broadcast centralisés ici, AVANT subscribe() ════
+_broadcastChannel
+  // ── Popup nouvelles commandes (NOP) ──
+  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+      const o = payload;
+      if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      if (o.created_at && new Date(o.created_at) < todayStart) return;
+      if (_nopSeenIds.has(String(o.id))) return;
+      _nopSeenIds.add(String(o.id));
+      _nopSaveSeen();
+      _nopPendingOrders = [..._nopPendingOrders, o];
+      _nopShowPopup();
+  })
+  .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+      const o = payload;
+      // Fermer popup si annulée
+      const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
+      if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
+      // Historique
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const on = { ...o };
+      on.status = STATUS_NORM[on.status] || on.status;
+      if (on.status && on.status.toLowerCase().includes('annul')) on.status = 'cancelled';
+      const idx = histAllOrders.findIndex(x => x.id === on.id);
+      if (idx !== -1) { histAllOrders[idx] = on; _histUpdateUI(); }
+  })
+  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+      // Historique — nouvelle commande
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const o = { ...payload };
+      o.status = STATUS_NORM[o.status] || o.status;
+      if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
+      histAllOrders = [o, ...histAllOrders];
+      _histUpdateUI();
+  })
+  .subscribe((status) => {
+      if (status === 'SUBSCRIBED') _broadcastReady = true;
+  });
 async function _broadcastOrder(event, orderData) {
   // استنى subscribe إلا مازال ما وقعش
   if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
@@ -1105,22 +1143,7 @@ function openHistoriqueModal() {
     if (_histRealtimeChannel) return;
     _histRealtimeChannel = true; // flag باش ما يتخلقش مرتين
     const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
-    _broadcastChannel
-      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-          const o = { ...payload };
-          o.status = STATUS_NORM[o.status] || o.status;
-          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-          histAllOrders = [o, ...histAllOrders];
-          _histUpdateUI();
-      })
-      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-          const o = { ...payload };
-          o.status = STATUS_NORM[o.status] || o.status;
-          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-          const idx = histAllOrders.findIndex(x => x.id === o.id);
-          if (idx !== -1) histAllOrders[idx] = o;
-          _histUpdateUI();
-      });
+    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
 }
 
 function closeHistoriqueModal() {
@@ -1596,36 +1619,13 @@ async function printAndDismissNewOrders() {
 }
 
 function _nopStartPolling() {
-    // Fetch initial pour charger les commandes en attente déjà présentes
+    // Fetch initial — une seule fois au démarrage pour les commandes déjà en attente
     _nopPollOrders();
 
-    // ── Realtime : écouter les nouveaux INSERT (status paiement/paid) ──
     if (_nopInterval) return; // déjà démarré
-    _nopInterval = true; // flag pour éviter double init
+    _nopInterval = true;
 
-    // نسمع broadcast بدل postgres_changes باش ما يأكلش egress
-    _broadcastChannel
-      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-          const o = payload;
-          if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-          if (o.created_at && new Date(o.created_at) < todayStart) return;
-          if (_nopSeenIds.has(String(o.id))) return;
-          _nopSeenIds.add(String(o.id));
-          _nopSaveSeen();
-          _nopPendingOrders = [..._nopPendingOrders, o];
-          _nopShowPopup();
-      })
-      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-          const o = payload;
-          const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
-          if (cancelledStatuses.has(o.status)) {
-              dismissSingleOrderFromPopup(o.id);
-          }
-      })
-      .subscribe((status) => {
-          if (status === 'SUBSCRIBED') _broadcastReady = true;
-      });
+    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
 }
 
 // ── TOAST ──
