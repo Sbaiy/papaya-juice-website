@@ -315,6 +315,11 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+const getToken = () => localStorage.getItem('papaya_token');
+const apiHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
 
 // ─── Cloudinary Upload ──────────────────────────────────────
 const CLOUDINARY_CLOUD  = "ddo0srqrv";
@@ -423,24 +428,23 @@ let isSaving = false;
 async function saveNewOrder(updates) {
   isSaving = true;
   showToast('⏳ Sauvegarde de l\'ordre…', 'success');
-  const promises = updates.map(({ id, sort_order }) =>
-    db.from('categories').update({ sort_order }).eq('id', id)
-  );
-  const results = await Promise.all(promises);
-  isSaving = false;
-  const failed = results.filter(r => r.error);
-  if (failed.length > 0) {
-    console.error('Reorder errors:', failed.map(r => r.error));
-    showToast('❌ Erreur: ' + failed[0].error.message, 'error');
-    loadCategories(); // reload correct state on error
-  } else {
+  try {
+    const res = await fetch(BACKEND_URL + '/api/menu/categories/reorder', {
+      method: 'PUT', headers: apiHeaders(),
+      body: JSON.stringify({ ids: updates.map(u => u.id) })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Erreur');
     updates.forEach(({ id, sort_order }) => {
       const cat = allCategories.find(c => String(c.id) === String(id));
       if (cat) cat.sort_order = sort_order;
     });
     allCategories.sort((a, b) => a.sort_order - b.sort_order);
     showToast('✅ Ordre sauvegardé', 'success');
+  } catch(e) {
+    showToast('❌ Erreur: ' + e.message, 'error');
+    loadCategories();
   }
+  isSaving = false;
 }
 
 function filterTable() {
@@ -466,15 +470,20 @@ async function saveCategory() {
 
   const payload = { name_fr, name_en, name_ar, max_items, image };
 
-  let error;
-  if (id) {
-    ({ error } = await db.from('categories').update(payload).eq('id', id));
-  } else {
-    const maxOrder = allCategories.length ? Math.max(...allCategories.map(c => c.sort_order || 0)) + 1 : 0;
-    ({ error } = await db.from('categories').insert([{ ...payload, sort_order: maxOrder }]));
-  }
-
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  try {
+    let res;
+    if (id) {
+      res = await fetch(BACKEND_URL + '/api/menu/categories/' + id, {
+        method: 'PUT', headers: apiHeaders(), body: JSON.stringify(payload)
+      });
+    } else {
+      const maxOrder = allCategories.length ? Math.max(...allCategories.map(c => c.sort_order || 0)) + 1 : 0;
+      res = await fetch(BACKEND_URL + '/api/menu/categories', {
+        method: 'POST', headers: apiHeaders(), body: JSON.stringify({ ...payload, sort_order: maxOrder })
+      });
+    }
+    if (!res.ok) { const e = await res.json(); showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); return; }
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); return; }
 
   showToast(id ? 'Catégorie modifiée !' : 'Catégorie ajoutée !');
   cancelEdit();
@@ -527,10 +536,14 @@ function closeDeleteModal() {
 }
 async function confirmDelete() {
   if (!deleteTargetId) return;
-  const { error } = await db.from('categories').delete().eq('id', deleteTargetId);
-  closeDeleteModal();
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
-  showToast('Catégorie supprimée');
+  try {
+    const res = await fetch(BACKEND_URL + '/api/menu/categories/' + deleteTargetId, {
+      method: 'DELETE', headers: apiHeaders()
+    });
+    closeDeleteModal();
+    if (!res.ok) { const e = await res.json(); showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); return; }
+    showToast('Catégorie supprimée');
+  } catch(e) { closeDeleteModal(); showToast('Erreur: ' + e.message, 'error'); return; }
   loadCategories();
 }
 

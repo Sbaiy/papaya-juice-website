@@ -283,6 +283,17 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+const getToken = () => localStorage.getItem('papaya_token');
+const apiH = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
+async function apiCall(method, path, body) {
+  const res = await fetch(BACKEND_URL + path, { method, headers: apiH(), body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
 
 // ─── Cloudinary Upload ──────────────────────────────────────
 const CLOUDINARY_CLOUD = "ddo0srqrv";
@@ -346,10 +357,7 @@ async function saveOrder() {
     const rows = document.querySelectorAll('.custom-table tbody tr[data-id]');
     const orderedIds = [...rows].map(r => parseInt(r.dataset.id));
     localStorage.setItem('productOrder', JSON.stringify(orderedIds));
-    const updates = orderedIds.map((id, index) => 
-        _supabase.from('products').update({ sort_order: index }).eq('id', id)
-    );
-    await Promise.all(updates);
+    try { await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds }); } catch(e) { console.error(e); }
 }
 
 function filterTableByCategory(category) {
@@ -415,8 +423,7 @@ async function addProduct(){
     const price = document.getElementById('price').value; 
     const category = document.getElementById('categorySelect').value; 
     if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
-    const { error } = await _supabase.from('products').insert([{ title, price, image: imageData, category, description, disponible: true }]); 
-    if(error) { alert('Error saving data'); } else { localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } 
+    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
 }
 
 async function startEdit(id) {
@@ -440,8 +447,7 @@ async function updateProduct() {
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
     if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
-    const { error } = await _supabase.from('products').update({ title, price, image: imageData, category, description }).eq('id', currentEditingProductId);
-    if (error) { alert('Error updating data'); } else { localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); }
+    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
 }
 
 function clearForm() {
@@ -460,9 +466,7 @@ function clearForm() {
 
 async function deleteProduct(id){ 
     if(confirm('Are you sure you want to delete this item?')) {
-        const { error } = await _supabase.from('products').delete().eq('id', id); 
-        if(!error) { localStorage.removeItem('papaya_menu_cache'); if(currentEditingProductId === id) clearForm(); loadProducts(); } 
-        else { alert('Error deleting product'); }
+        try { await apiCall('DELETE', '/api/menu/products/' + id); localStorage.removeItem('papaya_menu_cache'); if(currentEditingProductId === id) clearForm(); loadProducts(); } catch(e) { alert('Error deleting product: ' + e.message); }
     }
 }
 
@@ -566,8 +570,7 @@ function makeFieldEditable(id, field, currentVal) {
         if (isSaving) return; isSaving = true;
         const newVal = input.value.trim() || (isDesc ? '-' : currentVal);
         const updateData = {}; updateData[field] = newVal;
-        const { error } = await _supabase.from('products').update(updateData).eq('id', id);
-        if (error) { alert('Error: ' + (error.message || JSON.stringify(error))); isSaving = false; return; }
+        try { await apiCall('PUT', '/api/menu/products/' + id, updateData); } catch(e) { alert('Error: ' + e.message); isSaving = false; return; }
         let p = globalProductsArray.find(p => p.id === id);
         if (p) p[field] = newVal;
         const cssClass = isDesc ? 'td-desc' : 'td-name';
@@ -587,7 +590,7 @@ async function toggleDisponibilite(id, isChecked) {
     const row = document.getElementById('row-' + id);
     if (isChecked) { row.classList.remove('indisponible'); } 
     else { row.classList.add('indisponible'); }
-    await _supabase.from('products').update({ disponible: isChecked }).eq('id', id);
+    try { await apiCall('PUT', '/api/menu/products/' + id, { disponible: isChecked }); } catch(e) { console.error(e); }
 }
 
 function makePriceEditable(id, currentPrice) {
@@ -602,13 +605,12 @@ function makePriceEditable(id, currentPrice) {
         if (isNaN(newPrice) || newPrice < 0) { 
             cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`;
         } else {
-            const { error } = await _supabase.from('products').update({ price: newPrice }).eq('id', id);
-            if (error) { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; }
-            else { 
+            try {
+                await apiCall('PUT', '/api/menu/products/' + id, { price: newPrice });
                 cell.innerHTML = `<div class="td-price">${newPrice} <span class="dh">DH</span></div>`;
                 let p = globalProductsArray.find(p => p.id === id);
                 if (p) p.price = newPrice;
-            }
+            } catch(e) { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; }
         }
         cell.onclick = () => makePriceEditable(id, newPrice || currentPrice);
     }
@@ -633,13 +635,11 @@ hiddenImageInput.addEventListener('change', async function() {
         const imgEl = document.getElementById('img-' + targetImageProductId);
         if (imgEl) { imgEl.style.opacity = '0.4'; }
         const newUrl = await uploadToCloudinary(file);
-        _supabase.from('products').update({ image: newUrl }).eq('id', targetImageProductId).then(({ error }) => {
-            if (!error) {
-                if (imgEl) { imgEl.src = newUrl; imgEl.style.opacity = '1'; }
-                let p = globalProductsArray.find(p => p.id === targetImageProductId);
-                if (p) p.image = newUrl;
-            }
-        });
+        apiCall('PUT', '/api/menu/products/' + targetImageProductId, { image: newUrl }).then(() => {
+            if (imgEl) { imgEl.src = newUrl; imgEl.style.opacity = '1'; }
+            let p = globalProductsArray.find(p => p.id === targetImageProductId);
+            if (p) p.image = newUrl;
+        }).catch(e => console.error(e));
     } catch(err) {
         alert('❌ Image upload failed: ' + err.message);
     }
