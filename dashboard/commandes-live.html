@@ -462,7 +462,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel
 const _liveChannel = db.channel("papaya-broadcast");
 let _liveReady = false;
-_liveChannel.subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
+// subscribe() يتسمى بعد .on() — see below
 async function _broadcastUpdate(event, orderData) {
   if (!_liveReady) await new Promise(r => setTimeout(r, 150));
   try { await _liveChannel.send({ type: "broadcast", event, payload: orderData }); }
@@ -894,7 +894,8 @@ _liveChannel
   .on('broadcast', { event: 'delete_order' }, ({ payload }) => {
     allOrders = allOrders.filter(o => o.id !== payload.id);
     updateStats(); updateCounts(); renderOrders();
-  });
+  })
+  .subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
 
 // ── Fallback: si onglet redevient visible après inactivité → resync ──
 let _lastVisible = Date.now();
