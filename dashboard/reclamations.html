@@ -447,11 +447,14 @@ function renderReclamations(list) {
 /* ── MARK AS READ ── */
 async function markAsRead(id) {
   try {
-    await db.from('reclamations').update({ read: true }).eq('id', id);
+    const { data } = await db.from('reclamations').update({ read: true }).eq('id', id).select().single();
     const rec = allReclamations.find(r => r.id === id);
     if (rec) rec.read = true;
     updateStats();
     applyFilters();
+    if (data) {
+      try { await db.channel('papaya-broadcast').send({ type: 'broadcast', event: 'update_reclamation', payload: data }); } catch(e) {}
+    }
   } catch(err) {
     console.error('Erreur markAsRead:', err);
   }
@@ -510,19 +513,19 @@ function formatDate(iso) {
   return d.toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) + ' · ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 
-/* ── REAL-TIME SUBSCRIPTION ── */
+/* ── REAL-TIME SUBSCRIPTION (broadcast — zero egress) ── */
 function subscribeRealtime() {
-  db.channel('reclamations-channel')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reclamations' }, payload => {
-      allReclamations.unshift(payload.new);
-      updateStats();
-      applyFilters();
+  db.channel('papaya-broadcast')
+    .on('broadcast', { event: 'new_reclamation' }, ({ payload }) => {
+      if (!allReclamations.find(r => r.id === payload.id)) {
+        allReclamations.unshift(payload);
+        updateStats();
+        applyFilters();
+      }
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reclamations' }, payload => {
-      const idx = allReclamations.findIndex(r => r.id === payload.new.id);
-      if (idx !== -1) allReclamations[idx] = payload.new;
-      updateStats();
-      applyFilters();
+    .on('broadcast', { event: 'update_reclamation' }, ({ payload }) => {
+      const idx = allReclamations.findIndex(r => r.id === payload.id);
+      if (idx !== -1) { allReclamations[idx] = payload; updateStats(); applyFilters(); }
     })
     .subscribe();
 }

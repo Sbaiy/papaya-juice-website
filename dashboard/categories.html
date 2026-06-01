@@ -488,6 +488,7 @@ async function saveCategory() {
   showToast(id ? 'Catégorie modifiée !' : 'Catégorie ajoutée !');
   cancelEdit();
   loadCategories();
+  try { await db.channel('papaya-broadcast').send({ type: 'broadcast', event: 'update_categories', payload: {} }); } catch(e) {}
 }
 
 // ── Edit ──
@@ -545,6 +546,7 @@ async function confirmDelete() {
     showToast('Catégorie supprimée');
   } catch(e) { closeDeleteModal(); showToast('Erreur: ' + e.message, 'error'); return; }
   loadCategories();
+  try { await db.channel('papaya-broadcast').send({ type: 'broadcast', event: 'update_categories', payload: {} }); } catch(e) {}
 }
 
 // ── Image helpers ──
@@ -587,9 +589,9 @@ async function handleFileUpload(e) {
   }
 }
 
-// ── Realtime ──
-db.channel('categories-page')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+// ── Realtime (broadcast — zero egress) ──
+db.channel('papaya-broadcast')
+  .on('broadcast', { event: 'update_categories' }, () => {
     if (!isSaving) loadCategories();
   })
   .subscribe();

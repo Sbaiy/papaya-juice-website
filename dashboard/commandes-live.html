@@ -812,8 +812,16 @@ function statusName(s) {
 }
 async function quickStatus(orderId, newStatus) {
   try {
-    const { data } = await db.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId).select().single();
-    if (data) await _broadcastUpdate('update_order', data);
+    const token = localStorage.getItem('papaya_token');
+    const BACKEND_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000/api'
+      : 'https://papaya-juice-backend-production.up.railway.app/api';
+    const res = await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (!res.ok) { const e = await res.json(); console.error('quickStatus error:', e.error); return; }
     await loadOrders();
   } catch (e) { console.error(e); }
 }
