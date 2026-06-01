@@ -1230,10 +1230,11 @@ async function validerCloture() {
                 const raw = await res.json();
                 const orders = Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.commandes || []);
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret', 'completed', 'payé', 'paye', 'paid'];
+                const STATUS_CANCEL = ['cancelled', 'annule', 'annulé', 'canceled'];
+                const isNotCancelled = o => !STATUS_CANCEL.includes(o.status) && !(o.status && o.status.toLowerCase().includes('annul'));
                 clotureOrders = clotureTime
-                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
-                    : orders.filter(o => STATUS_DONE.includes(o.status));
+                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && isNotCancelled(o))
+                    : orders.filter(o => isNotCancelled(o));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
