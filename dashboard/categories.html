@@ -9,6 +9,7 @@
 <title>Catégories - Papaya Juice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -97,6 +98,7 @@
   /* Cells */
   .td-drag { cursor: grab; color: var(--muted); width: 28px; }
   .td-drag:active { cursor: grabbing; }
+  .sortable-ghost { opacity: 0.4; background: rgba(249,115,22,0.08) !important; }
   .td-id { font-size: 12px; font-weight: 700; color: var(--muted); font-family: monospace; width: 70px; }
   .td-img { width: 60px; }
   .cat-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: rgba(255,255,255,0.08); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -147,7 +149,7 @@
     .search-bar input { width: 100px; }
   }
 </style>
-<script src="api.js"></script>
+<script src="../api.js"></script>
 </head>
 <body>
 
@@ -313,6 +315,11 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+const getToken = () => localStorage.getItem('papaya_token');
+const apiHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
 
 // ─── Cloudinary Upload ──────────────────────────────────────
 const CLOUDINARY_CLOUD  = "ddo0srqrv";
@@ -352,6 +359,7 @@ async function loadCategories() {
   if (error) { showToast('Erreur de chargement', 'error'); return; }
   allCategories = data || [];
   renderTable(allCategories);
+  initSortable();
 }
 
 function renderTable(cats) {
@@ -394,6 +402,51 @@ function renderTable(cats) {
   }).join('');
 }
 
+// ── Drag & Drop (SortableJS) ──
+let sortableInstance = null;
+
+function initSortable() {
+  const tbody = document.getElementById('categoriesTbody');
+  if (sortableInstance) sortableInstance.destroy();
+  sortableInstance = Sortable.create(tbody, {
+    handle: '.td-drag',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onEnd: async function() {
+      const rows = tbody.querySelectorAll('tr[data-id]');
+      const updates = [];
+      rows.forEach((row, index) => {
+        updates.push({ id: row.dataset.id, sort_order: index });
+      });
+      await saveNewOrder(updates);
+    }
+  });
+}
+
+let isSaving = false;
+
+async function saveNewOrder(updates) {
+  isSaving = true;
+  showToast('⏳ Sauvegarde de l\'ordre…', 'success');
+  try {
+    const res = await fetch(BACKEND_URL + '/api/menu/categories/reorder', {
+      method: 'PUT', headers: apiHeaders(),
+      body: JSON.stringify({ ids: updates.map(u => u.id) })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Erreur');
+    updates.forEach(({ id, sort_order }) => {
+      const cat = allCategories.find(c => String(c.id) === String(id));
+      if (cat) cat.sort_order = sort_order;
+    });
+    allCategories.sort((a, b) => a.sort_order - b.sort_order);
+    showToast('✅ Ordre sauvegardé', 'success');
+  } catch(e) {
+    showToast('❌ Erreur: ' + e.message, 'error');
+    loadCategories();
+  }
+  isSaving = false;
+}
+
 function filterTable() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const filtered = allCategories.filter(c =>
@@ -417,19 +470,25 @@ async function saveCategory() {
 
   const payload = { name_fr, name_en, name_ar, max_items, image };
 
-  let error;
-  if (id) {
-    ({ error } = await db.from('categories').update(payload).eq('id', id));
-  } else {
-    const maxOrder = allCategories.length ? Math.max(...allCategories.map(c => c.sort_order || 0)) + 1 : 0;
-    ({ error } = await db.from('categories').insert([{ ...payload, sort_order: maxOrder }]));
-  }
-
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  try {
+    let res;
+    if (id) {
+      res = await fetch(BACKEND_URL + '/api/menu/categories/' + id, {
+        method: 'PUT', headers: apiHeaders(), body: JSON.stringify(payload)
+      });
+    } else {
+      const maxOrder = allCategories.length ? Math.max(...allCategories.map(c => c.sort_order || 0)) + 1 : 0;
+      res = await fetch(BACKEND_URL + '/api/menu/categories', {
+        method: 'POST', headers: apiHeaders(), body: JSON.stringify({ ...payload, sort_order: maxOrder })
+      });
+    }
+    if (!res.ok) { const e = await res.json(); showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); return; }
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); return; }
 
   showToast(id ? 'Catégorie modifiée !' : 'Catégorie ajoutée !');
   cancelEdit();
   loadCategories();
+  try { await db.channel('papaya-broadcast').send({ type: 'broadcast', event: 'update_categories', payload: {} }); } catch(e) {}
 }
 
 // ── Edit ──
@@ -478,11 +537,16 @@ function closeDeleteModal() {
 }
 async function confirmDelete() {
   if (!deleteTargetId) return;
-  const { error } = await db.from('categories').delete().eq('id', deleteTargetId);
-  closeDeleteModal();
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
-  showToast('Catégorie supprimée');
+  try {
+    const res = await fetch(BACKEND_URL + '/api/menu/categories/' + deleteTargetId, {
+      method: 'DELETE', headers: apiHeaders()
+    });
+    closeDeleteModal();
+    if (!res.ok) { const e = await res.json(); showToast('Erreur: ' + (e.error || 'Inconnue'), 'error'); return; }
+    showToast('Catégorie supprimée');
+  } catch(e) { closeDeleteModal(); showToast('Erreur: ' + e.message, 'error'); return; }
   loadCategories();
+  try { await db.channel('papaya-broadcast').send({ type: 'broadcast', event: 'update_categories', payload: {} }); } catch(e) {}
 }
 
 // ── Image helpers ──
@@ -511,7 +575,7 @@ function promptImageUrl() {
 async function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Image trop lourde (max 5MB)', 'error'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('Image trop lourde (max 10MB)', 'error'); return; }
   setPreviewImage(URL.createObjectURL(file));
   try {
     showToast('⏳ Upload en cours…', 'success');
@@ -525,9 +589,11 @@ async function handleFileUpload(e) {
   }
 }
 
-// ── Realtime ──
-db.channel('categories-page')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => loadCategories())
+// ── Realtime (broadcast — zero egress) ──
+db.channel('papaya-broadcast')
+  .on('broadcast', { event: 'update_categories' }, () => {
+    if (!isSaving) loadCategories();
+  })
   .subscribe();
 
 // ── Load on startup ──
