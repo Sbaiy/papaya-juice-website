@@ -1237,7 +1237,9 @@ async function validerCloture() {
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
-        } catch(e) {}
+        } catch(e) { console.error('ERREUR ORDERS:', e); }
+        console.log('STATUTS:', [...new Set(orders.map(o=>o.status))]);
+        console.log('NB ORDERS:', orders?.length, '| NB FILTRE:', clotureOrders.length);
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
