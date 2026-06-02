@@ -679,8 +679,13 @@ const _broadcastReadyPromise = new Promise(resolve => {
 });
 async function _broadcastOrder(event, orderData) {
   if (!_broadcastReady) await _broadcastReadyPromise;
+  // محاولة أولى
+  try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); return; }
+  catch(e) { console.warn('Broadcast attempt 1 failed, retrying...', e); }
+  // إعادة محاولة بعد 1.5 ثانية
+  await new Promise(r => setTimeout(r, 1500));
   try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); }
-  catch(e) { console.warn('Broadcast failed:', e); }
+  catch(e) { console.warn('Broadcast attempt 2 failed:', e); }
 }
 
 /* ════════════════════════
