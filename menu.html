@@ -1281,10 +1281,16 @@ function onCategoryClick(category, pill) {
     displayProducts(allProducts.filter(p => p.category === category));
     attachCardClicks();
     closeDropdown();
-    // scroll to top smoothly — lock header hide during this scroll
+    // scroll to just below header so products are visible — lock header hide during scroll
     _scrollLocked = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => { _scrollLocked = false; }, 700);
+    const header = document.getElementById('mainHeader');
+    const headerH = header ? header.getBoundingClientRect().height : 80;
+    const title = document.querySelector('h1.menu-title');
+    const scrollTarget = title
+        ? title.getBoundingClientRect().top + window.pageYOffset - headerH - 16
+        : 0;
+    window.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+    setTimeout(() => { _scrollLocked = false; lastST = window.pageYOffset; }, 800);
 }
 
 function onCategoryClick(category, pill) {
