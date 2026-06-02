@@ -588,48 +588,11 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Broadcast channel — يبعت ويسمع إشارات بدون ما يقرا من DB
-const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
-// ════ Tous les listeners broadcast centralisés ici, AVANT subscribe() ════
-_broadcastChannel
-  // ── Popup nouvelles commandes (NOP) ──
-  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-      const o = payload;
-      if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-      if (o.created_at && new Date(o.created_at) < todayStart) return;
-      if (_nopSeenIds.has(String(o.id))) return;
-      _nopSeenIds.add(String(o.id));
-      _nopSaveSeen();
-      _nopPendingOrders = [..._nopPendingOrders, o];
-      _nopShowPopup();
-  })
-  .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-      const o = payload;
-      // Fermer popup si annulée
-      const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
-      if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
-      // Historique
-      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
-      const on = { ...o };
-      on.status = STATUS_NORM[on.status] || on.status;
-      if (on.status && on.status.toLowerCase().includes('annul')) on.status = 'cancelled';
-      const idx = histAllOrders.findIndex(x => x.id === on.id);
-      if (idx !== -1) { histAllOrders[idx] = on; _histUpdateUI(); }
-  })
-  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-      // Historique — nouvelle commande
-      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
-      const o = { ...payload };
-      o.status = STATUS_NORM[o.status] || o.status;
-      if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-      histAllOrders = [o, ...histAllOrders];
-      _histUpdateUI();
-  })
-  .subscribe((status) => {
-      if (status === 'SUBSCRIBED') _broadcastReady = true;
-  });
+_broadcastChannel.subscribe((status) => {
+  if (status === 'SUBSCRIBED') _broadcastReady = true;
+});
 async function _broadcastOrder(event, orderData) {
   // استنى subscribe إلا مازال ما وقعش
   if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
@@ -663,7 +626,7 @@ setInterval(updateClock, 30000);
 function openPinModal(action) {
     pendingAction = action;
     document.getElementById('pinInput').value = '';
-    // PIN modal mafetchach tl9a2iyan — katkhrj ghir mn openPinModal()
+    document.getElementById('pinModal').style.display = 'flex';
 }
 function addPin(num) {
     const input = document.getElementById('pinInput');
@@ -1144,7 +1107,22 @@ function openHistoriqueModal() {
     if (_histRealtimeChannel) return;
     _histRealtimeChannel = true; // flag باش ما يتخلقش مرتين
     const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
-    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
+    _broadcastChannel
+      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+          const o = { ...payload };
+          o.status = STATUS_NORM[o.status] || o.status;
+          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
+          histAllOrders = [o, ...histAllOrders];
+          _histUpdateUI();
+      })
+      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+          const o = { ...payload };
+          o.status = STATUS_NORM[o.status] || o.status;
+          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
+          const idx = histAllOrders.findIndex(x => x.id === o.id);
+          if (idx !== -1) histAllOrders[idx] = o;
+          _histUpdateUI();
+      });
 }
 
 function closeHistoriqueModal() {
@@ -1293,25 +1271,10 @@ async function validerCloture() {
         const pad = (str, len) => String(str).padEnd(len);
         const padL = (str, len) => String(str).padStart(len);
 
-        // ── Sauvegarder d'abord pour avoir le vrai numéro de clôture ──
-        let nCloture = '—';
-        try {
-            const token = localStorage.getItem('papaya_token');
-            const resSave = await fetch(BACKEND_URL + '/api/clotures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
-            });
-            if (resSave.ok) {
-                const savedCloture = await resSave.json();
-                nCloture = savedCloture.id || '—';
-            }
-        } catch(e) { console.warn('Cloture non sauvegardée:', e); }
-        localStorage.setItem('papaya_cloture_time', new Date().toISOString());
-
         let ticketZ = '\n';
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
+        const nCloture = Math.floor(Date.now() / 1000) % 10000;
         ticketZ += `N CLOTURE : ${nCloture}\n`;
         const clotureTime = localStorage.getItem('papaya_cloture_time');
         const deStr = clotureTime
@@ -1358,6 +1321,15 @@ async function validerCloture() {
         ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
         ticketZ += sep;
         await printViaPrintNode(ticketZ, 'cash');
+        try {
+            const token = localStorage.getItem('papaya_token');
+            await fetch(BACKEND_URL + '/api/clotures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
+            });
+        } catch(e) { console.warn('Cloture non sauvegardée:', e); }
+        localStorage.setItem('papaya_cloture_time', new Date().toISOString());
         showToast('✅ Clôture réussie ! Déconnexion...');
         setTimeout(() => { if(typeof API!=='undefined') API.Auth.logout(); else { sessionStorage.clear(); location.href='/dashboard'; } }, 2000);
     } catch(err) { showToast('❌ Erreur clôture: '+err.message); }
@@ -1371,7 +1343,7 @@ let _nopPendingOrders = [];  // orders à afficher dans le popup courant
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
-// déplacé avant le channel broadcast (voir ligne ~593)
+const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
 
 function _nopSaveSeen() {
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
@@ -1620,13 +1592,33 @@ async function printAndDismissNewOrders() {
 }
 
 function _nopStartPolling() {
-    // Fetch initial — une seule fois au démarrage pour les commandes déjà en attente
+    // Fetch initial pour charger les commandes en attente déjà présentes
     _nopPollOrders();
 
+    // ── Realtime : écouter les nouveaux INSERT (status paiement/paid) ──
     if (_nopInterval) return; // déjà démarré
-    _nopInterval = true;
+    _nopInterval = true; // flag pour éviter double init
 
-    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
+    // نسمع broadcast بدل postgres_changes باش ما يأكلش egress
+    _broadcastChannel
+      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+          const o = payload;
+          if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+          if (o.created_at && new Date(o.created_at) < todayStart) return;
+          if (_nopSeenIds.has(String(o.id))) return;
+          _nopSeenIds.add(String(o.id));
+          _nopSaveSeen();
+          _nopPendingOrders = [..._nopPendingOrders, o];
+          _nopShowPopup();
+      })
+      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+          const o = payload;
+          const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
+          if (cancelledStatuses.has(o.status)) {
+              dismissSingleOrderFromPopup(o.id);
+          }
+      });
 }
 
 // ── TOAST ──
@@ -1651,7 +1643,7 @@ document.addEventListener('visibilitychange', () => {
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-    // PIN modal mafetchach tl9a2iyan — katkhrj ghir mn openPinModal()
+    document.getElementById('pinModal').style.display = 'flex';
 
     if (typeof API === 'undefined') {
         window.API = {
