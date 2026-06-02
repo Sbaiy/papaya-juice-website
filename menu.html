@@ -1015,7 +1015,6 @@ async function submitOrder() {
                 items:        JSON.stringify(items),
                 total:        parseFloat(total.toFixed(2)),
                 status:       'paiement',
-                source:       'menu',
                 table_number: tableNum || null,
                 note:         note     || null,
                 created_at:   new Date().toISOString()
