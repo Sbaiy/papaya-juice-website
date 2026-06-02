@@ -126,6 +126,9 @@
         .cart-item-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 2px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
         .cart-item-remove:hover { color: var(--red); }
         .cart-footer { padding: 14px 16px; border-top: 1px solid var(--border); }
+        .cart-header-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .btn-clear-top { padding: 5px 11px; background: transparent; border: 1px solid rgba(248,81,73,0.3); border-radius: 7px; color: #f85149; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+        .btn-clear-top:hover { background: rgba(248,81,73,0.12); }
         .cart-summary { margin-bottom: 12px; }
         .cart-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); padding: 3px 0; }
         .cart-row.total { font-size: 14px; font-weight: 700; color: var(--text); border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px; }
@@ -384,10 +387,13 @@
 
     <!-- ── CART SIDEBAR ── -->
     <aside class="cart-sidebar">
-        <div class="cart-header">
-            <span style="font-size:18px">🛒</span>
-            <span class="cart-title">Commande en cours</span>
-            <span class="cart-badge" id="cartBadge">0</span>
+        <div class="cart-header" style="justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px">🛒</span>
+                <span class="cart-title">Commande en cours</span>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </div>
+            <button class="btn-clear-top" onclick="clearCart()">🗑️ Vider</button>
         </div>
         <div class="cart-body" id="cartBody">
             <div class="cart-empty" id="cartEmpty">
@@ -411,7 +417,6 @@
                 <div class="cart-row total"><span>Total</span><span id="total">0.00 DH</span></div>
             </div>
             <button class="btn-order" id="btnOrder" disabled onclick="submitOrder()">Envoyer la commande</button>
-            <button class="btn-clear" onclick="clearCart()">🗑️ Vider le panier</button>
         </div>
     </aside>
 </div>
@@ -583,11 +588,48 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Broadcast channel — يبعت ويسمع إشارات بدون ما يقرا من DB
+const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
-_broadcastChannel.subscribe((status) => {
-  if (status === 'SUBSCRIBED') _broadcastReady = true;
-});
+// ════ Tous les listeners broadcast centralisés ici, AVANT subscribe() ════
+_broadcastChannel
+  // ── Popup nouvelles commandes (NOP) ──
+  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+      const o = payload;
+      if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      if (o.created_at && new Date(o.created_at) < todayStart) return;
+      if (_nopSeenIds.has(String(o.id))) return;
+      _nopSeenIds.add(String(o.id));
+      _nopSaveSeen();
+      _nopPendingOrders = [..._nopPendingOrders, o];
+      _nopShowPopup();
+  })
+  .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+      const o = payload;
+      // Fermer popup si annulée
+      const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
+      if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
+      // Historique
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const on = { ...o };
+      on.status = STATUS_NORM[on.status] || on.status;
+      if (on.status && on.status.toLowerCase().includes('annul')) on.status = 'cancelled';
+      const idx = histAllOrders.findIndex(x => x.id === on.id);
+      if (idx !== -1) { histAllOrders[idx] = on; _histUpdateUI(); }
+  })
+  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+      // Historique — nouvelle commande
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const o = { ...payload };
+      o.status = STATUS_NORM[o.status] || o.status;
+      if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
+      histAllOrders = [o, ...histAllOrders];
+      _histUpdateUI();
+  })
+  .subscribe((status) => {
+      if (status === 'SUBSCRIBED') _broadcastReady = true;
+  });
 async function _broadcastOrder(event, orderData) {
   // استنى subscribe إلا مازال ما وقعش
   if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
@@ -1102,22 +1144,7 @@ function openHistoriqueModal() {
     if (_histRealtimeChannel) return;
     _histRealtimeChannel = true; // flag باش ما يتخلقش مرتين
     const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
-    _broadcastChannel
-      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-          const o = { ...payload };
-          o.status = STATUS_NORM[o.status] || o.status;
-          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-          histAllOrders = [o, ...histAllOrders];
-          _histUpdateUI();
-      })
-      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-          const o = { ...payload };
-          o.status = STATUS_NORM[o.status] || o.status;
-          if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-          const idx = histAllOrders.findIndex(x => x.id === o.id);
-          if (idx !== -1) histAllOrders[idx] = o;
-          _histUpdateUI();
-      });
+    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
 }
 
 function closeHistoriqueModal() {
@@ -1134,7 +1161,8 @@ async function loadHistoriqueOrders() {
         const token = localStorage.getItem('papaya_token');
         const res = await fetch(BACKEND_URL + '/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
         if (!res.ok) throw new Error('Erreur serveur ' + res.status);
-        const newOrders = await res.json();
+        const raw2 = await res.json();
+        const newOrders = Array.isArray(raw2) ? raw2 : (raw2.data || raw2.orders || raw2.commandes || []);
         // Merge avec les orders déjà reçus via Realtime (éviter doublons)
         const fetchedNorm = _histNormalizeOrders(newOrders);
         const realtimeOnly = histAllOrders.filter(r => !fetchedNorm.find(f => f.id === r.id));
@@ -1226,16 +1254,18 @@ async function validerCloture() {
             const token = localStorage.getItem('papaya_token');
             const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.ok) {
-                const orders = await res.json();
+                const raw = await res.json();
+                const orders = Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.commandes || []);
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret'];
+                const STATUS_CANCEL = ['cancelled', 'annule', 'annulé', 'canceled'];
+                const isNotCancelled = o => !STATUS_CANCEL.includes(o.status) && !(o.status && o.status.toLowerCase().includes('annul'));
                 clotureOrders = clotureTime
-                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
-                    : orders.filter(o => STATUS_DONE.includes(o.status));
+                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && isNotCancelled(o))
+                    : orders.filter(o => isNotCancelled(o));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
-        } catch(e) {}
+        } catch(e) { console.error('ERREUR ORDERS:', e); }
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -1263,10 +1293,25 @@ async function validerCloture() {
         const pad = (str, len) => String(str).padEnd(len);
         const padL = (str, len) => String(str).padStart(len);
 
+        // ── Sauvegarder d'abord pour avoir le vrai numéro de clôture ──
+        let nCloture = '—';
+        try {
+            const token = localStorage.getItem('papaya_token');
+            const resSave = await fetch(BACKEND_URL + '/api/clotures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
+            });
+            if (resSave.ok) {
+                const savedCloture = await resSave.json();
+                nCloture = savedCloture.id || '—';
+            }
+        } catch(e) { console.warn('Cloture non sauvegardée:', e); }
+        localStorage.setItem('papaya_cloture_time', new Date().toISOString());
+
         let ticketZ = '\n';
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
-        const nCloture = Math.floor(Date.now() / 1000) % 10000;
         ticketZ += `N CLOTURE : ${nCloture}\n`;
         const clotureTime = localStorage.getItem('papaya_cloture_time');
         const deStr = clotureTime
@@ -1313,15 +1358,6 @@ async function validerCloture() {
         ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
         ticketZ += sep;
         await printViaPrintNode(ticketZ, 'cash');
-        try {
-            const token = localStorage.getItem('papaya_token');
-            await fetch(BACKEND_URL + '/api/clotures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
-            });
-        } catch(e) { console.warn('Cloture non sauvegardée:', e); }
-        localStorage.setItem('papaya_cloture_time', new Date().toISOString());
         showToast('✅ Clôture réussie ! Déconnexion...');
         setTimeout(() => { if(typeof API!=='undefined') API.Auth.logout(); else { sessionStorage.clear(); location.href='/dashboard'; } }, 2000);
     } catch(err) { showToast('❌ Erreur clôture: '+err.message); }
@@ -1335,7 +1371,7 @@ let _nopPendingOrders = [];  // orders à afficher dans le popup courant
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
-const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
+// déplacé avant le channel broadcast (voir ligne ~593)
 
 function _nopSaveSeen() {
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
@@ -1348,7 +1384,8 @@ async function _nopPollOrders() {
             headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         });
         if (!res.ok) return;
-        const orders = await res.json();
+        const _rawOrders = await res.json();
+        const orders = Array.isArray(_rawOrders) ? _rawOrders : (_rawOrders.data || _rawOrders.orders || _rawOrders.commandes || []);
 
         // Filtrer : statut 'paiement' ou 'paid', pas encore vus, créés aujourd'hui
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -1503,14 +1540,16 @@ async function printSingleOrder(o) {
         const additionTkt = generateTextTicket(cartLike, tableVal, total, o.id);
         await printViaPrintNode(kitchenTkt, 'kitchen');
         await printViaPrintNode(additionTkt, 'cash');
-        // Mettre status en_preparation
+        // Mettre status en_preparation — préserver source pour que commandes-live garde le badge Menu Client
         try {
             const token = localStorage.getItem('papaya_token');
             await fetch(BACKEND_URL + '/api/orders/' + o.id + '/status', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'preparing' })
+                body: JSON.stringify({ status: 'preparing', source: o.source || 'menu' })
             });
+            // Broadcast avec source préservée
+            await _broadcastOrder('update_order', { ...o, status: 'preparing', source: o.source || 'menu' });
         } catch(e2) { console.warn('Status update failed:', e2); }
         dismissSingleOrderFromPopup(o.id);
     } catch(e) {
@@ -1581,33 +1620,13 @@ async function printAndDismissNewOrders() {
 }
 
 function _nopStartPolling() {
-    // Fetch initial pour charger les commandes en attente déjà présentes
+    // Fetch initial — une seule fois au démarrage pour les commandes déjà en attente
     _nopPollOrders();
 
-    // ── Realtime : écouter les nouveaux INSERT (status paiement/paid) ──
     if (_nopInterval) return; // déjà démarré
-    _nopInterval = true; // flag pour éviter double init
+    _nopInterval = true;
 
-    // نسمع broadcast بدل postgres_changes باش ما يأكلش egress
-    _broadcastChannel
-      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-          const o = payload;
-          if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-          if (o.created_at && new Date(o.created_at) < todayStart) return;
-          if (_nopSeenIds.has(String(o.id))) return;
-          _nopSeenIds.add(String(o.id));
-          _nopSaveSeen();
-          _nopPendingOrders = [..._nopPendingOrders, o];
-          _nopShowPopup();
-      })
-      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-          const o = payload;
-          const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
-          if (cancelledStatuses.has(o.status)) {
-              dismissSingleOrderFromPopup(o.id);
-          }
-      });
+    // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
 }
 
 // ── TOAST ──

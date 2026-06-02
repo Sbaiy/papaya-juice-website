@@ -421,6 +421,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
   </div>
   <div class="filter-bar" id="filterBar">
     <button class="filter-tab active" data-status="all">📋 Tout <span class="tab-count" id="cnt-all">0</span></button>
+    <button class="filter-tab" data-status="paiement">💰 Paiement <span class="tab-count" id="cnt-paiement">0</span></button>
     <button class="filter-tab" data-status="en_preparation">⚡ En Préparation <span class="tab-count" id="cnt-en_preparation">0</span></button>
     <button class="filter-tab" data-status="pret">✔️ Prêt <span class="tab-count" id="cnt-pret">0</span></button>
     <button class="filter-tab" data-status="termine">✓ Terminé <span class="tab-count" id="cnt-termine">0</span></button>
@@ -461,9 +462,9 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel
 const _liveChannel = db.channel("papaya-broadcast");
 let _liveReady = false;
-_liveChannel.subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
+// subscribe() يتسمى بعد .on() — see below
 async function _broadcastUpdate(event, orderData) {
-  if (!_liveReady) await new Promise(r => setTimeout(r, 1000));
+  if (!_liveReady) await new Promise(r => setTimeout(r, 150));
   try { await _liveChannel.send({ type: "broadcast", event, payload: orderData }); }
   catch(e) { console.warn("Broadcast failed:", e); }
 }
@@ -554,7 +555,7 @@ async function loadOrders() {
   try {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     const { data, error } = await db.from('orders')
-      .select('id, items, total, status, created_at, table_number, updated_at')
+      .select('id, items, total, status, created_at, table_number, updated_at, serveur, note, order_number')
       .gte('created_at', todayStart.toISOString())
       .order('created_at', { ascending: false })
       .limit(200);
@@ -723,8 +724,11 @@ function buildCard(order) {
   const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
   const src = (order.source || '').toLowerCase().trim();
   const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
-  // Menu orders explicitly set source: 'menu'
-  const isFromMenu = !isFromKiosk && ['menu', 'online', 'web', 'client'].includes(src);
+  // Menu orders: source explicite OU détecté par rawStatus 'paiement' (kiosk insère en 'pending', menu en 'paiement')
+  const isFromMenu = !isFromKiosk && (
+    ['menu', 'online', 'web', 'client'].includes(src) ||
+    (!src && order._rawStatus === 'paiement')
+  );
   card.className = `order-card status-${cssStatus}${isFromMenu ? ' from-menu' : ''}`;
   card.dataset.id = order.id;
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
@@ -782,7 +786,8 @@ function buildCard(order) {
   card.querySelector('[data-action="commencer"]')?.addEventListener('click', async () => {
     let newStatus;
     if (order.status === 'pret') newStatus = 'termine';
-    else newStatus = 'pret'; // paiement ou en_preparation → pret directement
+    else if (order.status === 'paiement') newStatus = 'en_preparation';
+    else newStatus = 'pret'; // en_preparation → pret
     stopOrderAlert(ordId);
     await quickStatus(order.id, newStatus);
   });
@@ -792,14 +797,12 @@ function buildCard(order) {
 function buildActions(order) {
   const s = order.status;
   const raw = order._rawStatus || '';
-  const src = (order.source || '').toLowerCase().trim();
-  const isMenuOrder = ['menu', 'online', 'web', 'client'].includes(src);
   let btns = '';
 
   if (s !== 'annule' && s !== 'termine' && raw !== 'cancelled' && raw !== 'annulé' && raw !== 'annule') {
     if (s === 'pret') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
-    } else if ((s === 'en_preparation' || s === 'paiement') && !isMenuOrder) {
+    } else if (s === 'en_preparation') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
     }
   }
@@ -891,7 +894,8 @@ _liveChannel
   .on('broadcast', { event: 'delete_order' }, ({ payload }) => {
     allOrders = allOrders.filter(o => o.id !== payload.id);
     updateStats(); updateCounts(); renderOrders();
-  });
+  })
+  .subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
 
 // ── Fallback: si onglet redevient visible après inactivité → resync ──
 let _lastVisible = Date.now();
