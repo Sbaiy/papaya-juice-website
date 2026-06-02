@@ -603,6 +603,7 @@ _broadcastChannel
       _nopSeenIds.add(String(o.id));
       _nopSaveSeen();
       _nopPendingOrders = [..._nopPendingOrders, o];
+      _nopSavePending();
       _nopShowPopup();
   })
   .on('broadcast', { event: 'update_order' }, ({ payload }) => {
@@ -1369,6 +1370,7 @@ async function validerCloture() {
 let _nopSeenIds = new Set();
 try { _nopSeenIds = new Set(JSON.parse(localStorage.getItem('nop_seen_ids') || '[]')); } catch(e) {}
 let _nopPendingOrders = [];  // orders à afficher dans le popup courant
+try { _nopPendingOrders = JSON.parse(localStorage.getItem('nop_pending_orders') || '[]'); } catch(e) {}
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
@@ -1377,6 +1379,12 @@ let _nopInterval = null;
 function _nopSaveSeen() {
     try {
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
+    } catch(e) {}
+}
+
+function _nopSavePending() {
+    try {
+        localStorage.setItem('nop_pending_orders', JSON.stringify(_nopPendingOrders));
     } catch(e) {}
 }
 
@@ -1421,6 +1429,7 @@ async function _nopPollOrders() {
 
         // Empiler dans pending et (ré)afficher le popup
         _nopPendingOrders = [..._nopPendingOrders, ...newOnes];
+        _nopSavePending();
         _nopShowPopup();
     } catch(e) { /* silencieux */ }
 }
@@ -1563,6 +1572,7 @@ async function printSingleOrder(o) {
 function dismissSingleOrderFromPopup(orderId) {
     _nopStopSound();
     _nopPendingOrders = _nopPendingOrders.filter(o => o.id !== orderId);
+    _nopSavePending();
     const el = document.getElementById('nop-order-' + orderId);
     if (el) el.remove();
     const badge = document.getElementById('nopBadge');
@@ -1588,6 +1598,7 @@ async function dismissSingleOrder(orderId) {
         showToast("❌ Erreur annulation: " + e.message);
     }
     _nopPendingOrders = _nopPendingOrders.filter(o => o.id !== orderId);
+    _nopSavePending();
     const el = document.getElementById('nop-order-' + orderId);
     if (el) el.remove();
     const badge = document.getElementById('nopBadge');
@@ -1665,6 +1676,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadProducts();
     _nopStartPolling();
+
+    // Restaurer le popup si des commandes pending existent après refresh
+    if (_nopPendingOrders.length) {
+        setTimeout(() => _nopShowPopup(), 500);
+    }
 
     const _user = API.Auth.getUser();
     if (_user) {
