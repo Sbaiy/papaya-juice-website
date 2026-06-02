@@ -724,12 +724,11 @@ function buildCard(order) {
   const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
   const src = (order.source || '').toLowerCase().trim();
   const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
-  // Menu orders: source explicite uniquement (source='menu' inséré par menu.html)
-  const isFromMenu = !isFromKiosk && ['menu', 'online', 'web', 'client'].includes(src);
-
-
-
-
+  // Menu orders: source explicite OU détecté par rawStatus 'paiement' (kiosk insère en 'pending', menu en 'paiement')
+  const isFromMenu = !isFromKiosk && (
+    ['menu', 'online', 'web', 'client'].includes(src) ||
+    (!src && order._rawStatus === 'paiement')
+  );
   card.className = `order-card status-${cssStatus}${isFromMenu ? ' from-menu' : ''}`;
   card.dataset.id = order.id;
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
@@ -885,6 +884,9 @@ _liveChannel
     const o = _normalizeOrder({ ...payload });
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) {
+      // Préserver source/table_number si le payload update ne les contient pas
+      if (!o.source && allOrders[idx].source) o.source = allOrders[idx].source;
+      if (!o.table_number && allOrders[idx].table_number) o.table_number = allOrders[idx].table_number;
       allOrders[idx] = o;
     } else if (_shouldShowOrder(o)) {
       allOrders = [o, ...allOrders];
