@@ -1458,7 +1458,7 @@ async function submitReclamation() {
             const data = await res.json();
             if (data.secure_url) imageUrls.push(data.secure_url);
         }
-        const { error } = await _supabase.from('reclamations').insert([{
+        const { data: insertedData, error } = await _supabase.from('reclamations').insert([{
             name: document.getElementById('reclName').value.trim() || null,
             message,
             table_number: detectedTable || null,
@@ -1466,8 +1466,16 @@ async function submitReclamation() {
             image_url_2: imageUrls[1] || null,
             image_url_3: imageUrls[2] || null,
             created_at: new Date().toISOString()
-        }]);
+        }]).select().single();
         if (error) throw error;
+        // Broadcast pour que reclamations.html reçoive en temps réel
+        try {
+            await _supabase.channel('papaya-broadcast').send({
+                type: 'broadcast',
+                event: 'new_reclamation',
+                payload: insertedData
+            });
+        } catch(e) { console.warn('Broadcast reclamation failed:', e); }
         closeReclamation();
         const toast = document.getElementById('successToast');
         document.getElementById('toastOrderNum').textContent = 'Réclamation envoyée avec succès';
