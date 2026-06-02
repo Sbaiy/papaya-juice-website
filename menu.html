@@ -145,18 +145,20 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
 .cat-pill.all-toggle.open .arrow-icon { transform: rotate(180deg); }
 .cat-dropdown {
     position: fixed;
-    width: 90vw; max-width: 480px;
+    left: 50%; transform: translateX(-50%);
+    width: 90vw; max-width: 500px;
     background: rgba(16,26,18,0.97); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.13); border-radius: 18px;
     box-shadow: 0 16px 48px rgba(0,0,0,0.55);
-    display: flex; flex-direction: column; gap: 8px; overflow: hidden;
-    max-height: 0; opacity: 0; padding: 0 12px; pointer-events: none;
-    transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, padding 0.3s ease;
+    display: flex; flex-direction: column; gap: 0; overflow: hidden;
+    max-height: 0; opacity: 0; padding: 0; pointer-events: none;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, padding 0.3s ease;
     z-index: 9999;
 }
-.cat-dropdown.open { max-height: 500px; opacity: 1; padding: 12px; pointer-events: all; }
+.cat-dropdown.open { max-height: 500px; opacity: 1; padding: 10px; pointer-events: all; }
 .cat-dropdown-row {
     display: flex; gap: 8px; flex-wrap: nowrap; justify-content: flex-start;
+    padding: 4px 0;
 }
 .cat-dropdown-row .cat-pill {
     font-size: 12px; padding: 7px 14px; flex-shrink: 0;
@@ -1234,9 +1236,7 @@ function openDropdown() {
     const header = document.getElementById('mainHeader');
     if (dropdown && header) {
         const hr = header.getBoundingClientRect();
-        dropdown.style.top  = (hr.bottom + 10) + 'px';
-        dropdown.style.left = '50%';
-        dropdown.style.transform = 'translateX(-50%)';
+        dropdown.style.top = (hr.bottom + 10) + 'px';
     }
     dropdown?.classList.add('open');
     document.getElementById('allMenuBtn')?.classList.add('open');
@@ -1253,12 +1253,11 @@ function onCategoryClick(category, pill) {
     activeCategory = category;
     displayProducts(allProducts.filter(p => p.category === category));
     attachCardClicks();
-    setTimeout(closeDropdown, 180);
-    setTimeout(() => {
-        const grid    = document.getElementById('menuGrid');
-        const gridTop = grid.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: Math.max(0, gridTop - 158), behavior: 'smooth' });
-    }, 220);
+    closeDropdown();
+    // scroll to top smoothly — lock header hide during this scroll
+    _scrollLocked = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => { _scrollLocked = false; }, 700);
 }
 
 function onCategoryClick(category, pill) {
@@ -1392,10 +1391,11 @@ function attachCardClicks() {
    SCROLL
 ════════════════════════ */
 let lastST = 0;
+let _scrollLocked = false;
 const header = document.getElementById('mainHeader');
 
 window.addEventListener('scroll', () => {
-    if (cartIsOpen) return;
+    if (cartIsOpen || _scrollLocked) return;
     const st = window.pageYOffset || document.documentElement.scrollTop;
     if (st > lastST && st > 100) {
         header.classList.add('hide-nav');
