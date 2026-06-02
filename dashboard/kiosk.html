@@ -611,7 +611,7 @@ _broadcastChannel
       const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
       if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
       // Historique
-      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
       const on = { ...o };
       on.status = STATUS_NORM[on.status] || on.status;
       if (on.status && on.status.toLowerCase().includes('annul')) on.status = 'cancelled';
@@ -620,7 +620,7 @@ _broadcastChannel
   })
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
       // Historique — nouvelle commande
-      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
       const o = { ...payload };
       o.status = STATUS_NORM[o.status] || o.status;
       if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
@@ -1092,14 +1092,14 @@ let histCurrentFilter = '';
 const HIST_STATUS_LABELS = {
     pending:{label:'En attente',icon:'🕐'}, paid:{label:'Payé',icon:'💰'},
     preparing:{label:'En préparation',icon:'🍳'}, ready:{label:'Prêt',icon:'✅'},
-    done:{label:'Terminé',icon:'✔️'}, cancelled:{label:'Annulé',icon:'✕'},
+    done:{label:'Terminé',icon:'✔️'}, delivered:{label:'Terminé',icon:'✔️'}, cancelled:{label:'Annulé',icon:'✕'},
     en_attente:{label:'En attente',icon:'🕐'}, paiement:{label:'Payé',icon:'💰'},
     en_preparation:{label:'En préparation',icon:'🍳'}, pret:{label:'Prêt',icon:'✅'},
     termine:{label:'Terminé',icon:'✔️'}, annule:{label:'Annulé',icon:'✕'},
 };
 
 function getStatusClass(status) {
-    const map = {pending:'pending',en_attente:'pending',paid:'paid',paiement:'paid',preparing:'preparing',en_preparation:'preparing',ready:'ready',pret:'ready',done:'done',termine:'done',cancelled:'cancelled',annule:'cancelled'};
+    const map = {pending:'pending',en_attente:'pending',paid:'paid',paiement:'paid',preparing:'preparing',en_preparation:'preparing',ready:'ready',pret:'ready',done:'done',delivered:'done',termine:'done',cancelled:'cancelled',annule:'cancelled'};
     return map[status] || 'pending';
 }
 
@@ -1107,7 +1107,7 @@ let historiqueRefreshInterval = null;
 let _histRealtimeChannel = null;
 
 function _histNormalizeOrders(orders) {
-    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
+    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
     const clotureTime = localStorage.getItem('papaya_cloture_time');
     orders.forEach(o => {
         o.status = STATUS_NORM[o.status] || o.status;
@@ -1143,7 +1143,7 @@ function openHistoriqueModal() {
     // Broadcast pour le modal historique — بدل postgres_changes
     if (_histRealtimeChannel) return;
     _histRealtimeChannel = true; // flag باش ما يتخلقش مرتين
-    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
+    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
     // listeners broadcast déplacés vers l'init du channel (voir _broadcastChannel.subscribe)
 }
 
