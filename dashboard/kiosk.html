@@ -593,17 +593,32 @@ const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
 // ════ Tous les listeners broadcast centralisés ici, AVANT subscribe() ════
 _broadcastChannel
-  // ── Popup nouvelles commandes (NOP) ──
+  // ── Popup + Historique nouvelles commandes (un seul listener) ──
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
       const o = payload;
-      if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-      if (o.created_at && new Date(o.created_at) < todayStart) return;
-      if (_nopSeenIds.has(String(o.id))) return;
-      _nopSeenIds.add(String(o.id));
-      _nopSaveSeen();
-      _nopPendingOrders = [..._nopPendingOrders, o];
-      _nopShowPopup();
+      console.log('[NOP] new_order reçu:', o.id, o.status);
+
+      // ── Popup ──
+      if (NOP_TRIGGER_STATUSES.has(o.status)) {
+          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+          const isToday = !o.created_at || new Date(o.created_at) >= todayStart;
+          if (isToday && !_nopSeenIds.has(String(o.id))) {
+              _nopSeenIds.add(String(o.id));
+              _nopSaveSeen();
+              _nopPendingOrders = [..._nopPendingOrders, o];
+              _nopShowPopup();
+          }
+      }
+
+      // ── Historique ──
+      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
+      const on = { ...o };
+      on.status = STATUS_NORM[on.status] || on.status;
+      if (on.status && on.status.toLowerCase().includes('annul')) on.status = 'cancelled';
+      if (!histAllOrders.find(x => x.id === on.id)) {
+          histAllOrders = [on, ...histAllOrders];
+          _histUpdateUI();
+      }
   })
   .on('broadcast', { event: 'update_order' }, ({ payload }) => {
       const o = payload;
@@ -618,16 +633,8 @@ _broadcastChannel
       const idx = histAllOrders.findIndex(x => x.id === on.id);
       if (idx !== -1) { histAllOrders[idx] = on; _histUpdateUI(); }
   })
-  .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-      // Historique — nouvelle commande
-      const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled',canceled:'cancelled'};
-      const o = { ...payload };
-      o.status = STATUS_NORM[o.status] || o.status;
-      if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
-      histAllOrders = [o, ...histAllOrders];
-      _histUpdateUI();
-  })
   .subscribe((status) => {
+      console.log('[NOP] Broadcast channel status:', status);
       if (status === 'SUBSCRIBED') _broadcastReady = true;
   });
 async function _broadcastOrder(event, orderData) {
