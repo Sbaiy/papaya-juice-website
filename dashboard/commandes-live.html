@@ -819,12 +819,18 @@ async function quickStatus(orderId, newStatus) {
     const BACKEND_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
       : 'https://papaya-juice-backend-production.up.railway.app/api';
+    // Récupérer source de l ordre local pour le préserver dans le broadcast
+    const localOrder = allOrders.find(o => o.id === orderId);
+    const source = localOrder ? (localOrder.source || null) : null;
     const res = await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify({ status: newStatus, ...(source ? { source } : {}) })
     });
     if (!res.ok) { const e = await res.json(); console.error('quickStatus error:', e.error); return; }
+    const updated = await res.json();
+    // Broadcast avec source préservée
+    _broadcastUpdate('update_order', { ...updated, source: source || updated.source });
     await loadOrders();
   } catch (e) { console.error(e); }
 }
