@@ -723,8 +723,9 @@ function buildCard(order) {
   const isAnnule = normS === 'annule' || normS.includes('annul') || rawS === 'cancelled' || rawS.includes('annul') || rawS === 'annule';
   const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
   const src = (order.source || '').toLowerCase().trim();
-  const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
-  // Menu orders: source explicite OU détecté par rawStatus 'paiement' (kiosk insère en 'pending', menu en 'paiement')
+  const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src) ||
+    (!src && order._rawStatus === 'pending');  // kiosk insère en 'pending', menu en 'paiement'
+  // Menu orders: source explicite OU détecté par rawStatus 'paiement'
   const isFromMenu = !isFromKiosk && (
     ['menu', 'online', 'web', 'client'].includes(src) ||
     (!src && order._rawStatus === 'paiement')
