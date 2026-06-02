@@ -1071,12 +1071,12 @@ async function submitOrder() {
                 await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ status: 'preparing' })
+                    body: JSON.stringify({ status: 'preparing', source: 'kiosk' })
                 });
             } catch(e) { console.warn('Status update failed:', e); }
         }
         // Broadcast للـ commandes-live بدون egress
-        if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
+        if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation', source: 'kiosk' });
         showToast('✅ Commande envoyée !');
         clearCart();
     } catch(err) {
