@@ -126,9 +126,6 @@
         .cart-item-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 2px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
         .cart-item-remove:hover { color: var(--red); }
         .cart-footer { padding: 14px 16px; border-top: 1px solid var(--border); }
-        .cart-header-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-        .btn-clear-top { padding: 5px 11px; background: transparent; border: 1px solid rgba(248,81,73,0.3); border-radius: 7px; color: #f85149; font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
-        .btn-clear-top:hover { background: rgba(248,81,73,0.12); }
         .cart-summary { margin-bottom: 12px; }
         .cart-row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); padding: 3px 0; }
         .cart-row.total { font-size: 14px; font-weight: 700; color: var(--text); border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px; }
@@ -387,13 +384,10 @@
 
     <!-- ── CART SIDEBAR ── -->
     <aside class="cart-sidebar">
-        <div class="cart-header" style="justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:18px">🛒</span>
-                <span class="cart-title">Commande en cours</span>
-                <span class="cart-badge" id="cartBadge">0</span>
-            </div>
-            <button class="btn-clear-top" onclick="clearCart()">🗑️ Vider</button>
+        <div class="cart-header">
+            <span style="font-size:18px">🛒</span>
+            <span class="cart-title">Commande en cours</span>
+            <span class="cart-badge" id="cartBadge">0</span>
         </div>
         <div class="cart-body" id="cartBody">
             <div class="cart-empty" id="cartEmpty">
@@ -417,6 +411,7 @@
                 <div class="cart-row total"><span>Total</span><span id="total">0.00 DH</span></div>
             </div>
             <button class="btn-order" id="btnOrder" disabled onclick="submitOrder()">Envoyer la commande</button>
+            <button class="btn-clear" onclick="clearCart()">🗑️ Vider le panier</button>
         </div>
     </aside>
 </div>
@@ -1139,8 +1134,7 @@ async function loadHistoriqueOrders() {
         const token = localStorage.getItem('papaya_token');
         const res = await fetch(BACKEND_URL + '/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
         if (!res.ok) throw new Error('Erreur serveur ' + res.status);
-        const raw2 = await res.json();
-        const newOrders = Array.isArray(raw2) ? raw2 : (raw2.data || raw2.orders || raw2.commandes || []);
+        const newOrders = await res.json();
         // Merge avec les orders déjà reçus via Realtime (éviter doublons)
         const fetchedNorm = _histNormalizeOrders(newOrders);
         const realtimeOnly = histAllOrders.filter(r => !fetchedNorm.find(f => f.id === r.id));
@@ -1232,18 +1226,16 @@ async function validerCloture() {
             const token = localStorage.getItem('papaya_token');
             const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.ok) {
-                const raw = await res.json();
-                const orders = Array.isArray(raw) ? raw : (raw.data || raw.orders || raw.commandes || []);
+                const orders = await res.json();
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
-                const STATUS_CANCEL = ['cancelled', 'annule', 'annulé', 'canceled'];
-                const isNotCancelled = o => !STATUS_CANCEL.includes(o.status) && !(o.status && o.status.toLowerCase().includes('annul'));
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret'];
                 clotureOrders = clotureTime
-                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && isNotCancelled(o))
-                    : orders.filter(o => isNotCancelled(o));
+                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
+                    : orders.filter(o => STATUS_DONE.includes(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
-        } catch(e) { console.error('ERREUR ORDERS:', e); }
+        } catch(e) {}
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -1356,8 +1348,7 @@ async function _nopPollOrders() {
             headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         });
         if (!res.ok) return;
-        const _rawOrders = await res.json();
-        const orders = Array.isArray(_rawOrders) ? _rawOrders : (_rawOrders.data || _rawOrders.orders || _rawOrders.commandes || []);
+        const orders = await res.json();
 
         // Filtrer : statut 'paiement' ou 'paid', pas encore vus, créés aujourd'hui
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -1512,16 +1503,14 @@ async function printSingleOrder(o) {
         const additionTkt = generateTextTicket(cartLike, tableVal, total, o.id);
         await printViaPrintNode(kitchenTkt, 'kitchen');
         await printViaPrintNode(additionTkt, 'cash');
-        // Mettre status en_preparation — préserver source pour que commandes-live garde le badge Menu Client
+        // Mettre status en_preparation
         try {
             const token = localStorage.getItem('papaya_token');
             await fetch(BACKEND_URL + '/api/orders/' + o.id + '/status', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'preparing', source: o.source || 'menu' })
+                body: JSON.stringify({ status: 'preparing' })
             });
-            // Broadcast avec source préservée
-            await _broadcastOrder('update_order', { ...o, status: 'preparing', source: o.source || 'menu' });
         } catch(e2) { console.warn('Status update failed:', e2); }
         dismissSingleOrderFromPopup(o.id);
     } catch(e) {

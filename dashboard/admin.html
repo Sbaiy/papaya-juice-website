@@ -247,23 +247,13 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
   if (!token) return;
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    // Token expiré
     if (payload.exp && Date.now() / 1000 > payload.exp) {
+      // Token expiré — forcer logout
       localStorage.removeItem('papaya_token');
       localStorage.removeItem('papaya_user');
       sessionStorage.removeItem('papaya_auth');
       sessionStorage.removeItem('papaya_user');
       alert('Votre session a expiré. Veuillez vous reconnecter.');
-      window.location.replace('/dashboard');
-      return;
-    }
-    // Pas propriétaire
-    if (payload.role && payload.role !== 'owner') {
-      alert('⚠️ Accès refusé — cette page est réservée au propriétaire.\nVeuillez vous connecter avec le compte propriétaire.');
-      localStorage.removeItem('papaya_token');
-      localStorage.removeItem('papaya_user');
-      sessionStorage.removeItem('papaya_auth');
-      sessionStorage.removeItem('papaya_user');
       window.location.replace('/dashboard');
     }
   } catch(e) {}
@@ -383,21 +373,8 @@ document.addEventListener('dragover', function(e) {
 async function saveOrder() {
     const rows = document.querySelectorAll('.custom-table tbody tr[data-id]');
     const orderedIds = [...rows].map(r => parseInt(r.dataset.id));
-    try {
-        await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds });
-        localStorage.setItem('productOrder', JSON.stringify(orderedIds));
-    } catch(e) {
-        if (e.message && e.message.includes('propriétaire')) {
-            if (confirm('⚠️ Session expirée — veuillez vous reconnecter pour sauvegarder l\'ordre.')) {
-                localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user');
-                sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user');
-                window.location.replace('/dashboard');
-            }
-        } else {
-            alert('Erreur sauvegarde ordre: ' + e.message);
-        }
-        loadProducts(); // reset visually to DB order
-    }
+    localStorage.setItem('productOrder', JSON.stringify(orderedIds));
+    try { await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds }); } catch(e) { console.error(e); }
 }
 
 function filterTableByCategory(category) {
@@ -521,7 +498,7 @@ async function deleteProduct(id){
 async function loadProducts(){ 
     const list = document.getElementById('productsList'); 
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
-    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('sort_order', { ascending: true }); 
+    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('id', { ascending: false }); 
     if(error) { 
         list.innerHTML = `<div style='color:red; padding:20px; text-align:center;'><b>Failed to load data</b></div>`; 
         return; 
