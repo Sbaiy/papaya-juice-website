@@ -663,7 +663,7 @@ setInterval(updateClock, 30000);
 function openPinModal(action) {
     pendingAction = action;
     document.getElementById('pinInput').value = '';
-    document.getElementById('pinModal').style.display = 'flex';
+    // PIN modal mafetchach tl9a2iyan — katkhrj ghir mn openPinModal()
 }
 function addPin(num) {
     const input = document.getElementById('pinInput');
@@ -1651,7 +1651,7 @@ document.addEventListener('visibilitychange', () => {
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('pinModal').style.display = 'flex';
+    // PIN modal mafetchach tl9a2iyan — katkhrj ghir mn openPinModal()
 
     if (typeof API === 'undefined') {
         window.API = {
