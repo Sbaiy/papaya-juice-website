@@ -1181,40 +1181,67 @@ function buildCategoryBar(productCatNames) {
         ...productCatNames.filter(n => !dbCatNames.includes(n)).map(n => ({ name: n, image: null }))
     ];
 
-    // Pack categories into rows: estimate pill width (chars * ~8px + 28px padding)
-    // Max row width = dropdown max-width - 24px padding = ~456px
-    const ROW_MAX = 456;
-    const rows = [];
-    let currentRow = [];
-    let currentWidth = 0;
-    orderedCats.forEach(catObj => {
-        const pillW = catObj.name.length * 8 + 36 + (catObj.image ? 24 : 0);
-        if (currentRow.length > 0 && currentWidth + 8 + pillW > ROW_MAX) {
-            rows.push(currentRow);
-            currentRow = [catObj];
-            currentWidth = pillW;
-        } else {
-            currentRow.push(catObj);
-            currentWidth += (currentRow.length > 1 ? 8 : 0) + pillW;
-        }
-    });
-    if (currentRow.length) rows.push(currentRow);
+    // Render all pills into a hidden off-screen container to measure real widths
+    const measurer = document.createElement('div');
+    measurer.style.cssText = 'position:fixed;top:-9999px;left:-9999px;display:flex;gap:8px;flex-wrap:nowrap;visibility:hidden;pointer-events:none;';
+    document.body.appendChild(measurer);
 
-    rows.forEach(rowCats => {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'cat-dropdown-row';
-        rowCats.forEach(catObj => {
-            const pill = document.createElement('button');
-            pill.className = 'cat-pill';
-            if (catObj.image) {
-                pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+    const pillEls = orderedCats.map(catObj => {
+        const pill = document.createElement('button');
+        pill.className = 'cat-pill';
+        pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
+        if (catObj.image) {
+            pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+        } else {
+            pill.textContent = catObj.name;
+        }
+        measurer.appendChild(pill);
+        return { catObj, pill };
+    });
+
+    // Force layout then measure
+    requestAnimationFrame(() => {
+        // Max row width = dropdown width (90vw capped 500px) minus 20px padding
+        const dropW = Math.min(window.innerWidth * 0.90, 500) - 20;
+
+        // Pack into rows using real measured widths
+        const rows = [];
+        let currentRow = [];
+        let currentWidth = 0;
+        pillEls.forEach(({ catObj, pill }) => {
+            const w = pill.getBoundingClientRect().width;
+            const gap = currentRow.length > 0 ? 8 : 0;
+            if (currentRow.length > 0 && currentWidth + gap + w > dropW) {
+                rows.push(currentRow);
+                currentRow = [{ catObj, w }];
+                currentWidth = w;
             } else {
-                pill.textContent = catObj.name;
+                currentRow.push({ catObj, w });
+                currentWidth += gap + w;
             }
-            pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
-            rowEl.appendChild(pill);
         });
-        dropdown.appendChild(rowEl);
+        if (currentRow.length) rows.push(currentRow);
+
+        document.body.removeChild(measurer);
+
+        // Build real pills in rows
+        rows.forEach(rowItems => {
+            const rowEl = document.createElement('div');
+            rowEl.className = 'cat-dropdown-row';
+            rowItems.forEach(({ catObj }) => {
+                const pill = document.createElement('button');
+                pill.className = 'cat-pill';
+                pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
+                if (catObj.image) {
+                    pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+                } else {
+                    pill.textContent = catObj.name;
+                }
+                pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
+                rowEl.appendChild(pill);
+            });
+            dropdown.appendChild(rowEl);
+        });
     });
 
     allBtn.addEventListener('click', (e) => {
