@@ -672,9 +672,13 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel
 const _broadcastChannel = _supabase.channel('papaya-broadcast');
 let _broadcastReady = false;
-_broadcastChannel.subscribe((status) => { if (status === 'SUBSCRIBED') _broadcastReady = true; });
+const _broadcastReadyPromise = new Promise(resolve => {
+  _broadcastChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
+  });
+});
 async function _broadcastOrder(event, orderData) {
-  if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
+  if (!_broadcastReady) await _broadcastReadyPromise;
   try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); }
   catch(e) { console.warn('Broadcast failed:', e); }
 }
