@@ -1275,12 +1275,24 @@ async function validerCloture() {
         const sep2 = '================================\n';
 
         // ── Grouper tous les articles par catégorie ──
+        // Construire un map titre → catégorie ET id → catégorie depuis allProducts pour les items sans catégorie
+        const productCatMap = {};
+        const productCatById = {};
+        (window.allProducts || []).forEach(p => {
+            if (p.title && p.category) productCatMap[p.title.toUpperCase()] = p.category.toUpperCase();
+            if (p.id && p.category) productCatById[String(p.id)] = p.category.toUpperCase();
+        });
+
         const categoryMap = {};
         clotureOrders.forEach(o => {
             const items = typeof o.items === 'string' ? JSON.parse(o.items||'[]') : (o.items||[]);
             items.forEach(item => {
-                const cat = (item.category || item.categorie || 'AUTRES').toUpperCase();
                 const name = (item.title || item.name || '').toUpperCase();
+                const catRaw = item.category || item.categorie
+                    || productCatById[String(item.id || item.product_id || '')]
+                    || productCatMap[name]
+                    || 'AUTRES';
+                const cat = catRaw.toUpperCase();
                 const qty  = parseInt(item.qty || item.quantity || 1);
                 const price = parseFloat(item.price || item.prix || 0) * qty;
                 if (!categoryMap[cat]) categoryMap[cat] = {};
