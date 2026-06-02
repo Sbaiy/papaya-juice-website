@@ -1445,18 +1445,16 @@ async function submitReclamation() {
         const imageUrls = [];
         for (let i = 0; i < reclPhotos.length; i++) {
             const file = reclPhotos[i];
-            // Convertir en base64
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload  = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
             const fd = new FormData();
-            fd.append("file",           base64);
-            fd.append("upload_preset",  CLOUDINARY_PRESET);
-            fd.append("folder",         "reclamations");
-            const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+            fd.append("file", file);  // ✅ File object directement
+            fd.append("upload_preset", CLOUDINARY_PRESET);
+            fd.append("folder", "reclamations");
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                console.error('Cloudinary error:', errData);
+                throw new Error(errData.error?.message || `Upload échoué (${res.status})`);
+            }
             const data = await res.json();
             if (data.secure_url) imageUrls.push(data.secure_url);
         }
