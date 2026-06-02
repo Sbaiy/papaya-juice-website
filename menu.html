@@ -66,9 +66,11 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
 /* ── CAT BAR ── */
 .cat-bar {
     display: flex; align-items: center; gap: 8px;
-    flex: 1; overflow: visible; position: static;
-    justify-content: flex-end;
+    flex: 1; overflow-x: auto; overflow-y: visible; position: static;
+    justify-content: flex-start;
+    scrollbar-width: none; -ms-overflow-style: none;
 }
+.cat-bar::-webkit-scrollbar { display: none; }
 .cat-bar.hide-nav { opacity: 0; pointer-events: none; }
 
 /* ── HAMBURGER ── */
@@ -135,27 +137,12 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
 .cat-pill {
     background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.12); color: #ccc;
-    padding: 7px 20px; border-radius: 30px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.3s ease; white-space: nowrap; flex-shrink: 0;
-    font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 6px;
+    padding: 6px 13px; border-radius: 30px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.25s ease; white-space: nowrap; flex-shrink: 0;
+    font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 5px;
 }
-.cat-pill:hover { background: rgba(255,98,0,0.2); border-color: var(--primary); color: #fff; transform: translateY(-2px); }
-.cat-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 6px 18px rgba(255,98,0,0.4); transform: translateY(-2px); }
-.arrow-icon { display: inline-block; font-style: normal; font-size: 11px; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); line-height: 1; }
-.cat-pill.all-toggle.open .arrow-icon { transform: rotate(180deg); }
-.cat-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0; left: auto;
-    width: 90vw; max-width: 480px;
-    background: rgba(16,26,18,0.97); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.13); border-radius: 18px;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow: hidden;
-    max-height: 0; opacity: 0; padding: 0 12px; pointer-events: none;
-    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease, padding 0.35s ease;
-    z-index: 9999;
-}
-.cat-dropdown.open { max-height: 400px; opacity: 1; padding: 12px; pointer-events: all; }
-.cat-dropdown .cat-pill { font-size: 11.5px; padding: 7px 10px; width: 100%; justify-content: center; text-align: center; }
+.cat-pill:hover { background: rgba(255,98,0,0.2); border-color: var(--primary); color: #fff; }
+.cat-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 14px rgba(255,98,0,0.4); }
 
 /* ── TITLE ── */
 h1.menu-title {
@@ -1154,16 +1141,13 @@ function applyProducts(products) {
 function buildCategoryBar(productCatNames) {
     const bar = document.getElementById('catBar');
     bar.innerHTML = '';
-    const allBtn = document.createElement('button');
-    allBtn.className = 'cat-pill all-toggle active';
-    allBtn.id = 'allMenuBtn';
-    allBtn.innerHTML = 'Category <span class="arrow-icon">▾</span>';
-    bar.appendChild(allBtn);
 
-    const dropdown = document.createElement('div');
-    dropdown.className = 'cat-dropdown';
-    dropdown.id = 'catDropdown';
-    bar.appendChild(dropdown);
+    // "All" pill
+    const allBtn = document.createElement('button');
+    allBtn.className = 'cat-pill active';
+    allBtn.id = 'allMenuBtn';
+    allBtn.textContent = 'Tout';
+    bar.appendChild(allBtn);
 
     const dbCatNames  = allCategories.map(c => c.name_fr || c.name_en || c.name_ar);
     const orderedCats = [
@@ -1174,59 +1158,40 @@ function buildCategoryBar(productCatNames) {
         ...productCatNames.filter(n => !dbCatNames.includes(n)).map(n => ({ name: n, image: null }))
     ];
 
-    orderedCats.forEach((catObj, i) => {
+    orderedCats.forEach((catObj) => {
         const pill = document.createElement('button');
         pill.className = 'cat-pill';
-        pill.style.animationDelay = `${i * 50}ms`;
         if (catObj.image) {
-            pill.innerHTML = `<img src="${catObj.image}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;margin-right:6px;vertical-align:middle;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+            pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
         } else {
             pill.textContent = catObj.name;
         }
         pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
-        dropdown.appendChild(pill);
+        bar.appendChild(pill);
     });
 
     allBtn.addEventListener('click', () => {
-        dropdown.classList.contains('open') ? closeDropdown() : openDropdown();
+        bar.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        allBtn.classList.add('active');
         activeCategory = 'all';
-        dropdown.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
         displayProducts(allProducts);
         attachCardClicks();
     });
-
-    document.addEventListener('click', (e) => {
-        if (!document.getElementById('catBar').contains(e.target)) closeDropdown();
-    });
 }
-function openDropdown() {
-    const dropdown = document.getElementById('catDropdown');
-    const header = document.getElementById('mainHeader');
-    if (dropdown && header) {
-        const hr = header.getBoundingClientRect();
-        dropdown.style.position = 'fixed';
-        dropdown.style.top = (hr.bottom + 8) + 'px';
-        dropdown.style.left = '50%';
-        dropdown.style.transform = 'translateX(-50%)';
-        dropdown.style.width = hr.width + 'px';
-    }
-    dropdown?.classList.add('open');
-    document.getElementById('allMenuBtn')?.classList.add('open');
-}
-function closeDropdown() { document.getElementById('catDropdown')?.classList.remove('open'); document.getElementById('allMenuBtn')?.classList.remove('open'); }
+function openDropdown() {}
+function closeDropdown() {}
 
 function onCategoryClick(category, pill) {
-    document.querySelectorAll('#catDropdown .cat-pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#catBar .cat-pill').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
     activeCategory = category;
     displayProducts(allProducts.filter(p => p.category === category));
     attachCardClicks();
-    setTimeout(closeDropdown, 180);
     setTimeout(() => {
         const grid    = document.getElementById('menuGrid');
         const gridTop = grid.getBoundingClientRect().top + window.pageYOffset;
         window.scrollTo({ top: Math.max(0, gridTop - 158), behavior: 'smooth' });
-    }, 220);
+    }, 100);
 }
 
 /* ════════════════════════
