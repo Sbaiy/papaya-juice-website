@@ -1293,18 +1293,6 @@ function onCategoryClick(category, pill) {
     setTimeout(() => { _scrollLocked = false; lastST = window.pageYOffset; }, 800);
 }
 
-function onCategoryClick(category, pill) {
-    document.querySelectorAll('#catBar .cat-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    activeCategory = category;
-    displayProducts(allProducts.filter(p => p.category === category));
-    attachCardClicks();
-    setTimeout(() => {
-        const grid    = document.getElementById('menuGrid');
-        const gridTop = grid.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: Math.max(0, gridTop - 158), behavior: 'smooth' });
-    }, 100);
-}
 
 /* ════════════════════════
    DISPLAY PRODUCTS
