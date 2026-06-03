@@ -1072,7 +1072,7 @@ let historiqueRefreshInterval = null;
 let _histRealtimeChannel = null;
 
 function _histNormalizeOrders(orders) {
-    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
+    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
     const clotureTime = localStorage.getItem('papaya_cloture_time');
     orders.forEach(o => {
         o.status = STATUS_NORM[o.status] || o.status;
@@ -1108,7 +1108,7 @@ function openHistoriqueModal() {
     // Broadcast pour le modal historique — بدل postgres_changes
     if (_histRealtimeChannel) return;
     _histRealtimeChannel = true; // flag باش ما يتخلقش مرتين
-    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
+    const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
     _broadcastChannel
       .on('broadcast', { event: 'new_order' }, ({ payload }) => {
           const o = { ...payload };
@@ -1189,6 +1189,10 @@ function renderHistOrders() {
             <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--orange);">${parseFloat(o.total||0).toFixed(2)}</div>
             <div style="font-size:10px;color:var(--muted);">DH</div>
           </div>
+${o.status === 'preparing' ? `<button onclick="updateOrderStatusFromKiosk('${o.id}', 'ready')"
+            style="padding:6px 14px;border-radius:8px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">✅ Prêt</button>` : ''}
+${o.status === 'ready' ? `<button onclick="updateOrderStatusFromKiosk('${o.id}', 'done')"
+            style="padding:6px 14px;border-radius:8px;background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">🏁 Terminer</button>` : ''}
 ${o.status === 'done' || o.status === 'termine' ? `<button onclick="reprintOrder('${orderJson}')" title="Réimprimer"
             style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🖨️</button>` : ''}
         </div>`;
@@ -1588,6 +1592,31 @@ async function printAndDismissNewOrders() {
         }
     }
     showToast(`✅ ${orders.length} ticket${orders.length > 1 ? 's' : ''} envoyé${orders.length > 1 ? 's' : ''} à l'impression`);
+}
+
+async function updateOrderStatusFromKiosk(orderId, newStatus) {
+    try {
+        const token = localStorage.getItem('papaya_token');
+        const STATUS_TO_API = { 'ready': 'ready', 'done': 'delivered' };
+        const apiStatus = STATUS_TO_API[newStatus] || newStatus;
+        const res = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ status: apiStatus })
+        });
+        if (!res.ok) { showToast('❌ Erreur mise à jour'); return; }
+        const updated = await res.json();
+        const STATUS_NORM = { ready: 'ready', delivered: 'done', done: 'done' };
+        const idx = histAllOrders.findIndex(o => o.id === orderId);
+        if (idx !== -1) {
+            histAllOrders[idx].status = STATUS_NORM[updated.status] || updated.status;
+        }
+        _histUpdateUI();
+        await _broadcastOrder('update_order', updated);
+        showToast(newStatus === 'ready' ? '✅ Commande marquée Prête !' : '✔️ Commande Terminée !');
+    } catch(e) {
+        showToast('❌ Erreur: ' + e.message);
+    }
 }
 
 function _nopStartPolling() {
