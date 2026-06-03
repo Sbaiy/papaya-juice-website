@@ -496,10 +496,15 @@ const BACKEND_URL = window.location.hostname === 'localhost'
 
 function logout() {
   const token = localStorage.getItem('papaya_token');
-  if (token) {
+  const userRaw = localStorage.getItem('papaya_user') || sessionStorage.getItem('papaya_user');
+  let userId = null;
+  try { userId = JSON.parse(userRaw)?.id; } catch(e) {}
+
+  if (token && userId && userId !== 'owner') {
     fetch(BACKEND_URL + '/api/auth/logout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ employee_id: userId })
     }).catch(() => {}).finally(() => {
       sessionStorage.clear();
       localStorage.removeItem('papaya_token');

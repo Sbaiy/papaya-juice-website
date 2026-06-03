@@ -692,10 +692,15 @@ function doLogout() {
     document.getElementById('logoutModal').style.display = 'none';
     // Pointage logout automatique
     const token = localStorage.getItem('papaya_token');
-    if (token) {
+    const userRaw = localStorage.getItem('papaya_user') || sessionStorage.getItem('papaya_user');
+    let userId = null;
+    try { userId = JSON.parse(userRaw)?.id; } catch(e) {}
+
+    if (token && userId && userId !== 'owner') {
         fetch(BACKEND_URL + '/api/auth/logout', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ employee_id: userId })
         }).catch(() => {}).finally(() => {
             if (typeof API !== 'undefined') API.Auth.logout();
             else { sessionStorage.clear(); location.href = '/dashboard'; }
