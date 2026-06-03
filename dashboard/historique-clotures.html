@@ -273,7 +273,11 @@ function renderClotures() {
     return;
   }
 
-  list.innerHTML = filtered.map((c, i) => {
+  // Stocker les données dans une map JS pour éviter les problèmes d'échappement dans onclick
+  window._cloturesMap = {};
+  filtered.forEach(c => { window._cloturesMap[c.id] = c; });
+
+  list.innerHTML = filtered.map((c) => {
     const date = new Date(c.created_at).toLocaleString('fr-FR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
@@ -295,7 +299,7 @@ function renderClotures() {
           <div class="cloture-total">${parseFloat(c.total).toFixed(2)} DH</div>
           <div class="cloture-cmds">${c.nbr_commandes} commandes</div>
         </div>
-        <button class="btn-print" onclick="imprimerCloture(${JSON.stringify(c).replace(/"/g,'&quot;')}, ${num}, this)">
+        <button class="btn-print" onclick="imprimerCloture('${c.id}', ${num}, this)">
           🖨️ Imprimer
         </button>
       </div>
@@ -312,7 +316,9 @@ document.getElementById('btnReset').addEventListener('click', () => {
   renderClotures();
 });
 
-async function imprimerCloture(c, num, btn) {
+async function imprimerCloture(id, num, btn) {
+  const c = window._cloturesMap && window._cloturesMap[id];
+  if (!c) { alert('Données introuvables'); return; }
   btn.classList.add('loading');
   btn.textContent = '⏳ Impression...';
 
