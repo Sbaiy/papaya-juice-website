@@ -115,6 +115,25 @@
     /* LOADING */
     .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
 
+    .btn-print {
+      background: transparent;
+      border: 1px solid rgba(249,115,22,.35);
+      border-radius: 8px;
+      color: var(--orange);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-print:hover { background: rgba(249,115,22,.1); border-color: var(--orange); }
+    .btn-print:active { transform: scale(0.97); }
+    .btn-print.loading { opacity: 0.6; pointer-events: none; }
+
     @media (max-width: 480px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       .filters-bar { flex-direction: column; }
@@ -260,20 +279,25 @@ function renderClotures() {
       hour: '2-digit', minute: '2-digit'
     });
     const initials = (c.caissier || 'S').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const num = allClotures.indexOf(c) + 1;
+    const num = allClotures.length - allClotures.indexOf(c);
     return `
     <div class="cloture-card">
       <div>
-        <div class="cloture-num">Clôture #${allClotures.length - allClotures.indexOf(c)}</div>
+        <div class="cloture-num">Clôture #${num}</div>
         <div class="cloture-date">📅 ${date}</div>
         <div class="cloture-caissier">
           <span class="avatar">${initials}</span>
           ${c.caissier}
         </div>
       </div>
-      <div class="cloture-right">
-        <div class="cloture-total">${parseFloat(c.total).toFixed(2)} DH</div>
-        <div class="cloture-cmds">${c.nbr_commandes} commandes</div>
+      <div class="cloture-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <div>
+          <div class="cloture-total">${parseFloat(c.total).toFixed(2)} DH</div>
+          <div class="cloture-cmds">${c.nbr_commandes} commandes</div>
+        </div>
+        <button class="btn-print" onclick="imprimerCloture(${JSON.stringify(c).replace(/"/g,'&quot;')}, ${num}, this)">
+          🖨️ Imprimer
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -287,6 +311,89 @@ document.getElementById('btnReset').addEventListener('click', () => {
   document.getElementById('filterDate').value = '';
   renderClotures();
 });
+
+async function imprimerCloture(c, num, btn) {
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Impression...';
+
+  try {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+
+    const date = new Date(c.created_at);
+    const dateStr = date.toLocaleDateString('fr-FR');
+    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const sep  = '--------------------------------\n';
+    const sep2 = '================================\n';
+    const pad  = (str, len) => String(str).padEnd(len);
+    const padL = (str, len) => String(str).padStart(len);
+    const C_ART = 28, C_QTY = 4, C_TOT = 9;
+    const artLine = (name, qty, total) =>
+      pad(name, C_ART) + padL(String(qty), C_QTY) + ' ' + padL(String(total), C_TOT);
+
+    let ticket = '\n';
+    ticket += '   CLOTURE GLOBALE\n';
+    ticket += sep2;
+    ticket += `N CLOTURE : ${c.id || num}\n`;
+    ticket += `DATE      : ${dateStr} ${timeStr}\n`;
+    ticket += sep;
+    ticket += artLine('Article', 'Qte', 'TOTAL_NET') + '\n';
+    ticket += sep;
+    ticket += `TOTAL NET: ${padL(parseFloat(c.total).toFixed(2) + ' DH', 20)}\n`;
+    ticket += sep2;
+    ticket += `ESPECES  : ${padL(parseFloat(c.total).toFixed(2) + ' DH', 21)}\n`;
+    ticket += sep;
+    ticket += `CAISSIER : ${c.caissier}\n`;
+    ticket += sep;
+    ticket += `COMMANDES: ${padL(String(c.nbr_commandes), 22)}\n`;
+    ticket += sep;
+
+    // PrintNode si configuré
+    if (cfg.apiKey && cfg.cashPrinter) {
+      const ESC = '\x1B', GS = '\x1D';
+      const INIT = ESC + '@';
+      const ALIGN_LEFT = ESC + 'a' + '\x00';
+      const FEED = ESC + 'd' + '\x01';
+      const CUT = GS + 'V' + '\x41' + '\x03';
+      const raw = INIT + ALIGN_LEFT + ticket + FEED + CUT;
+      const bytes = [];
+      for (let i = 0; i < raw.length; i++) bytes.push(raw.charCodeAt(i) & 0xFF);
+      const uint8 = new Uint8Array(bytes);
+      let binary = '';
+      uint8.forEach(b => binary += String.fromCharCode(b));
+      const base64 = btoa(binary);
+
+      const res = await fetch('https://api.printnode.com/printjobs', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          printerId: parseInt(cfg.cashPrinter),
+          title: 'Clôture #' + (c.id || num),
+          contentType: 'raw_base64',
+          content: base64,
+          source: 'Historique Clôtures'
+        })
+      });
+      if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
+      btn.textContent = '✅ Imprimé !';
+    } else {
+      // Fallback: impression navigateur
+      const win = window.open('', '_blank', 'width=400,height=600');
+      win.document.write(`<pre style="font-family:monospace;font-size:13px;white-space:pre;">${ticket}</pre>`);
+      win.document.close();
+      win.print();
+      btn.textContent = '✅ Imprimé !';
+    }
+  } catch(e) {
+    btn.textContent = '❌ Erreur';
+    console.error('Impression échouée:', e);
+  } finally {
+    btn.classList.remove('loading');
+    setTimeout(() => { btn.innerHTML = '🖨️ Imprimer'; }, 2500);
+  }
+}
 
 loadClotures();
 </script>
