@@ -1243,10 +1243,11 @@ async function validerCloture() {
                 const ordersRes = await res.json();
                 const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending'];
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement'];
+                const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
                 clotureOrders = loginTime
-                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status))
-                    : orders.filter(o => STATUS_DONE.includes(o.status));
+                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status))
+                    : orders.filter(o => STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
