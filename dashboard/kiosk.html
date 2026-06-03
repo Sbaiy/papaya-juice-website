@@ -1241,7 +1241,7 @@ async function validerCloture() {
                 const ordersRes = await res.json();
                 const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
                 const clotureTime = localStorage.getItem('papaya_cloture_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'preparing', 'en_preparation', 'ready', 'pret'];
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending'];
                 clotureOrders = clotureTime
                     ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
                     : orders.filter(o => STATUS_DONE.includes(o.status));
