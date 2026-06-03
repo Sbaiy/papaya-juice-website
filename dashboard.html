@@ -759,6 +759,7 @@ async function doLogin() {
 
     sessionStorage.setItem('papaya_auth', '1');
     sessionStorage.setItem('papaya_user', JSON.stringify(data.user));
+    localStorage.setItem('papaya_user', JSON.stringify(data.user));
 
     if (data.redirect) { window.location.href = data.redirect; return; }
 
