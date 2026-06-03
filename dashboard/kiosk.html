@@ -1290,8 +1290,7 @@ async function validerCloture() {
         let ticketZ = '\n';
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
-        const nCloture = Math.floor(Date.now() / 1000) % 10000;
-        ticketZ += `N CLOTURE : ${nCloture}\n`;
+        ticketZ += `N CLOTURE : __CLOTURE_ID__\n`;
         const loginTime = localStorage.getItem('papaya_kiosk_login_time');
         const deStr = loginTime
             ? new Date(loginTime).toLocaleString('fr-FR').replace(',','')
@@ -1336,15 +1335,27 @@ async function validerCloture() {
         ticketZ += sep;
         ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
         ticketZ += sep;
-        await printViaPrintNode(ticketZ, 'cash');
+
+        // ── Enregistrer la clôture en DB d'abord pour obtenir l'ID réel ──
+        let realClotureId = null;
         try {
             const token = localStorage.getItem('papaya_token');
-            await fetch(BACKEND_URL + '/api/clotures', {
+            const saveRes = await fetch(BACKEND_URL + '/api/clotures', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2), items_snapshot: categoryMap })
             });
+            if (saveRes.ok) {
+                const saved = await saveRes.json();
+                realClotureId = saved.id != null ? saved.id : null;
+            }
         } catch(e) { console.warn('Cloture non sauvegardée:', e); }
+
+        // Remplacer le placeholder par l'ID réel (fallback: timestamp si échec réseau)
+        const fallbackId = Math.floor(Date.now() / 1000) % 10000;
+        ticketZ = ticketZ.replace('__CLOTURE_ID__', realClotureId !== null ? realClotureId : fallbackId);
+
+        await printViaPrintNode(ticketZ, 'cash');
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
         localStorage.removeItem('papaya_kiosk_login_time');
         showToast('✅ Clôture réussie ! Déconnexion...');
