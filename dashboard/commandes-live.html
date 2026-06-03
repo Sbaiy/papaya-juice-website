@@ -579,7 +579,7 @@ async function loadOrders() {
       'preparing':  'en_preparation',
       'ready':      'pret',
       'done':       'termine',
-      'delivered':  'termine',
+      'termine':  'termine',
     };
     newOrders.forEach(o => {
       o._rawStatus = o.status;
@@ -828,7 +828,7 @@ async function quickStatus(orderId, newStatus) {
       : 'https://papaya-juice-backend-production.up.railway.app/api';
     // Récupérer source de l ordre local pour le préserver dans le broadcast
     // Convertir statuts locaux vers valeurs acceptées par le backend
-    const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'delivered', 'annule':'cancelled', 'paiement':'pending' };
+    const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'termine', 'annule':'cancelled', 'paiement':'pending' };
     const apiStatus = STATUS_TO_API[newStatus] || newStatus;
     const localOrder = allOrders.find(o => o.id === orderId);
     const source = localOrder ? (localOrder.source || null) : null;
@@ -879,7 +879,7 @@ function _normalizeOrder(o) {
   const STATUS_NORM = {
     'cancelled':'annule','annulé':'annule','annule':'annule','canceled':'annule',
     'paid':'paiement','pending':'paiement','preparing':'en_preparation',
-    'ready':'pret','done':'termine','delivered':'termine',
+    'ready':'pret','done':'termine','termine':'termine',
   };
   o._rawStatus = o.status;
   if (STATUS_NORM[o.status]) o.status = STATUS_NORM[o.status];
