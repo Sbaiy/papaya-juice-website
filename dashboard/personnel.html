@@ -430,21 +430,7 @@ function renderEmployees() {
           </button>
         </div>
       </td>
-    </tr>
-    <tr id="pointage-row-${emp.id}">
-      <td colspan="5" style="padding: 0 20px 16px; background: rgba(0,0,0,0.1);">
-        <div class="pointage-section">
-          <div class="pointage-title">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Pointage
-          </div>
-          <div id="pointage-list-${emp.id}"><div class="pointage-empty">Chargement...</div></div>
-        </div>
-      </td>
     </tr>`).join('');
-
-  // Charger pointages pour chaque employé
-  employees.forEach(emp => loadPointagesEmp(emp.id));
 }
 
 function populateSalarySelect() {
