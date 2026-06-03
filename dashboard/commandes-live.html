@@ -827,12 +827,15 @@ async function quickStatus(orderId, newStatus) {
       ? 'http://localhost:3000/api'
       : 'https://papaya-juice-backend-production.up.railway.app/api';
     // Récupérer source de l ordre local pour le préserver dans le broadcast
+    // Convertir statuts locaux vers valeurs acceptées par le backend
+    const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'delivered', 'annule':'cancelled', 'paiement':'pending' };
+    const apiStatus = STATUS_TO_API[newStatus] || newStatus;
     const localOrder = allOrders.find(o => o.id === orderId);
     const source = localOrder ? (localOrder.source || null) : null;
     const res = await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ status: newStatus, ...(source ? { source } : {}) })
+      body: JSON.stringify({ status: apiStatus, ...(source ? { source } : {}) })
     });
     if (!res.ok) { const e = await res.json(); console.error('quickStatus error:', e.error); return; }
     const updated = await res.json();
