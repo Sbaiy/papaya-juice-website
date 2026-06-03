@@ -629,8 +629,10 @@ function openPinModal(action) {
     pendingAction = action;
     document.getElementById('pinInput').value = '';
     document.getElementById('pinModal').style.display = 'flex';
-    // Enregistrer l'heure de login (ouverture du kiosk)
-    localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
+    // Enregistrer l'heure de login UNIQUEMENT à l'ouverture (pas lors d'une clôture)
+    if (action !== 'cloture') {
+        localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
+    }
 }
 function addPin(num) {
     const input = document.getElementById('pinInput');
@@ -1682,8 +1684,10 @@ document.addEventListener('visibilitychange', () => {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pinModal').style.display = 'flex';
-    // Enregistrer l'heure de login (ouverture du kiosk)
-    localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
+    // Enregistrer l'heure de login uniquement si pas déjà enregistrée (évite de perdre l'heure au refresh)
+    if (!localStorage.getItem('papaya_kiosk_login_time')) {
+        localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
+    }
 
     if (typeof API === 'undefined') {
         window.API = {
