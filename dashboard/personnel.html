@@ -431,20 +431,9 @@ function renderEmployees() {
         </div>
       </td>
     </tr>
-    <tr id="pointage-row-${emp.id}">
-      <td colspan="5" style="padding: 0 20px 16px; background: rgba(0,0,0,0.1);">
-        <div class="pointage-section">
-          <div class="pointage-title">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Pointage
-          </div>
-          <div id="pointage-list-${emp.id}"><div class="pointage-empty">Chargement...</div></div>
-        </div>
-      </td>
-    </tr>`).join('');
+`).join('');
 
-  // Charger pointages pour chaque employé
-  employees.forEach(emp => loadPointagesEmp(emp.id));
+
 }
 
 function populateSalarySelect() {
@@ -606,21 +595,6 @@ async function deleteSalary(id) {
     loadSalaries();
   } catch (err) { alert('Erreur: ' + err.message); }
 }
-
-/* ══════════════════════
-   POINTAGES
-══════════════════════ */
-async function loadPointagesEmp(empId) {
-  const el = document.getElementById('pointage-list-' + empId);
-  if (!el) return;
-  try {
-    // Fetch uniquement les pointages d'aujourd'hui
-    const today = new Date().toISOString().split('T')[0];
-    const data = await apiFetch('/pointages?employee_id=' + empId + '&date=' + today);
-    if (!data || !data.length) {
-      el.innerHTML = '<div class="pointage-empty">Aucun pointage aujourd\'hui.</div>';
-      return;
-    }
 
     // Grouper par date (aujourd'hui seulement)
     const groups = {};
