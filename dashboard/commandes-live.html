@@ -490,33 +490,23 @@ function resetOrders() {
   loadOrders();
 }
 
-const BACKEND_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000/api'
-  : 'https://papaya-juice-backend-production.up.railway.app/api';
-
-function logout() {
-  const token = localStorage.getItem('papaya_token');
-  const userRaw = localStorage.getItem('papaya_user') || sessionStorage.getItem('papaya_user');
-  let userId = null;
-  try { userId = JSON.parse(userRaw)?.id; } catch(e) {}
-
-  if (token && userId && userId !== 'owner') {
-    fetch(BACKEND_URL + '/api/auth/logout', {
+async function logout() {
+  const token = localStorage.getItem('papaya_token') || sessionStorage.getItem('papaya_token');
+  try {
+    await fetch('/api/auth/logout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ employee_id: userId })
-    }).catch(() => {}).finally(() => {
-      sessionStorage.clear();
-      localStorage.removeItem('papaya_token');
-      localStorage.removeItem('papaya_user');
-      window.location.href = '/dashboard';
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
-  } else {
-    sessionStorage.clear();
-    localStorage.removeItem('papaya_token');
-    localStorage.removeItem('papaya_user');
-    window.location.href = '/dashboard';
+  } catch(e) {
+    console.warn('Pointage logout échoué:', e);
   }
+  sessionStorage.clear();
+  localStorage.removeItem('papaya_token');
+  localStorage.removeItem('papaya_user');
+  window.location.href = '/dashboard';
 }
 
 function activateSound() {
@@ -745,9 +735,8 @@ function buildCard(order) {
   const isAnnule = normS === 'annule' || normS.includes('annul') || rawS === 'cancelled' || rawS.includes('annul') || rawS === 'annule';
   const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
   const src = (order.source || '').toLowerCase().trim();
-  const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src) ||
-    (!src && order._rawStatus === 'pending');  // kiosk insère en 'pending', menu en 'paiement'
-  // Menu orders: source explicite OU détecté par rawStatus 'paiement'
+  const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
+  // Menu orders: source explicite OU détecté par rawStatus 'paiement' (kiosk insère en 'pending', menu en 'paiement')
   const isFromMenu = !isFromKiosk && (
     ['menu', 'online', 'web', 'client'].includes(src) ||
     (!src && order._rawStatus === 'paiement')
@@ -845,25 +834,21 @@ async function quickStatus(orderId, newStatus) {
     // Récupérer source de l ordre local pour le préserver dans le broadcast
     const localOrder = allOrders.find(o => o.id === orderId);
     const source = localOrder ? (localOrder.source || null) : null;
-    // Traduire les statuts FR → EN pour le backend
-    const STATUS_TO_BACKEND = {
-      'paiement':       'pending',
-      'en_preparation': 'preparing',
-      'pret':           'ready',
-      'termine':        'delivered',
-      'annule':         'cancelled',
-    };
-    const backendStatus = STATUS_TO_BACKEND[newStatus] || newStatus;
     const res = await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ status: backendStatus, ...(source ? { source } : {}) })
+      body: JSON.stringify({ status: newStatus, ...(source ? { source } : {}) })
     });
     if (!res.ok) { const e = await res.json(); console.error('quickStatus error:', e.error); return; }
     const updated = await res.json();
     // Broadcast avec source préservée
     _broadcastUpdate('update_order', { ...updated, source: source || updated.source });
+    // Préserver source dans allOrders avant loadOrders (DB peut retourner source: null pour anciens orders)
+    const savedSources = {};
+    allOrders.forEach(o => { if (o.source) savedSources[o.id] = o.source; });
     await loadOrders();
+    allOrders = allOrders.map(o => ({ ...o, source: o.source || savedSources[o.id] || null }));
+    renderOrders();
   } catch (e) { console.error(e); }
 }
 function openStatusModal(orderId, currentStatus) {
