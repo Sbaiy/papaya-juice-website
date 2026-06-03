@@ -145,6 +145,20 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,.1); border-top-color: var(--orange); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* POINTAGE */
+.pointage-section { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.pointage-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.pointage-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 5px; font-size: 12px; }
+.pointage-row:last-child { margin-bottom: 0; }
+.pointage-times { color: var(--muted); display: flex; gap: 12px; align-items: center; }
+.pointage-times span { display: flex; align-items: center; gap: 4px; }
+.pointage-duree { font-weight: 700; color: var(--orange); font-size: 12px; white-space: nowrap; }
+.pointage-open { color: #4ade80; font-weight: 700; font-size: 11px; display: flex; align-items: center; gap: 4px; }
+.pointage-open::before { content:''; width:6px; height:6px; border-radius:50%; background:#4ade80; display:inline-block; animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.pointage-empty { font-size: 12px; color: var(--muted); font-style: italic; padding: 6px 0; }
+.pointage-date-group { font-size: 10px; color: var(--muted); margin: 6px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+
 @media (max-width: 700px) {
   .topbar, .masquer-bar { margin-left: 10px; margin-right: 10px; }
   .page-header { flex-direction: column; }
@@ -379,7 +393,21 @@ function renderEmployees() {
           </button>
         </div>
       </td>
+    </tr>
+    <tr id="pointage-row-${emp.id}">
+      <td colspan="5" style="padding: 0 20px 16px; background: rgba(0,0,0,0.1);">
+        <div class="pointage-section">
+          <div class="pointage-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Pointage
+          </div>
+          <div id="pointage-list-${emp.id}"><div class="pointage-empty">Chargement...</div></div>
+        </div>
+      </td>
     </tr>`).join('');
+
+  // Charger pointages pour chaque employé
+  employees.forEach(emp => loadPointagesEmp(emp.id));
 }
 
 function populateSalarySelect() {
@@ -540,6 +568,54 @@ async function deleteSalary(id) {
     await apiFetch('/salaries/' + id, { method: 'DELETE' });
     loadSalaries();
   } catch (err) { alert('Erreur: ' + err.message); }
+}
+
+/* ══════════════════════
+   POINTAGES
+══════════════════════ */
+async function loadPointagesEmp(empId) {
+  const el = document.getElementById('pointage-list-' + empId);
+  if (!el) return;
+  try {
+    const data = await apiFetch('/pointages?employee_id=' + empId);
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="pointage-empty">Aucun pointage enregistré.</div>';
+      return;
+    }
+
+    // Grouper par date
+    const groups = {};
+    data.forEach(p => {
+      const d = new Date(p.login_at).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(p);
+    });
+
+    // Afficher max 5 jours
+    const days = Object.keys(groups).slice(0, 5);
+    el.innerHTML = days.map(day => {
+      const rows = groups[day].map(p => {
+        const loginStr  = new Date(p.login_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+        const logoutStr = p.logout_at
+          ? new Date(p.logout_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
+          : null;
+        const duree = p.duree_label || null;
+        return `
+          <div class="pointage-row">
+            <div class="pointage-times">
+              <span>🟢 ${loginStr}</span>
+              ${logoutStr
+                ? `<span>🔴 ${logoutStr}</span>`
+                : `<span class="pointage-open">En cours</span>`}
+            </div>
+            <div class="pointage-duree">${duree || (logoutStr ? '—' : '')}</div>
+          </div>`;
+      }).join('');
+      return `<div class="pointage-date-group">${day}</div>${rows}`;
+    }).join('');
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="pointage-empty">Erreur chargement.</div>';
+  }
 }
 
 /* ══════════════════════

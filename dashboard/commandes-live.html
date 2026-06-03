@@ -490,11 +490,28 @@ function resetOrders() {
   loadOrders();
 }
 
+const BACKEND_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : 'https://papaya-juice-backend-production.up.railway.app/api';
+
 function logout() {
-  sessionStorage.clear();
-  localStorage.removeItem('papaya_token');
-  localStorage.removeItem('papaya_user');
-  window.location.href = '/dashboard';
+  const token = localStorage.getItem('papaya_token');
+  if (token) {
+    fetch(BACKEND_URL + '/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    }).catch(() => {}).finally(() => {
+      sessionStorage.clear();
+      localStorage.removeItem('papaya_token');
+      localStorage.removeItem('papaya_user');
+      window.location.href = '/dashboard';
+    });
+  } else {
+    sessionStorage.clear();
+    localStorage.removeItem('papaya_token');
+    localStorage.removeItem('papaya_user');
+    window.location.href = '/dashboard';
+  }
 }
 
 function activateSound() {
