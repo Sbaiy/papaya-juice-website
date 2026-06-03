@@ -629,6 +629,8 @@ function openPinModal(action) {
     pendingAction = action;
     document.getElementById('pinInput').value = '';
     document.getElementById('pinModal').style.display = 'flex';
+    // Enregistrer l'heure de login (ouverture du kiosk)
+    localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
 }
 function addPin(num) {
     const input = document.getElementById('pinInput');
@@ -1073,12 +1075,12 @@ let _histRealtimeChannel = null;
 
 function _histNormalizeOrders(orders) {
     const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
-    const clotureTime = localStorage.getItem('papaya_cloture_time');
+    const loginTime = localStorage.getItem('papaya_kiosk_login_time');
     orders.forEach(o => {
         o.status = STATUS_NORM[o.status] || o.status;
         if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'cancelled';
     });
-    const filtered = clotureTime ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime)) : orders;
+    const filtered = loginTime ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime)) : orders;
     filtered.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
     return filtered;
 }
@@ -1240,10 +1242,10 @@ async function validerCloture() {
             if (res.ok) {
                 const ordersRes = await res.json();
                 const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
-                const clotureTime = localStorage.getItem('papaya_cloture_time');
+                const loginTime = localStorage.getItem('papaya_kiosk_login_time');
                 const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending'];
-                clotureOrders = clotureTime
-                    ? orders.filter(o => new Date(o.created_at) > new Date(clotureTime) && STATUS_DONE.includes(o.status))
+                clotureOrders = loginTime
+                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status))
                     : orders.filter(o => STATUS_DONE.includes(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
@@ -1287,9 +1289,9 @@ async function validerCloture() {
         ticketZ += sep2;
         const nCloture = Math.floor(Date.now() / 1000) % 10000;
         ticketZ += `N CLOTURE : ${nCloture}\n`;
-        const clotureTime = localStorage.getItem('papaya_cloture_time');
-        const deStr = clotureTime
-            ? new Date(clotureTime).toLocaleString('fr-FR').replace(',','')
+        const loginTime = localStorage.getItem('papaya_kiosk_login_time');
+        const deStr = loginTime
+            ? new Date(loginTime).toLocaleString('fr-FR').replace(',','')
             : dateStr + ' 00:00:00';
         ticketZ += `DE        : ${deStr}\n`;
         ticketZ += `A         : ${dateStr} ${timeStr}\n`;
@@ -1341,6 +1343,7 @@ async function validerCloture() {
             });
         } catch(e) { console.warn('Cloture non sauvegardée:', e); }
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
+        localStorage.removeItem('papaya_kiosk_login_time');
         showToast('✅ Clôture réussie ! Déconnexion...');
         setTimeout(() => { if(typeof API!=='undefined') API.Auth.logout(); else { sessionStorage.clear(); location.href='/dashboard'; } }, 2000);
     } catch(err) { showToast('❌ Erreur clôture: '+err.message); }
@@ -1678,6 +1681,8 @@ document.addEventListener('visibilitychange', () => {
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pinModal').style.display = 'flex';
+    // Enregistrer l'heure de login (ouverture du kiosk)
+    localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
 
     if (typeof API === 'undefined') {
         window.API = {
