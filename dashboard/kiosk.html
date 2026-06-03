@@ -1243,26 +1243,10 @@ async function validerCloture() {
                 const ordersRes = await res.json();
                 const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending', 'en_attente', 'cancelled', 'annule', 'annulé'];
-                const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-                const filterFrom = loginTime ? new Date(loginTime) : todayStart;
-
-                // DEBUG — نشوف شنو كيجي من API
-                const allStatuses = [...new Set(orders.map(o => o.status))];
-                const todayOrders = orders.filter(o => new Date(o.created_at) >= todayStart);
-                console.log('🔍 CLOTURE DEBUG:');
-                console.log('  Total orders from API:', orders.length);
-                console.log('  Today orders:', todayOrders.length);
-                console.log('  All statuses found:', allStatuses);
-                console.log('  LoginTime:', loginTime);
-                console.log('  FilterFrom:', filterFrom);
-                console.log('  Sample orders:', orders.slice(0,3).map(o => ({id:o.id, status:o.status, total:o.total, created_at:o.created_at})));
-                showToast(`🔍 API: ${orders.length} cmds total, ${todayOrders.length} aujourd'hui, statuts: ${allStatuses.join(', ')}`);
-
-                clotureOrders = orders.filter(o =>
-                    new Date(o.created_at) >= filterFrom &&
-                    STATUS_DONE.includes(o.status)
-                );
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending'];
+                clotureOrders = loginTime
+                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status))
+                    : orders.filter(o => STATUS_DONE.includes(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
@@ -1304,15 +1288,13 @@ async function validerCloture() {
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
         const nCloture = Math.floor(Date.now() / 1000) % 10000;
-        ticketZ += `N CLOTURE  : ${nCloture}\n`;
-        const loginTimeC = localStorage.getItem('papaya_kiosk_login_time');
-        const deStr = loginTimeC
-            ? new Date(loginTimeC).toLocaleString('fr-FR').replace(',','')
+        ticketZ += `N CLOTURE : ${nCloture}\n`;
+        const loginTime = localStorage.getItem('papaya_kiosk_login_time');
+        const deStr = loginTime
+            ? new Date(loginTime).toLocaleString('fr-FR').replace(',','')
             : dateStr + ' 00:00:00';
-        ticketZ += `DE         : ${deStr}\n`;
-        ticketZ += `A          : ${dateStr} ${timeStr}\n`;
-        ticketZ += `CAISSIER   : ${userName}\n`;
-        ticketZ += `NBR CMD    : ${nbrCommandes}\n`;
+        ticketZ += `DE        : ${deStr}\n`;
+        ticketZ += `A         : ${dateStr} ${timeStr}\n`;
         ticketZ += sep;
 
         // W=42: Article=28, Qte=4, space=1, TOTAL=9 => 42 chars exact
@@ -1343,16 +1325,14 @@ async function validerCloture() {
         });
 
         ticketZ += sep2;
-        ticketZ += `TOTAL NET  : ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
+        ticketZ += `TOTAL NET: ${padL(grandTotal.toFixed(2) + ' DH', 20)}\n`;
         ticketZ += sep2;
-        ticketZ += `ESPECES    : ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
+        ticketZ += `ESPECES : ${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
         ticketZ += sep;
-        if (nbrCommandes === 0) {
-            ticketZ += '  !! AUCUNE COMMANDE TROUVEE !!\n';
-            ticketZ += '  Verifiez les statuts ou la\n';
-            ticketZ += '  periode de session.\n';
-            ticketZ += sep;
-        }
+        ticketZ += `CAISSIER : ${userName}\n`;
+        ticketZ += sep;
+        ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
+        ticketZ += sep;
         await printViaPrintNode(ticketZ, 'cash');
         try {
             const token = localStorage.getItem('papaya_token');
