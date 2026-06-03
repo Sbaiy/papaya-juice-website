@@ -1243,10 +1243,14 @@ async function validerCloture() {
                 const ordersRes = await res.json();
                 const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending'];
-                clotureOrders = loginTime
-                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status))
-                    : orders.filter(o => STATUS_DONE.includes(o.status));
+                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement', 'pending', 'en_attente'];
+                const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                // Si loginTime existe, utiliser loginTime, sinon utiliser début du jour
+                const filterFrom = loginTime ? new Date(loginTime) : todayStart;
+                clotureOrders = orders.filter(o =>
+                    new Date(o.created_at) >= filterFrom &&
+                    STATUS_DONE.includes(o.status)
+                );
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
@@ -1288,13 +1292,15 @@ async function validerCloture() {
         ticketZ += '   CLOTURE GLOBALE\n';
         ticketZ += sep2;
         const nCloture = Math.floor(Date.now() / 1000) % 10000;
-        ticketZ += `N CLOTURE : ${nCloture}\n`;
-        const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-        const deStr = loginTime
-            ? new Date(loginTime).toLocaleString('fr-FR').replace(',','')
+        ticketZ += `N CLOTURE  : ${nCloture}\n`;
+        const loginTimeC = localStorage.getItem('papaya_kiosk_login_time');
+        const deStr = loginTimeC
+            ? new Date(loginTimeC).toLocaleString('fr-FR').replace(',','')
             : dateStr + ' 00:00:00';
-        ticketZ += `DE        : ${deStr}\n`;
-        ticketZ += `A         : ${dateStr} ${timeStr}\n`;
+        ticketZ += `DE         : ${deStr}\n`;
+        ticketZ += `A          : ${dateStr} ${timeStr}\n`;
+        ticketZ += `CAISSIER   : ${userName}\n`;
+        ticketZ += `NBR CMD    : ${nbrCommandes}\n`;
         ticketZ += sep;
 
         // W=42: Article=28, Qte=4, space=1, TOTAL=9 => 42 chars exact
@@ -1325,14 +1331,16 @@ async function validerCloture() {
         });
 
         ticketZ += sep2;
-        ticketZ += `TOTAL NET: ${padL(grandTotal.toFixed(2) + ' DH', 20)}\n`;
+        ticketZ += `TOTAL NET  : ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
         ticketZ += sep2;
-        ticketZ += `ESPECES : ${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
+        ticketZ += `ESPECES    : ${padL(grandTotal.toFixed(2) + ' DH', 18)}\n`;
         ticketZ += sep;
-        ticketZ += `CAISSIER : ${userName}\n`;
-        ticketZ += sep;
-        ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
-        ticketZ += sep;
+        if (nbrCommandes === 0) {
+            ticketZ += '  !! AUCUNE COMMANDE TROUVEE !!\n';
+            ticketZ += '  Verifiez les statuts ou la\n';
+            ticketZ += '  periode de session.\n';
+            ticketZ += sep;
+        }
         await printViaPrintNode(ticketZ, 'cash');
         try {
             const token = localStorage.getItem('papaya_token');
