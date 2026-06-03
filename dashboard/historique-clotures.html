@@ -319,13 +319,13 @@ async function imprimerCloture(c, num, btn) {
   try {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
 
-    const date = new Date(c.created_at);
+    const date    = new Date(c.created_at);
     const dateStr = date.toLocaleDateString('fr-FR');
     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const sep  = '--------------------------------\n';
-    const sep2 = '================================\n';
-    const pad  = (str, len) => String(str).padEnd(len);
-    const padL = (str, len) => String(str).padStart(len);
+    const sep     = '--------------------------------\n';
+    const sep2    = '================================\n';
+    const pad     = (str, len) => String(str).padEnd(len);
+    const padL    = (str, len) => String(str).padStart(len);
     const C_ART = 28, C_QTY = 4, C_TOT = 9;
     const artLine = (name, qty, total) =>
       pad(name, C_ART) + padL(String(qty), C_QTY) + ' ' + padL(String(total), C_TOT);
@@ -336,8 +336,34 @@ async function imprimerCloture(c, num, btn) {
     ticket += `N CLOTURE : ${c.id || num}\n`;
     ticket += `DATE      : ${dateStr} ${timeStr}\n`;
     ticket += sep;
-    ticket += artLine('Article', 'Qte', 'TOTAL_NET') + '\n';
-    ticket += sep;
+
+    // ── Détail articles par catégorie si disponible ──
+    const snap = c.items_snapshot;
+    if (snap && typeof snap === 'object' && Object.keys(snap).length > 0) {
+      ticket += artLine('Article', 'Qte', 'TOTAL_NET') + '\n';
+      ticket += sep;
+      Object.keys(snap).sort().forEach(cat => {
+        ticket += `${cat}\n`;
+        let catTotal = 0, catQty = 0;
+        Object.keys(snap[cat]).sort().forEach(name => {
+          const { qty, total } = snap[cat][name];
+          const shortName = '  ' + name.substring(0, C_ART - 2);
+          ticket += artLine(shortName, qty, parseFloat(total).toFixed(0)) + '\n';
+          catTotal += parseFloat(total);
+          catQty   += parseInt(qty);
+        });
+        ticket += artLine('* TOTAL FAMILLE *', '*' + catQty + '*', '*' + catTotal.toFixed(0) + '*') + '\n';
+        ticket += sep;
+      });
+    } else {
+      // Ancien enregistrement sans détail
+      ticket += artLine('Article', 'Qte', 'TOTAL_NET') + '\n';
+      ticket += sep;
+      ticket += '  (Détail non disponible)\n';
+      ticket += sep;
+    }
+
+    ticket += sep2;
     ticket += `TOTAL NET: ${padL(parseFloat(c.total).toFixed(2) + ' DH', 20)}\n`;
     ticket += sep2;
     ticket += `ESPECES  : ${padL(parseFloat(c.total).toFixed(2) + ' DH', 21)}\n`;
@@ -347,13 +373,13 @@ async function imprimerCloture(c, num, btn) {
     ticket += `COMMANDES: ${padL(String(c.nbr_commandes), 22)}\n`;
     ticket += sep;
 
-    // PrintNode si configuré
+    // ── PrintNode si configuré ──
     if (cfg.apiKey && cfg.cashPrinter) {
       const ESC = '\x1B', GS = '\x1D';
-      const INIT = ESC + '@';
+      const INIT       = ESC + '@';
       const ALIGN_LEFT = ESC + 'a' + '\x00';
-      const FEED = ESC + 'd' + '\x01';
-      const CUT = GS + 'V' + '\x41' + '\x03';
+      const FEED       = ESC + 'd' + '\x01';
+      const CUT        = GS  + 'V' + '\x41' + '\x03';
       const raw = INIT + ALIGN_LEFT + ticket + FEED + CUT;
       const bytes = [];
       for (let i = 0; i < raw.length; i++) bytes.push(raw.charCodeAt(i) & 0xFF);
@@ -379,7 +405,7 @@ async function imprimerCloture(c, num, btn) {
       if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
       btn.textContent = '✅ Imprimé !';
     } else {
-      // Fallback: impression navigateur
+      // ── Fallback navigateur ──
       const win = window.open('', '_blank', 'width=400,height=600');
       win.document.write(`<pre style="font-family:monospace;font-size:13px;white-space:pre;">${ticket}</pre>`);
       win.document.close();
