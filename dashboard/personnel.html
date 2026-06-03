@@ -614,13 +614,15 @@ async function loadPointagesEmp(empId) {
   const el = document.getElementById('pointage-list-' + empId);
   if (!el) return;
   try {
-    const data = await apiFetch('/pointages?employee_id=' + empId);
+    // Fetch uniquement les pointages d'aujourd'hui
+    const today = new Date().toISOString().split('T')[0];
+    const data = await apiFetch('/pointages?employee_id=' + empId + '&date=' + today);
     if (!data || !data.length) {
-      el.innerHTML = '<div class="pointage-empty">Aucun pointage enregistré.</div>';
+      el.innerHTML = '<div class="pointage-empty">Aucun pointage aujourd\'hui.</div>';
       return;
     }
 
-    // Grouper par date
+    // Grouper par date (aujourd'hui seulement)
     const groups = {};
     data.forEach(p => {
       const d = new Date(p.login_at).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
@@ -628,8 +630,7 @@ async function loadPointagesEmp(empId) {
       groups[d].push(p);
     });
 
-    // Afficher max 5 jours
-    const days = Object.keys(groups).slice(0, 5);
+    const days = Object.keys(groups);
     el.innerHTML = days.map(day => {
       const rows = groups[day].map(p => {
         const loginStr  = new Date(p.login_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
