@@ -1331,7 +1331,7 @@ async function validerCloture() {
             await fetch(BACKEND_URL + '/api/clotures', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2) })
+                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2), items_snapshot: categoryMap })
             });
         } catch(e) { console.warn('Cloture non sauvegardée:', e); }
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
