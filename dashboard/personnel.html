@@ -431,9 +431,20 @@ function renderEmployees() {
         </div>
       </td>
     </tr>
-`).join('');
+    <tr id="pointage-row-${emp.id}">
+      <td colspan="5" style="padding: 0 20px 16px; background: rgba(0,0,0,0.1);">
+        <div class="pointage-section">
+          <div class="pointage-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Pointage
+          </div>
+          <div id="pointage-list-${emp.id}"><div class="pointage-empty">Chargement...</div></div>
+        </div>
+      </td>
+    </tr>`).join('');
 
-
+  // Charger pointages pour chaque employé
+  employees.forEach(emp => loadPointagesEmp(emp.id));
 }
 
 function populateSalarySelect() {
@@ -596,7 +607,20 @@ async function deleteSalary(id) {
   } catch (err) { alert('Erreur: ' + err.message); }
 }
 
-    // Grouper par date (aujourd'hui seulement)
+/* ══════════════════════
+   POINTAGES
+══════════════════════ */
+async function loadPointagesEmp(empId) {
+  const el = document.getElementById('pointage-list-' + empId);
+  if (!el) return;
+  try {
+    const data = await apiFetch('/pointages?employee_id=' + empId);
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="pointage-empty">Aucun pointage enregistré.</div>';
+      return;
+    }
+
+    // Grouper par date
     const groups = {};
     data.forEach(p => {
       const d = new Date(p.login_at).toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
@@ -604,7 +628,8 @@ async function deleteSalary(id) {
       groups[d].push(p);
     });
 
-    const days = Object.keys(groups);
+    // Afficher max 5 jours
+    const days = Object.keys(groups).slice(0, 5);
     el.innerHTML = days.map(day => {
       const rows = groups[day].map(p => {
         const loginStr  = new Date(p.login_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
