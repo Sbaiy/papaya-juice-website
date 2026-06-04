@@ -1129,31 +1129,20 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
    LOAD PRODUCTS
 ════════════════════════ */
 const CACHE_KEY = 'papaya_menu_cache';
-const CACHE_TTL = 30 * 1000; // 30s — rafraîchi par realtime
+const CACHE_TTL = 0; // pas de cache
 
 async function loadMenuAndCategories() {
+    // Toujours vider le cache au chargement
+    localStorage.removeItem(CACHE_KEY);
     try {
         const { data: catData } = await _supabase.from('categories').select('*').order('sort_order', { ascending: true });
         allCategories = catData || [];
 
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_TTL) { applyProducts(data); return; }
-        }
-
         let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order');
-        if (error) {
-            const old = localStorage.getItem(CACHE_KEY);
-            if (old) { applyProducts(JSON.parse(old).data); return; }
-            showError(); return;
-        }
+        if (error) { showError(); return; }
 
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
         applyProducts(products);
     } catch {
-        const old = localStorage.getItem(CACHE_KEY);
-        if (old) { applyProducts(JSON.parse(old).data); return; }
         showError();
     }
 }
