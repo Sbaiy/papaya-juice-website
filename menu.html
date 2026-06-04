@@ -1242,18 +1242,15 @@ function buildCategoryBar(productCatNames) {
 
         document.body.removeChild(measurer);
 
-        // Build real pills in rows
-        let pillIndex = 0;
+        // Build real pills in rows (sans animation — sera déclenchée à l'ouverture)
         rows.forEach((rowItems, rowIndex) => {
             const rowEl = document.createElement('div');
-            rowEl.className = 'cat-dropdown-row animate-row';
-            rowEl.style.animationDelay = (rowIndex * 120) + 'ms';
+            rowEl.className = 'cat-dropdown-row';
+            rowEl.dataset.rowIndex = rowIndex;
             rowItems.forEach(({ catObj }) => {
                 const pill = document.createElement('button');
-                pill.className = 'cat-pill animate-in';
+                pill.className = 'cat-pill';
                 pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
-                pill.style.animationDelay = (pillIndex * 40) + 'ms';
-                pillIndex++;
                 if (catObj.image) {
                     pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
                 } else {
@@ -1291,8 +1288,14 @@ function openDropdown() {
     document.getElementById('allMenuBtn')?.classList.add('open');
     // Re-trigger stagger animation
     if (dropdown) {
-        const rows = dropdown.querySelectorAll('.cat-dropdown-row.animate-row');
-        rows.forEach(r => { r.classList.remove('animate-row'); void r.offsetWidth; r.classList.add('animate-row'); });
+        const rows = dropdown.querySelectorAll('.cat-dropdown-row');
+        rows.forEach(r => {
+            const delay = parseInt(r.dataset.rowIndex || 0) * 120;
+            r.style.animationDelay = delay + 'ms';
+            r.classList.remove('animate-row');
+            void r.offsetWidth;
+            r.classList.add('animate-row');
+        });
     }
 }
 
