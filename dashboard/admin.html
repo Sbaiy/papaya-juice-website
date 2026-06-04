@@ -310,6 +310,17 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw"; 
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Broadcast menu update to all connected clients (menu pages) ──
+async function broadcastMenuUpdate() {
+  try {
+    await _supabase.channel('papaya-broadcast').send({
+      type: 'broadcast',
+      event: 'menu_updated',
+      payload: { ts: Date.now() }
+    });
+  } catch(e) { console.warn('Broadcast failed:', e); }
+}
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
   : 'https://papaya-juice-backend-production.up.railway.app';
@@ -463,7 +474,7 @@ async function addProduct(){
     const price = document.getElementById('price').value; 
     const category = document.getElementById('categorySelect').value; 
     if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
-    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
+    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
 }
 
 async function startEdit(id) {
@@ -487,7 +498,7 @@ async function updateProduct() {
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
     if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
-    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
+    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
 }
 
 function clearForm() {
@@ -506,7 +517,7 @@ function clearForm() {
 
 async function deleteProduct(id){ 
     if(confirm('Are you sure you want to delete this item?')) {
-        try { await apiCall('DELETE', '/api/menu/products/' + id); localStorage.removeItem('papaya_menu_cache'); if(currentEditingProductId === id) clearForm(); loadProducts(); } catch(e) {
+        try { await apiCall('DELETE', '/api/menu/products/' + id); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); if(currentEditingProductId === id) clearForm(); loadProducts(); } catch(e) {
           if (e.message && e.message.includes('propriétaire')) {
             if (confirm('⚠️ Accès refusé : seul le propriétaire peut supprimer.\n\nVotre session a peut-être expiré. Voulez-vous vous reconnecter ?')) {
               localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user');
