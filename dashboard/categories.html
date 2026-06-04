@@ -561,7 +561,7 @@ function cancelEdit() {
 // ── Delete ──
 function askDelete(id, name) {
   deleteTargetId = id;
-  document.getElementById('deleteModalBody').textContent = `Voulez-vous supprimer "${name}" ? Cette action est irréversible.`;
+  document.getElementById('deleteModalBody').textContent = `Voulez-vous supprimer "${name}" ? ⚠️ Tous les produits de cette catégorie seront également supprimés. Cette action est irréversible.`;
   document.getElementById('deleteModal').classList.add('open');
 }
 function closeDeleteModal() {
