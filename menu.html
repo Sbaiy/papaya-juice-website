@@ -179,6 +179,14 @@ h1.menu-title {
 }
 @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
+@keyframes cardSlideDown {
+  from { opacity: 0; transform: translateY(-28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.product-card.animate-in {
+  animation: cardSlideDown 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 /* ── GRID ── */
 .menu-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1062,7 +1070,8 @@ async function submitOrder() {
             table: tableNum || '',
             total: total.toFixed(2),
             items: JSON.stringify(items),
-            t:     _rawToken
+            t:     _rawToken,
+            source: 'menu'
         });
         window.location.href = 'confirmation.html?' + qp.toString();
 
@@ -1309,10 +1318,11 @@ function displayProducts(list) {
         grid.innerHTML = `<div class="empty-state"><span>🍃</span>No items in this category yet.</div>`;
         return;
     }
-    list.forEach((product) => {
+    list.forEach((product, index) => {
         const desc = product.description && product.description !== '-' ? product.description : '';
         const card = document.createElement('div');
-        card.className = 'product-card';
+        card.className = 'product-card animate-in';
+        card.style.animationDelay = (index * 80) + 'ms';
         card.innerHTML = `
             <img src="${product.image || ''}" alt="${product.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22130%22 height=%22130%22%3E%3Crect fill=%22%23ffffff10%22 width=%22130%22 height=%22130%22 rx=%2216%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E🍹%3C/text%3E%3C/svg%3E'">
             <div class="product-info">
