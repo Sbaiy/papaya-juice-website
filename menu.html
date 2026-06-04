@@ -167,7 +167,11 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
     padding: 4px 0;
 }
 .cat-dropdown-row.animate-row {
-    animation: cardSlideDown 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation: rowSlideDown 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes rowSlideDown {
+  from { opacity: 0; transform: translateY(-22px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .cat-dropdown-row .cat-pill {
     font-size: 12px; padding: 7px 14px; flex-shrink: 0;
@@ -1250,8 +1254,7 @@ function buildCategoryBar(productCatNames) {
             rowItems.forEach(({ catObj }) => {
                 const pill = document.createElement('button');
                 pill.className = 'cat-pill';
-                pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
-                if (catObj.image) {
+                pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';                if (catObj.image) {
                     pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
                 } else {
                     pill.textContent = catObj.name;
@@ -1289,9 +1292,11 @@ function openDropdown() {
     // Re-trigger stagger animation
     if (dropdown) {
         const rows = dropdown.querySelectorAll('.cat-dropdown-row');
+        const total = rows.length;
+        const step = total > 1 ? Math.round(2000 / total) : 0;
         rows.forEach(r => {
-            const delay = parseInt(r.dataset.rowIndex || 0) * 120;
-            r.style.animationDelay = delay + 'ms';
+            const idx = parseInt(r.dataset.rowIndex || 0);
+            r.style.animationDelay = (idx * step) + 'ms';
             r.classList.remove('animate-row');
             void r.offsetWidth;
             r.classList.add('animate-row');
