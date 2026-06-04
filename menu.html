@@ -1285,6 +1285,11 @@ function openDropdown() {
     }
     dropdown?.classList.add('open');
     document.getElementById('allMenuBtn')?.classList.add('open');
+    // Re-trigger stagger animation
+    if (dropdown) {
+        const pills = dropdown.querySelectorAll('.cat-pill.animate-in');
+        pills.forEach(p => { p.classList.remove('animate-in'); void p.offsetWidth; p.classList.add('animate-in'); });
+    }
 }
 
 function closeDropdown() {
