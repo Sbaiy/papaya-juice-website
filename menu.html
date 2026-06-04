@@ -1274,11 +1274,9 @@ function openDropdown() {
     // Re-trigger stagger animation
     if (dropdown) {
         const rows = dropdown.querySelectorAll('.cat-dropdown-row');
-        const total = rows.length;
-        const step = total > 1 ? Math.round(2000 / total) : 0;
         rows.forEach(r => {
             const idx = parseInt(r.dataset.rowIndex || 0);
-            r.style.animationDelay = (idx * step) + 'ms';
+            r.style.animationDelay = (idx * 80) + 'ms';
             r.classList.remove('animate-row');
             void r.offsetWidth;
             r.classList.add('animate-row');
