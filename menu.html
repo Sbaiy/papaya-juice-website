@@ -701,9 +701,15 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const _broadcastChannel = _supabase.channel('papaya-broadcast');
 let _broadcastReady = false;
 const _broadcastReadyPromise = new Promise(resolve => {
-  _broadcastChannel.subscribe((status) => {
-    if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
-  });
+  _broadcastChannel
+    .on('broadcast', { event: 'menu_updated' }, () => {
+      // Admin updated the menu — clear cache and reload products immediately
+      localStorage.removeItem('papaya_menu_cache');
+      loadMenuAndCategories();
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
+    });
 });
 async function _broadcastOrder(event, orderData) {
   if (!_broadcastReady) await _broadcastReadyPromise;
