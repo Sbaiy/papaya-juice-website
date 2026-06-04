@@ -2,6 +2,10 @@
 <html lang="fr">
 <head>
   <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://papaya-juice-backend-production.up.railway.app">
+  <link rel="preconnect" href="https://rlwshuurruvtnqwgbjkl.supabase.co">
   <link rel="apple-touch-icon" href="/logo.png">
    <link rel="icon" href="logo.icon">
     <meta charset="UTF-8">
@@ -684,6 +688,12 @@ async function loadProducts() {
         buildCategoryNav();
         filteredProducts = allProducts;
         renderProducts();
+        // Pré-cacher les images produits dans le Service Worker Chrome
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            allProducts.forEach(p => {
+                if (p.image) navigator.serviceWorker.controller.postMessage({ type: 'CACHE_IMAGE', url: p.image });
+            });
+        }
     } catch(err) {
         document.getElementById('productsGrid').innerHTML = `<div class="state-msg"><div class="state-icon">⚠️</div><div class="state-title">Impossible de charger les produits</div><div class="state-sub">${err.message}</div></div>`;
         document.getElementById('sectionSub').textContent = 'Erreur de connexion';
@@ -747,7 +757,7 @@ function renderProducts() {
         return;
     }
     grid.innerHTML = filteredProducts.map(p => {
-        const imgHtml = p.image ? `<img src="${p.image}" alt="${p.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
+        const imgHtml = p.image ? `<img src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
         const placeholderStyle = p.image ? 'display:none' : '';
         const unavailable = p.disponible === false;
         return `<div class="product-card${unavailable?' unavailable':''}" onclick="${unavailable?'':` addToCart(${p.id})`}">
@@ -787,7 +797,7 @@ function renderCart() {
     if (!cart.length) { empty.style.display='flex'; items.style.display='none'; summary.style.display='none'; btnOrder.disabled=true; return; }
     empty.style.display='none'; items.style.display='block'; summary.style.display='block'; btnOrder.disabled=false;
     items.innerHTML = cart.map(({product:p, qty}) => {
-        const imgEl = p.image ? `<img class="cart-item-img" src="${p.image}" alt="${p.title}" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
+        const imgEl = p.image ? `<img class="cart-item-img" src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
         return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div><div class="cart-item-price">${(p.price*qty).toFixed(2)} DH</div><div class="cart-item-controls"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
     const sub = cart.reduce((s,i) => s+i.product.price*i.qty, 0);
@@ -1735,5 +1745,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </div>
 
+
+<script>
+// ── Service Worker — enregistrement + mise à jour auto ──
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
+        // Vérifier les mises à jour du SW toutes les 10 min
+        setInterval(() => reg.update(), 10 * 60 * 1000);
+    }).catch(err => console.warn('SW registration failed:', err));
+}
+</script>
 </body>
 </html>
