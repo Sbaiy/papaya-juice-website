@@ -688,7 +688,27 @@ async function loadProducts() {
         buildCategoryNav();
         filteredProducts = allProducts;
         renderProducts();
-        // Pré-cacher les images produits dans le Service Worker Chrome
+
+        // ── Preload ALL product images into browser memory cache ──
+        // Toutes les images sont chargées en arrière-plan une seule fois.
+        // Après ça, changer de catégorie = zéro lag (images déjà en RAM).
+        const _imgCache = {};
+        let _loaded = 0, _total = allProducts.filter(p => p.image).length;
+        allProducts.forEach(p => {
+            if (!p.image || _imgCache[p.image]) return;
+            const img = new Image();
+            img.onload = img.onerror = () => {
+                _loaded++;
+                if (_loaded === _total) {
+                    document.getElementById('sectionSub').textContent =
+                        filteredProducts.length + ' produit' + (filteredProducts.length !== 1 ? 's' : '') + ' · ✓ images prêtes';
+                }
+            };
+            _imgCache[p.image] = img;
+            img.src = p.image;   // déclenche le téléchargement maintenant
+        });
+
+        // Pré-cacher aussi dans le Service Worker (persistance entre sessions)
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             allProducts.forEach(p => {
                 if (p.image) navigator.serviceWorker.controller.postMessage({ type: 'CACHE_IMAGE', url: p.image });
@@ -757,7 +777,7 @@ function renderProducts() {
         return;
     }
     grid.innerHTML = filteredProducts.map(p => {
-        const imgHtml = p.image ? `<img src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
+        const imgHtml = p.image ? `<img src="${p.image}" alt="${p.title}" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
         const placeholderStyle = p.image ? 'display:none' : '';
         const unavailable = p.disponible === false;
         return `<div class="product-card${unavailable?' unavailable':''}" onclick="${unavailable?'':` addToCart(${p.id})`}">
