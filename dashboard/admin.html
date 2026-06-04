@@ -486,11 +486,8 @@ async function updateProduct() {
     const description = document.getElementById('description').value || "-"; 
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
-    if(!title || !price || !category){ alert('Please fill in all required fields!'); return; }
-    // imageData: si pas changé, garder l'image existante du produit
-    const payload = { title, price, category, description };
-    if (imageData) payload.image = imageData;
-    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, payload); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
+    if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
+    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
 }
 
 function clearForm() {
