@@ -144,18 +144,38 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
 .arrow-icon { display: inline-block; font-style: normal; font-size: 11px; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); line-height: 1; }
 .cat-pill.all-toggle.open .arrow-icon { transform: rotate(180deg); }
 .cat-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0; left: auto;
-    width: 90vw; max-width: 480px;
+    position: fixed;
+    left: 50%; transform: translateX(-50%) translateY(-8px);
+    width: 90vw; max-width: 500px;
     background: rgba(16,26,18,0.97); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.13); border-radius: 18px;
     box-shadow: 0 16px 48px rgba(0,0,0,0.55);
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow: hidden;
-    max-height: 0; opacity: 0; padding: 0 12px; pointer-events: none;
-    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease, padding 0.35s ease;
+    display: flex; flex-direction: column; gap: 0; overflow: hidden;
+    padding: 10px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4,0,0.2,1);
     z-index: 9999;
+    visibility: hidden;
 }
-.cat-dropdown.open { max-height: 400px; opacity: 1; padding: 12px; pointer-events: all; }
-.cat-dropdown .cat-pill { font-size: 11.5px; padding: 7px 10px; width: 100%; justify-content: center; text-align: center; }
+.cat-dropdown.open {
+    opacity: 1; pointer-events: all;
+    transform: translateX(-50%) translateY(0);
+    visibility: visible;
+}
+.cat-dropdown-row {
+    display: flex; gap: 8px; flex-wrap: nowrap; justify-content: flex-start;
+    padding: 4px 0;
+}
+.cat-dropdown-row.animate-row {
+    animation: rowSlideDown 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes rowSlideDown {
+  from { opacity: 0; transform: translateY(-22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cat-dropdown-row .cat-pill {
+    font-size: 12px; padding: 7px 14px; flex-shrink: 0;
+}
 
 /* ── TITLE ── */
 h1.menu-title {
@@ -165,6 +185,14 @@ h1.menu-title {
     animation: fadeDown 0.8s ease both;
 }
 @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+@keyframes cardSlideDown {
+  from { opacity: 0; transform: translateY(-28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.product-card.animate-in {
+  animation: cardSlideDown 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
 
 /* ── GRID ── */
 .menu-grid {
@@ -672,11 +700,20 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel
 const _broadcastChannel = _supabase.channel('papaya-broadcast');
 let _broadcastReady = false;
-_broadcastChannel.subscribe((status) => { if (status === 'SUBSCRIBED') _broadcastReady = true; });
+const _broadcastReadyPromise = new Promise(resolve => {
+  _broadcastChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
+  });
+});
 async function _broadcastOrder(event, orderData) {
-  if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
+  if (!_broadcastReady) await _broadcastReadyPromise;
+  // محاولة أولى
+  try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); return; }
+  catch(e) { console.warn('Broadcast attempt 1 failed, retrying...', e); }
+  // إعادة محاولة بعد 1.5 ثانية
+  await new Promise(r => setTimeout(r, 1500));
   try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); }
-  catch(e) { console.warn('Broadcast failed:', e); }
+  catch(e) { console.warn('Broadcast attempt 2 failed:', e); }
 }
 
 /* ════════════════════════
@@ -1015,6 +1052,7 @@ async function submitOrder() {
                 items:        JSON.stringify(items),
                 total:        parseFloat(total.toFixed(2)),
                 status:       'paiement',
+                source:       'menu',
                 table_number: tableNum || null,
                 note:         note     || null,
                 created_at:   new Date().toISOString()
@@ -1039,7 +1077,8 @@ async function submitOrder() {
             table: tableNum || '',
             total: total.toFixed(2),
             items: JSON.stringify(items),
-            t:     _rawToken
+            t:     _rawToken,
+            source: 'menu'
         });
         window.location.href = 'confirmation.html?' + qp.toString();
 
@@ -1089,26 +1128,48 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
 /* ════════════════════════
    LOAD PRODUCTS
 ════════════════════════ */
+const CACHE_KEY = 'papaya_menu_cache';
+const CACHE_TTL = 5 * 60 * 1000;
+
 async function loadMenuAndCategories() {
-    // Toujours vider tout cache résiduel
-    localStorage.removeItem('papaya_menu_cache');
-    localStorage.removeItem('productOrder');
     try {
         const { data: catData } = await _supabase.from('categories').select('*').order('sort_order', { ascending: true });
         allCategories = catData || [];
 
-        let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order');
-        if (error) { showError(); return; }
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) { applyProducts(data); return; }
+        }
 
+        let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order');
+        if (error) {
+            const old = localStorage.getItem(CACHE_KEY);
+            if (old) { applyProducts(JSON.parse(old).data); return; }
+            showError(); return;
+        }
+
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
         applyProducts(products);
     } catch {
+        const old = localStorage.getItem(CACHE_KEY);
+        if (old) { applyProducts(JSON.parse(old).data); return; }
         showError();
     }
 }
 
 function applyProducts(products) {
     let filtered = (products || []).filter(p => p.disponible !== false);
-    filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+    const hasSortOrder = filtered.some(p => p.sort_order != null);
+    if (hasSortOrder) {
+        filtered.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+    } else {
+        const saved = JSON.parse(localStorage.getItem('productOrder') || '[]');
+        if (saved.length) filtered.sort((a, b) => {
+            const ai = saved.indexOf(a.id), bi = saved.indexOf(b.id);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        });
+    }
     allProducts = filtered;
     const productCatNames = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
     buildCategoryBar(productCatNames);
@@ -1142,46 +1203,108 @@ function buildCategoryBar(productCatNames) {
         ...productCatNames.filter(n => !dbCatNames.includes(n)).map(n => ({ name: n, image: null }))
     ];
 
-    orderedCats.forEach((catObj, i) => {
-        const pill = document.createElement('button');
-        pill.className = 'cat-pill';
-        pill.style.animationDelay = `${i * 50}ms`;
-        if (catObj.image) {
-            pill.innerHTML = `<img src="${catObj.image}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;margin-right:6px;vertical-align:middle;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+    // Build pills synchronously — نحسبو عرض كل pill من عدد حروفها (تقريب كافي)
+    const dropW = Math.min(window.innerWidth * 0.90, 500) - 20;
+    const AVG_CHAR_W = 8; // px per character approx
+    const PILL_PADDING = 28; // padding left+right
+    const IMG_W = 22; // image + gap if exists
+    const GAP = 8;
+
+    const rows = [];
+    let currentRow = [];
+    let currentWidth = 0;
+
+    orderedCats.forEach(catObj => {
+        const w = catObj.name.length * AVG_CHAR_W + PILL_PADDING + (catObj.image ? IMG_W : 0);
+        const gap = currentRow.length > 0 ? GAP : 0;
+        if (currentRow.length > 0 && currentWidth + gap + w > dropW) {
+            rows.push(currentRow);
+            currentRow = [{ catObj, w }];
+            currentWidth = w;
         } else {
-            pill.textContent = catObj.name;
+            currentRow.push({ catObj, w });
+            currentWidth += gap + w;
         }
-        pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
-        dropdown.appendChild(pill);
+    });
+    if (currentRow.length) rows.push(currentRow);
+
+    // Build rows immediately
+    rows.forEach((rowItems, rowIndex) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'cat-dropdown-row';
+        rowEl.dataset.rowIndex = rowIndex;
+        rowItems.forEach(({ catObj }) => {
+            const pill = document.createElement('button');
+            pill.className = 'cat-pill';
+            pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
+            if (catObj.image) {
+                pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
+            } else {
+                pill.textContent = catObj.name;
+            }
+            pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
+            rowEl.appendChild(pill);
+        });
+        dropdown.appendChild(rowEl);
     });
 
-    allBtn.addEventListener('click', () => {
-        dropdown.classList.contains('open') ? closeDropdown() : openDropdown();
-        activeCategory = 'all';
-        dropdown.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        displayProducts(allProducts);
-        attachCardClicks();
+    allBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dropdown.classList.contains('open')) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
     });
 
     document.addEventListener('click', (e) => {
-        if (!document.getElementById('catBar').contains(e.target)) closeDropdown();
+        if (!bar.contains(e.target)) closeDropdown();
     });
 }
+
 function openDropdown() {
     const dropdown = document.getElementById('catDropdown');
     const header = document.getElementById('mainHeader');
     if (dropdown && header) {
         const hr = header.getBoundingClientRect();
-        dropdown.style.position = 'fixed';
-        dropdown.style.top = (hr.bottom + 8) + 'px';
-        dropdown.style.left = '50%';
-        dropdown.style.transform = 'translateX(-50%)';
-        dropdown.style.width = hr.width + 'px';
+        dropdown.style.top = (hr.bottom + 10) + 'px';
     }
     dropdown?.classList.add('open');
     document.getElementById('allMenuBtn')?.classList.add('open');
+
+    if (dropdown) {
+        const rows = dropdown.querySelectorAll('.cat-dropdown-row');
+        // 1. Reset all rows instantly to hidden state (no transition)
+        rows.forEach(r => {
+            r.classList.remove('animate-row');
+            r.style.transition = 'none';
+            r.style.opacity    = '0';
+            r.style.transform  = 'translateY(-22px)';
+        });
+        // 2. Force reflow — browser commits the hidden state before animating
+        void dropdown.offsetWidth;
+        // 3. Animate each row in with stagger via CSS transition
+        rows.forEach((r, idx) => {
+            const d = idx * 80;
+            r.style.transition = `opacity 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms, transform 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms`;
+            r.style.opacity    = '1';
+            r.style.transform  = 'translateY(0)';
+        });
+    }
 }
-function closeDropdown() { document.getElementById('catDropdown')?.classList.remove('open'); document.getElementById('allMenuBtn')?.classList.remove('open'); }
+
+function closeDropdown() {
+    const dropdown = document.getElementById('catDropdown');
+    if (dropdown) {
+        dropdown.querySelectorAll('.cat-dropdown-row').forEach(r => {
+            r.style.transition = '';
+            r.style.opacity    = '';
+            r.style.transform  = '';
+        });
+    }
+    dropdown?.classList.remove('open');
+    document.getElementById('allMenuBtn')?.classList.remove('open');
+}
 
 function onCategoryClick(category, pill) {
     document.querySelectorAll('#catDropdown .cat-pill').forEach(p => p.classList.remove('active'));
@@ -1189,13 +1312,18 @@ function onCategoryClick(category, pill) {
     activeCategory = category;
     displayProducts(allProducts.filter(p => p.category === category));
     attachCardClicks();
-    setTimeout(closeDropdown, 180);
-    setTimeout(() => {
-        const grid    = document.getElementById('menuGrid');
-        const gridTop = grid.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: Math.max(0, gridTop - 158), behavior: 'smooth' });
-    }, 220);
+    closeDropdown();
+    _scrollLocked = true;
+    const header = document.getElementById('mainHeader');
+    const headerH = header ? header.getBoundingClientRect().height : 80;
+    const title = document.querySelector('h1.menu-title');
+    const scrollTarget = title
+        ? title.getBoundingClientRect().top + window.pageYOffset - headerH - 16
+        : 0;
+    window.scrollTo({ top: Math.max(0, scrollTarget) });
+    setTimeout(() => { _scrollLocked = false; lastST = window.pageYOffset; }, 100);
 }
+
 
 /* ════════════════════════
    DISPLAY PRODUCTS
@@ -1207,10 +1335,11 @@ function displayProducts(list) {
         grid.innerHTML = `<div class="empty-state"><span>🍃</span>No items in this category yet.</div>`;
         return;
     }
-    list.forEach((product) => {
+    list.forEach((product, index) => {
         const desc = product.description && product.description !== '-' ? product.description : '';
         const card = document.createElement('div');
-        card.className = 'product-card';
+        card.className = 'product-card animate-in';
+        card.style.animationDelay = (index * 80) + 'ms';
         card.innerHTML = `
             <img src="${product.image || ''}" alt="${product.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22130%22 height=%22130%22%3E%3Crect fill=%22%23ffffff10%22 width=%22130%22 height=%22130%22 rx=%2216%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E🍹%3C/text%3E%3C/svg%3E'">
             <div class="product-info">
@@ -1315,10 +1444,11 @@ function attachCardClicks() {
    SCROLL
 ════════════════════════ */
 let lastST = 0;
+let _scrollLocked = false;
 const header = document.getElementById('mainHeader');
 
 window.addEventListener('scroll', () => {
-    if (cartIsOpen) return;
+    if (cartIsOpen || _scrollLocked) return;
     const st = window.pageYOffset || document.documentElement.scrollTop;
     if (st > lastST && st > 100) {
         header.classList.add('hide-nav');
@@ -1413,22 +1543,20 @@ async function submitReclamation() {
         const imageUrls = [];
         for (let i = 0; i < reclPhotos.length; i++) {
             const file = reclPhotos[i];
-            // Convertir en base64
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload  = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
             const fd = new FormData();
-            fd.append("file",           base64);
-            fd.append("upload_preset",  CLOUDINARY_PRESET);
-            fd.append("folder",         "reclamations");
-            const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+            fd.append("file", file);  // ✅ File object directement
+            fd.append("upload_preset", CLOUDINARY_PRESET);
+            fd.append("folder", "reclamations");
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                console.error('Cloudinary error:', errData);
+                throw new Error(errData.error?.message || `Upload échoué (${res.status})`);
+            }
             const data = await res.json();
             if (data.secure_url) imageUrls.push(data.secure_url);
         }
-        const { error } = await _supabase.from('reclamations').insert([{
+        const { data: insertedData, error } = await _supabase.from('reclamations').insert([{
             name: document.getElementById('reclName').value.trim() || null,
             message,
             table_number: detectedTable || null,
@@ -1436,8 +1564,16 @@ async function submitReclamation() {
             image_url_2: imageUrls[1] || null,
             image_url_3: imageUrls[2] || null,
             created_at: new Date().toISOString()
-        }]);
+        }]).select().single();
         if (error) throw error;
+        // Broadcast pour que reclamations.html reçoive en temps réel
+        try {
+            await _supabase.channel('papaya-broadcast').send({
+                type: 'broadcast',
+                event: 'new_reclamation',
+                payload: insertedData
+            });
+        } catch(e) { console.warn('Broadcast reclamation failed:', e); }
         closeReclamation();
         const toast = document.getElementById('successToast');
         document.getElementById('toastOrderNum').textContent = 'Réclamation envoyée avec succès';
