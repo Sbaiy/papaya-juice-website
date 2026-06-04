@@ -1,21 +1,103 @@
-/* ═══════════════════════════════════════
-   SERVICE WORKER — Papaya Juice
-   Gère les notifications push background
-═══════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   SERVICE WORKER — Papaya Juice  (v3 — Cache + Notifs)
+   ✓ Cache images produits (Supabase CDN)
+   ✓ Cache fonts Google
+   ✓ Cache assets statiques (logo, icons)
+   ✓ Network-first pour l'API backend
+   ✓ Notifications push
+═══════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'papaya-v1';
+const CACHE_STATIC  = 'papaya-static-v3';   // assets statiques du site
+const CACHE_IMAGES  = 'papaya-images-v3';   // images produits (Supabase / CDN)
+const CACHE_FONTS   = 'papaya-fonts-v3';    // Google Fonts
 
-/* ── Install ── */
+/* Assets à pré-cacher au premier chargement */
+const STATIC_ASSETS = [
+  '/logo.png',
+  '/sw.js',
+];
+
+/* ── Install : pré-cache les assets statiques ── */
 self.addEventListener('install', e => {
   self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE_STATIC).then(cache =>
+      cache.addAll(STATIC_ASSETS).catch(() => {/* silencieux si un asset manque */})
+    )
+  );
 });
 
-/* ── Activate ── */
+/* ── Activate : vider les anciens caches ── */
 self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
+  const KEEP = [CACHE_STATIC, CACHE_IMAGES, CACHE_FONTS];
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => !KEEP.includes(k)).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
-/* ── Push event (reçu depuis le serveur) ── */
+/* ── Fetch : stratégie par type de ressource ── */
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // ── 1. API backend → Network-first (toujours fraîche) ──
+  if (url.hostname.includes('railway.app') || url.pathname.startsWith('/api/')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // ── 2. Images produits Supabase / CDN → Cache-first ──
+  const isImage = /\.(png|jpg|jpeg|webp|svg|gif|avif)(\?.*)?$/i.test(url.pathname);
+  if (isImage || url.hostname.includes('supabase.co') || url.hostname.includes('storage.googleapis.com')) {
+    e.respondWith(
+      caches.open(CACHE_IMAGES).then(async cache => {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;                     // ← retourné du cache Chrome
+        try {
+          const fresh = await fetch(e.request);
+          if (fresh && fresh.status === 200) {
+            cache.put(e.request, fresh.clone());        // ← stocké pour la prochaine fois
+          }
+          return fresh;
+        } catch {
+          return cached || new Response('', { status: 404 });
+        }
+      })
+    );
+    return;
+  }
+
+  // ── 3. Google Fonts → Cache-first ──
+  if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
+    e.respondWith(
+      caches.open(CACHE_FONTS).then(async cache => {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        const fresh = await fetch(e.request);
+        if (fresh && fresh.status === 200) cache.put(e.request, fresh.clone());
+        return fresh;
+      })
+    );
+    return;
+  }
+
+  // ── 4. Assets statiques du site → Cache-first avec fallback réseau ──
+  if (url.origin === self.location.origin) {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request))
+    );
+    return;
+  }
+
+  // ── 5. Tout le reste → réseau normal ──
+});
+
+/* ══════════════════════════════════════════
+   Notifications Push
+══════════════════════════════════════════ */
 self.addEventListener('push', e => {
   if (!e.data) return;
   const data = e.data.json();
@@ -30,7 +112,6 @@ self.addEventListener('push', e => {
   );
 });
 
-/* ── Notification click ── */
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/';
@@ -45,20 +126,33 @@ self.addEventListener('notificationclick', e => {
 });
 
 /* ══════════════════════════════════════════
-   MESSAGE depuis la page (polling fallback)
-   La page envoie { type:'NOTIFY', title, body }
-   quand le statut change — le SW affiche la notif
-   même si la page est en background
+   MESSAGE depuis la page
 ══════════════════════════════════════════ */
 self.addEventListener('message', e => {
-  if (!e.data || e.data.type !== 'NOTIFY') return;
-  self.registration.showNotification(e.data.title || 'Papaya Juice', {
-    body:    e.data.body || '',
-    icon:    '/logo.png',
-    badge:   '/logo.png',
-    vibrate: [200, 100, 200],
-    tag:     e.data.tag || 'order-update',   // remplace la notif précédente si même tag
-    renotify: true,
-    data:    e.data.url ? { url: e.data.url } : {}
-  });
+  if (!e.data) return;
+
+  // Notification manuelle depuis la page
+  if (e.data.type === 'NOTIFY') {
+    self.registration.showNotification(e.data.title || 'Papaya Juice', {
+      body:     e.data.body || '',
+      icon:     '/logo.png',
+      badge:    '/logo.png',
+      vibrate:  [200, 100, 200],
+      tag:      e.data.tag || 'order-update',
+      renotify: true,
+      data:     e.data.url ? { url: e.data.url } : {}
+    });
+    return;
+  }
+
+  // Pré-cacher une image spécifique à la demande
+  if (e.data.type === 'CACHE_IMAGE' && e.data.url) {
+    caches.open(CACHE_IMAGES).then(async cache => {
+      const already = await cache.match(e.data.url);
+      if (!already) {
+        fetch(e.data.url).then(r => { if (r && r.status === 200) cache.put(e.data.url, r); }).catch(() => {});
+      }
+    });
+    return;
+  }
 });
