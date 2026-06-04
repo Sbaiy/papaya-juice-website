@@ -393,7 +393,6 @@ async function saveOrder() {
     const orderedIds = [...rows].map(r => parseInt(r.dataset.id));
     try {
         await apiCall('PUT', '/api/menu/products/reorder', { ids: orderedIds });
-        localStorage.setItem('productOrder', JSON.stringify(orderedIds));
     } catch(e) {
         if (e.message && e.message.includes('propriétaire')) {
             if (confirm('⚠️ Session expirée — veuillez vous reconnecter pour sauvegarder l\'ordre.')) {
