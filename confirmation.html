@@ -536,6 +536,19 @@ function applyStatus(status, prev, updatedAt) {
     document.getElementById('checkCircle').innerHTML = '<span style="font-size:40px" class="enjoy-anim">🎉</span>';
     launchConfetti();
     if (prev!=='termine') sendViaSW('🎉 Bon appétit!','Votre commande a été servie. Enjoy!','termine');
+    // Fermer la page après 30 secondes
+    let secsLeft = 30;
+    const countdownEl = document.getElementById('statusDesc');
+    const countdownTimer = setInterval(() => {
+      secsLeft--;
+      countdownEl.textContent = `Votre commande a été servie. Bon appétit! 🎉 (Cette page se ferme dans ${secsLeft}s)`;
+      if (secsLeft <= 0) {
+        clearInterval(countdownTimer);
+        window.close();
+        // Fallback si window.close() bloqué par le navigateur
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:Poppins,sans-serif;font-size:18px;text-align:center;">🎉 Merci et bon appétit!<br><small style="opacity:.5;font-size:13px;margin-top:8px;display:block">Vous pouvez fermer cette page</small></div>';
+      }
+    }, 1000);
   }
 }
 
