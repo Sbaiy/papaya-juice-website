@@ -333,6 +333,7 @@ const orderId     = urlParams.get('id')    || '';
 const tableNum    = urlParams.get('table') || '';
 const qrToken     = urlParams.get('t')     || '';   // token QR pour redirection
 const total       = parseFloat(urlParams.get('total') || '0');
+const orderSource = urlParams.get('source') || '';
 let   itemsParsed = [];
 try { itemsParsed = JSON.parse(urlParams.get('items') || '[]'); } catch(e){}
 
@@ -340,6 +341,17 @@ document.getElementById('orderNumDisplay').textContent = orderId ? '#' + orderId
 if (tableNum) {
   document.getElementById('subtitleText').textContent =
     'Merci! Votre commande de la table ' + tableNum + ' est en cours de préparation';
+}
+
+// Si la commande vient du kiosk (ou source inconnue), masquer le bouton Annuler
+if (orderSource !== 'menu') {
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  // Étendre le bouton refresh pour occuper toute la largeur
+  const refreshBtn = document.querySelector('.btn-refresh');
+  if (refreshBtn) refreshBtn.style.flex = 'none';
+  const trackBtns = document.querySelector('.track-btns');
+  if (trackBtns) trackBtns.style.justifyContent = 'center';
 }
 const now = new Date();
 document.getElementById('confirmedTime').textContent =
@@ -470,6 +482,7 @@ function applyStatus(status, prev, updatedAt) {
     document.getElementById('step1').classList.add('done-line');
     badge.innerHTML='En préparation'; badge.style.background='#e3f2fd'; badge.style.color='#1565c0';
     desc.textContent='La cuisine est en train de préparer votre commande.';
+    cancelBtn.disabled = true;
     if (prev==='paiement') sendViaSW('🍳 En préparation','La cuisine prépare votre commande!','preparation');
     return;
   }
