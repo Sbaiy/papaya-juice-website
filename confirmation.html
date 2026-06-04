@@ -406,6 +406,27 @@ async function registerSW() {
     await navigator.serviceWorker.ready;
   } catch(e) { console.warn('SW registration failed:', e); }
 }
+
+function startSWTracking() {
+  if (!swRegistration || !orderId) return;
+  const sw = swRegistration.active || swRegistration.waiting || swRegistration.installing;
+  if (!sw) return;
+  sw.postMessage({
+    type:            'START_TRACKING',
+    orderId:         orderId,
+    supabaseUrl:     SUPABASE_URL,
+    supabaseKey:     SUPABASE_KEY,
+    currentStatus:   currentStatus,
+    confirmationUrl: window.location.href
+  });
+}
+
+function updateSWStatus(status) {
+  if (!swRegistration) return;
+  const sw = swRegistration.active || swRegistration.waiting || swRegistration.installing;
+  if (sw) sw.postMessage({ type: 'UPDATE_STATUS', status });
+}
+
 function sendViaSW(title, body, tag) {
   if (!swRegistration) return sendFallback(title, body);
   const sw = swRegistration.active || swRegistration.waiting || swRegistration.installing;
@@ -428,7 +449,11 @@ function initNotifBanner() {
 }
 async function requestNotifPermission() {
   const perm = await Notification.requestPermission();
-  if (perm === 'granted') { document.getElementById('notifBanner').classList.add('hidden'); await registerSW(); }
+  if (perm === 'granted') {
+    document.getElementById('notifBanner').classList.add('hidden');
+    await registerSW();
+    startSWTracking();
+  }
 }
 
 /* ═══════════════════════════
@@ -462,6 +487,9 @@ function applyStatus(status, prev, updatedAt) {
   const badge = document.getElementById('paymentBadge');
   const desc  = document.getElementById('statusDesc');
   const cancelBtn = document.getElementById('cancelBtn');
+
+  // Informer le SW du nouveau status pour éviter les doublons
+  updateSWStatus(status);
 
   if (status === 'annulé') {
     cancelled = true; cancelBtn.disabled = true;
@@ -594,6 +622,8 @@ function startRefresh() {
   initNotifBanner();
   await fetchStatus();
   startRefresh();
+  // Démarrer le suivi background (SW poll même si page fermée)
+  if (Notification.permission === 'granted') startSWTracking();
 })();
 </script>
 </body>
