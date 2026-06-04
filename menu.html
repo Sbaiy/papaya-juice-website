@@ -1240,13 +1240,16 @@ function buildCategoryBar(productCatNames) {
         document.body.removeChild(measurer);
 
         // Build real pills in rows
+        let pillIndex = 0;
         rows.forEach(rowItems => {
             const rowEl = document.createElement('div');
             rowEl.className = 'cat-dropdown-row';
             rowItems.forEach(({ catObj }) => {
                 const pill = document.createElement('button');
-                pill.className = 'cat-pill';
+                pill.className = 'cat-pill animate-in';
                 pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
+                pill.style.animationDelay = (pillIndex * 40) + 'ms';
+                pillIndex++;
                 if (catObj.image) {
                     pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
                 } else {
