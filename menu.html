@@ -1231,7 +1231,7 @@ function buildCategoryBar(productCatNames) {
     // Build rows immediately
     rows.forEach((rowItems, rowIndex) => {
         const rowEl = document.createElement('div');
-        rowEl.className = 'cat-dropdown-row animate-row';
+        rowEl.className = 'cat-dropdown-row';
         rowEl.dataset.rowIndex = rowIndex;
         rowItems.forEach(({ catObj }) => {
             const pill = document.createElement('button');
@@ -1271,21 +1271,38 @@ function openDropdown() {
     }
     dropdown?.classList.add('open');
     document.getElementById('allMenuBtn')?.classList.add('open');
-    // Re-trigger stagger animation
+
     if (dropdown) {
         const rows = dropdown.querySelectorAll('.cat-dropdown-row');
+        // 1. Reset all rows instantly to hidden state (no transition)
         rows.forEach(r => {
-            const idx = parseInt(r.dataset.rowIndex || 0);
-            r.style.animationDelay = (idx * 80) + 'ms';
             r.classList.remove('animate-row');
-            void r.offsetWidth;
-            r.classList.add('animate-row');
+            r.style.transition = 'none';
+            r.style.opacity    = '0';
+            r.style.transform  = 'translateY(-22px)';
+        });
+        // 2. Force reflow — browser commits the hidden state before animating
+        void dropdown.offsetWidth;
+        // 3. Animate each row in with stagger via CSS transition
+        rows.forEach((r, idx) => {
+            const d = idx * 80;
+            r.style.transition = `opacity 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms, transform 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms`;
+            r.style.opacity    = '1';
+            r.style.transform  = 'translateY(0)';
         });
     }
 }
 
 function closeDropdown() {
-    document.getElementById('catDropdown')?.classList.remove('open');
+    const dropdown = document.getElementById('catDropdown');
+    if (dropdown) {
+        dropdown.querySelectorAll('.cat-dropdown-row').forEach(r => {
+            r.style.transition = '';
+            r.style.opacity    = '';
+            r.style.transform  = '';
+        });
+    }
+    dropdown?.classList.remove('open');
     document.getElementById('allMenuBtn')?.classList.remove('open');
 }
 
