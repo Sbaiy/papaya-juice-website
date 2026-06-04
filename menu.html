@@ -166,6 +166,9 @@ header.main-header.hide-nav { transform: translateX(-50%) translateY(-150px); op
     display: flex; gap: 8px; flex-wrap: nowrap; justify-content: flex-start;
     padding: 4px 0;
 }
+.cat-dropdown-row.animate-row {
+    animation: cardSlideDown 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
 .cat-dropdown-row .cat-pill {
     font-size: 12px; padding: 7px 14px; flex-shrink: 0;
 }
@@ -1241,9 +1244,10 @@ function buildCategoryBar(productCatNames) {
 
         // Build real pills in rows
         let pillIndex = 0;
-        rows.forEach(rowItems => {
+        rows.forEach((rowItems, rowIndex) => {
             const rowEl = document.createElement('div');
-            rowEl.className = 'cat-dropdown-row';
+            rowEl.className = 'cat-dropdown-row animate-row';
+            rowEl.style.animationDelay = (rowIndex * 120) + 'ms';
             rowItems.forEach(({ catObj }) => {
                 const pill = document.createElement('button');
                 pill.className = 'cat-pill animate-in';
@@ -1287,8 +1291,8 @@ function openDropdown() {
     document.getElementById('allMenuBtn')?.classList.add('open');
     // Re-trigger stagger animation
     if (dropdown) {
-        const pills = dropdown.querySelectorAll('.cat-pill.animate-in');
-        pills.forEach(p => { p.classList.remove('animate-in'); void p.offsetWidth; p.classList.add('animate-in'); });
+        const rows = dropdown.querySelectorAll('.cat-dropdown-row.animate-row');
+        rows.forEach(r => { r.classList.remove('animate-row'); void r.offsetWidth; r.classList.add('animate-row'); });
     }
 }
 
