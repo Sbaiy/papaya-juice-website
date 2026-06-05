@@ -400,10 +400,12 @@ async function loadEmployees() {
   try {
     const [personnelData, pointagesData] = await Promise.all([
       apiFetch('/personnel'),
-      apiFetch('/pointages?open=1').catch(() => [])
+      apiFetch('/pointages?open=1')
+        .then(data => Array.isArray(data) ? data.filter(p => !p.logout_at) : [])
+        .catch(() => [])
     ]);
     employees = personnelData || [];
-    openSessions = new Set((pointagesData || []).map(p => p.employee_id));
+    openSessions = new Set((pointagesData || []).map(p => Number(p.employee_id)));
     renderEmployees();
     populateSalarySelect();
     loadWeeklyRecap();
@@ -422,7 +424,7 @@ function renderEmployees() {
     <tr>
       <td class="td-name">
         ${emp.name || '–'}
-        ${openSessions.has(emp.id) ? '<div class="active-badge">En service</div>' : ''}
+        ${openSessions.has(Number(emp.id)) ? '<div class="active-badge">En service</div>' : ''}
       </td>
       <td class="td-email">${emp.email || '–'}</td>
       <td><span class="role-badge role-${emp.role || 'Autre'}">${emp.role || 'Autre'}</span></td>
@@ -707,11 +709,12 @@ async function loadWeeklyRecap() {
 
   try {
     // Fetch pointages pour toute la semaine en une seule requête par employé (parallel)
+    console.log('[WeeklyRecap] fetching from', monday.toISOString(), 'to', sunday.toISOString());
     const allPointages = await Promise.all(
       employees.map(emp =>
         apiFetch(`/pointages?employee_id=${emp.id}&from=${monday.toISOString()}&to=${sunday.toISOString()}`)
-          .then(data => ({ empId: emp.id, data: data || [] }))
-          .catch(() => ({ empId: emp.id, data: [] }))
+          .then(data => { console.log('[WeeklyRecap] emp', emp.id, '→', (data||[]).length, 'entries'); return { empId: emp.id, data: data || [] }; })
+          .catch(e => { console.warn('[WeeklyRecap] fetch error emp', emp.id, e.message); return { empId: emp.id, data: [] }; })
       )
     );
 
@@ -720,6 +723,7 @@ async function loadWeeklyRecap() {
     employees.forEach(e => { map[e.id] = [0, 0, 0, 0, 0, 0, 0]; });
 
     allPointages.forEach(({ empId, data }) => {
+      empId = Number(empId);  // normalize to int
       data.forEach(p => {
         if (!p.login_at) return;
         const d = new Date(p.login_at);
@@ -751,6 +755,7 @@ async function loadWeeklyRecap() {
     }).join('');
 
   } catch(e) {
+    console.error('loadWeeklyRecap error:', e);
     tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">⚠️ Erreur: ${e.message}</div></td></tr>`;
   }
 }
