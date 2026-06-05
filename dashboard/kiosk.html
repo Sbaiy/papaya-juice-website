@@ -1059,7 +1059,7 @@ async function submitOrder() {
         const orderPayload = {
             table_number: tableVal,
             items: cart.map(({product,qty,customPrice}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||''})),
-            total: cart.reduce((s,i) => s+parseFloat(i.product.price)*i.qty, 0),
+            total: cart.reduce((s,i) => s+parseFloat(i.customPrice??i.product.price)*i.qty, 0),
             status: 'pending',
             source: 'kiosk'
         };
