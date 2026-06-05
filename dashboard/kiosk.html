@@ -1413,11 +1413,15 @@ async function validerCloture() {
 //  NEW ORDER POPUP — polling depuis menu
 // ════════════════════════════════════════
 let _nopSeenIds = new Set(JSON.parse(localStorage.getItem('nop_seen_ids') || '[]'));
-let _nopPendingOrders = [];  // orders à afficher dans le popup courant
+let _nopPendingOrders = JSON.parse(localStorage.getItem('nop_pending_orders') || '[]');  // orders à afficher dans le popup courant
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
 const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
+
+function _nopSavePending() {
+    localStorage.setItem('nop_pending_orders', JSON.stringify(_nopPendingOrders));
+}
 
 function _nopSaveSeen() {
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
@@ -1464,6 +1468,7 @@ async function _nopPollOrders() {
 
         // Empiler dans pending et (ré)afficher le popup
         _nopPendingOrders = [..._nopPendingOrders, ...newOnes];
+        _nopSavePending();
         _nopShowPopup();
     } catch(e) { /* silencieux */ }
 }
@@ -1604,6 +1609,7 @@ async function printSingleOrder(o) {
 function dismissSingleOrderFromPopup(orderId) {
     _nopStopSound();
     _nopPendingOrders = _nopPendingOrders.filter(o => o.id !== orderId);
+    _nopSavePending();
     const el = document.getElementById('nop-order-' + orderId);
     if (el) el.remove();
     const badge = document.getElementById('nopBadge');
@@ -1629,6 +1635,7 @@ async function dismissSingleOrder(orderId) {
         showToast("❌ Erreur annulation: " + e.message);
     }
     _nopPendingOrders = _nopPendingOrders.filter(o => o.id !== orderId);
+    _nopSavePending();
     const el = document.getElementById('nop-order-' + orderId);
     if (el) el.remove();
     const badge = document.getElementById('nopBadge');
@@ -1707,6 +1714,7 @@ function _nopStartPolling() {
           _nopSeenIds.add(String(o.id));
           _nopSaveSeen();
           _nopPendingOrders = [..._nopPendingOrders, o];
+          _nopSavePending();
           _nopShowPopup();
       })
       .on('broadcast', { event: 'update_order' }, ({ payload }) => {
@@ -1755,6 +1763,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadProducts();
     _nopStartPolling();
+    // Remonter le popup si commandes en attente après refresh
+    if (_nopPendingOrders.length > 0) { setTimeout(_nopShowPopup, 800); }
 
     const _user = API.Auth.getUser();
     if (_user) {
