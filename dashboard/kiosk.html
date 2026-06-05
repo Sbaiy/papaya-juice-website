@@ -840,7 +840,6 @@ function renderCart() {
     document.getElementById('total').textContent = sub.toFixed(2)+' DH';
     // Mode ajout — mettre à jour le banner et le bouton
     const banner = document.getElementById('modifBanner');
-    const btnOrder = document.getElementById('btnOrder');
     if (_modifMode) {
         const idShort = String(_modifMode.orderId||'').slice(-6).padStart(6,'0');
         document.getElementById('modifBannerText').textContent = `➕ Ajout #${idShort} — Table ${_modifMode.tableNumber||'?'}`;
