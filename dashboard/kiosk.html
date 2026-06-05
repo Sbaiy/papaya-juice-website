@@ -805,7 +805,7 @@ function changeQty(productId, delta) {
 function changePrice(productId, delta) {
     const idx = cart.findIndex(i => i.product.id === productId);
     if (idx < 0) return;
-    const current = cart[idx].customPrice ?? cart[idx].product.price;
+    const current = parseFloat(cart[idx].customPrice ?? cart[idx].product.price) || 0;
     cart[idx].customPrice = Math.max(0, parseFloat((current + delta).toFixed(2)));
     renderCart();
 }
