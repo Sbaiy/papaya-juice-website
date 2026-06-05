@@ -155,29 +155,7 @@
     </div>
   </div>
 
-  <!-- SQL Setup banner -->
-  <div class="sql-banner" id="sqlBanner">
-    <div class="sql-title">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Awalan — Nfa3 had SQL f Supabase (مرة واحدة فقط)
-    </div>
-    <div class="sql-code" id="sqlCode">create table if not exists recettes (
-  id serial primary key,
-  product_id integer not null,
-  designation_id integer references stock_designations(id) on delete cascade,
-  quantite numeric not null
-);</div>
-    <button class="copy-btn" onclick="copySQL()">📋 Copier le SQL</button>
-  </div>
 
-  <!-- Info banner -->
-  <div class="info-banner">
-    <div class="info-banner-icon">💡</div>
-    <div class="info-banner-text">
-      <strong>Kifach tkhdam:</strong> Kol produit — zid les matières li kykhdmhom. Matalan <strong>Espresso → 12g Café</strong>.
-      Men ba3d, kol mra tjay commande, <strong>ighnik auto</strong> mn stock.
-    </div>
-  </div>
 
   <!-- Search -->
   <div class="search-bar">
