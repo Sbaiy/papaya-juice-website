@@ -698,7 +698,7 @@ async function loadProducts() {
         categoryMap = {};
         if (!window.categoriesData) window.categoriesData = {};
         allProducts.forEach(p => { categoryMap[p.category] = (categoryMap[p.category] || 0) + 1; });
-        document.getElementById('count-all').textContent = allProducts.length;
+        document.getElementById('count-all')?.textContent && (document.getElementById('count-all').textContent = allProducts.length);
         buildCategoryNav();
         filteredProducts = allProducts;
         renderProducts();
