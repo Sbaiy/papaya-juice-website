@@ -146,6 +146,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* POINTAGE */
+.active-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:#4ade80; margin-top:4px; }
+.active-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; animation: blink 1.2s infinite; }
 .pointage-section { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
 .pointage-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .pointage-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 5px; font-size: 12px; }
@@ -392,9 +394,16 @@ let employees = [];
 /* ══════════════════════
    EMPLOYEES
 ══════════════════════ */
+let openSessions = new Set(); // IDs des employés avec session ouverte
+
 async function loadEmployees() {
   try {
-    employees = await apiFetch('/personnel');
+    [employees] = await Promise.all([
+      apiFetch('/personnel'),
+      apiFetch('/pointages?open=1').then(data => {
+        openSessions = new Set((data || []).map(p => p.employee_id));
+      }).catch(() => { openSessions = new Set(); })
+    ]);
     renderEmployees();
     populateSalarySelect();
     loadWeeklyRecap();
@@ -411,7 +420,10 @@ function renderEmployees() {
   }
   tbody.innerHTML = employees.map(emp => `
     <tr>
-      <td class="td-name">${emp.name || '–'}</td>
+      <td class="td-name">
+        ${emp.name || '–'}
+        ${openSessions.has(emp.id) ? '<div class="active-badge">En service</div>' : ''}
+      </td>
       <td class="td-email">${emp.email || '–'}</td>
       <td><span class="role-badge role-${emp.role || 'Autre'}">${emp.role || 'Autre'}</span></td>
       <td>
