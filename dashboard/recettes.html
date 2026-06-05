@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recettes - Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #1b2e1e;
+    --orange:    #f97316;
+    --orange2:   #ea6a0a;
+    --glass:     rgba(255,255,255,0.06);
+    --glass-hov: rgba(255,255,255,0.10);
+    --border:    rgba(255,255,255,0.10);
+    --shadow:    0 8px 32px rgba(0,0,0,0.35);
+    --white:     #ffffff;
+    --muted:     rgba(255,255,255,0.50);
+    --blur:      blur(18px);
+    --red:       #ef4444;
+    --green:     #22c55e;
+  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
+  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+
+  /* Topbar */
+  .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+  .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .btn-icon { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background .15s, color .15s; text-decoration: none; }
+  .btn-icon:hover { background: var(--glass-hov); color: white; }
+  .user-pill { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; }
+  .user-name { font-size: 13px; font-weight: 700; color: white; }
+  .user-role { font-size: 11px; font-weight: 600; color: var(--orange); }
+
+  /* Main */
+  .main { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 14px; }
+  .page-title { font-size: 30px; font-weight: 700; color: white; font-family: 'Playfair Display', serif; }
+  .page-title span { color: var(--orange); font-style: italic; }
+  .page-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  /* Glass card */
+  .glass-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+
+  /* Products grid */
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+  .product-card { padding: 20px; border-radius: 16px; cursor: pointer; transition: border-color .2s, background .2s; border: 1px solid var(--border); background: var(--glass); }
+  .product-card:hover { border-color: rgba(249,115,22,.4); background: var(--glass-hov); }
+  .product-card.selected { border-color: var(--orange); background: rgba(249,115,22,.08); }
+
+  .product-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .product-img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: rgba(255,255,255,.08); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .product-info { flex: 1; min-width: 0; }
+  .product-name { font-size: 15px; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-price { font-size: 13px; color: var(--orange); font-weight: 600; margin-top: 2px; }
+  .product-cat { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Ingredients list inside card */
+  .ingredients-list { display: flex; flex-direction: column; gap: 8px; }
+  .ingredient-row { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 8px 10px; }
+  .ingredient-name { flex: 1; font-size: 13px; color: white; font-weight: 600; }
+  .ingredient-qty { font-size: 13px; color: var(--orange); font-weight: 700; min-width: 60px; text-align: right; }
+  .ingredient-unit { font-size: 11px; color: var(--muted); min-width: 28px; }
+  .ingredient-del { width: 22px; height: 22px; border-radius: 6px; border: none; background: transparent; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: background .12s, color .12s; flex-shrink: 0; }
+  .ingredient-del:hover { background: rgba(239,68,68,.15); color: #fca5a5; }
+
+  .add-ingredient-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .sel-desig { flex: 1; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 8px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; padding: 7px 10px; outline: none; cursor: pointer; min-width: 0; }
+  .sel-desig option { background: #1b2e1e; }
+  .inp-qty { width: 70px; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 8px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; padding: 7px 8px; outline: none; text-align: center; }
+  .inp-qty:focus, .sel-desig:focus { border-color: rgba(249,115,22,.5); }
+  .btn-add-ing { background: var(--orange); color: white; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; transition: background .15s; }
+  .btn-add-ing:hover { background: var(--orange2); }
+
+  .no-ingredients { font-size: 12px; color: var(--muted); font-style: italic; padding: 4px 0; }
+
+  /* Search bar */
+  .search-bar { position: relative; margin-bottom: 20px; }
+  .search-input { width: 100%; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 999px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; padding: 12px 20px 12px 44px; outline: none; transition: border-color .2s; }
+  .search-input:focus { border-color: rgba(249,115,22,.4); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+  /* Info banner */
+  .info-banner { background: rgba(249,115,22,.08); border: 1px solid rgba(249,115,22,.2); border-radius: 14px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px; }
+  .info-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .info-banner-text { font-size: 13px; color: rgba(255,255,255,.75); line-height: 1.6; }
+  .info-banner-text strong { color: var(--orange); }
+
+  /* SQL banner */
+  .sql-banner { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2); border-radius: 14px; padding: 14px 18px; margin-bottom: 24px; }
+  .sql-title { font-size: 13px; font-weight: 700; color: #93c5fd; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .sql-code { background: rgba(0,0,0,.3); border-radius: 8px; padding: 12px 14px; font-family: monospace; font-size: 12px; color: #e2e8f0; line-height: 1.7; overflow-x: auto; white-space: pre; }
+  .copy-btn { background: rgba(59,130,246,.2); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background .15s; }
+  .copy-btn:hover { background: rgba(59,130,246,.35); }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; z-index: 9000; background: rgba(30,50,34,.95); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; color: white; box-shadow: 0 8px 32px rgba(0,0,0,.4); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: rgba(52,168,83,.35); }
+  .toast.error   { border-color: rgba(239,68,68,.35); }
+
+  /* Loading */
+  .loading { text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
+
+  @media(max-width: 600px) {
+    .products-grid { grid-template-columns: 1fr; }
+    .add-ingredient-row { flex-wrap: wrap; }
+    .sel-desig { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <a class="nav-brand" href="/dashboard">
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+    <span class="brand-name">Papaya Juice</span>
+  </a>
+  <div class="topbar-right">
+    <a href="/dashboard" class="btn-icon" title="Dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </a>
+    <a href="/dashboard/stock" class="btn-icon" title="Stock">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+    </a>
+    <div class="user-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div>
+        <div class="user-name" id="topUserName">Admin</div>
+        <div class="user-role" id="topUserRole">Propriétaire</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Recettes & <span>Stock</span></h1>
+      <p class="page-subtitle">Rbat kol produit b les matières premières li kykhdm.</p>
+    </div>
+  </div>
+
+  <!-- SQL Setup banner -->
+  <div class="sql-banner" id="sqlBanner">
+    <div class="sql-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Awalan — Nfa3 had SQL f Supabase (مرة واحدة فقط)
+    </div>
+    <div class="sql-code" id="sqlCode">create table if not exists recettes (
+  id serial primary key,
+  product_id integer not null,
+  designation_id integer references stock_designations(id) on delete cascade,
+  quantite numeric not null
+);</div>
+    <button class="copy-btn" onclick="copySQL()">📋 Copier le SQL</button>
+  </div>
+
+  <!-- Info banner -->
+  <div class="info-banner">
+    <div class="info-banner-icon">💡</div>
+    <div class="info-banner-text">
+      <strong>Kifach tkhdam:</strong> Kol produit — zid les matières li kykhdmhom. Matalan <strong>Espresso → 12g Café</strong>.
+      Men ba3d, kol mra tjay commande, <strong>ighnik auto</strong> mn stock.
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Chercher un produit..." oninput="filterProducts()">
+  </div>
+
+  <!-- Products grid -->
+  <div id="productsContainer">
+    <div class="loading">⏳ Chargement des produits...</div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+if (sessionStorage.getItem('papaya_auth') !== '1') { window.location.replace('/dashboard'); }
+
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allProducts     = [];
+let allDesignations = [];
+let allRecettes     = {};  // { product_id: [ {id, designation_id, quantite} ] }
+
+// ── Toast ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Load everything ──
+async function loadAll() {
+  const [{ data: prods }, { data: desigs }, { data: recettes }] = await Promise.all([
+    db.from('products').select('id, title, price, category, image').order('sort_order', { ascending: true }),
+    db.from('stock_designations').select('id, nom, unite').order('nom'),
+    db.from('recettes').select('*')
+  ]);
+
+  allProducts     = prods     || [];
+  allDesignations = desigs    || [];
+
+  // Group recettes by product_id
+  allRecettes = {};
+  for (const r of (recettes || [])) {
+    if (!allRecettes[r.product_id]) allRecettes[r.product_id] = [];
+    allRecettes[r.product_id].push(r);
+  }
+
+  renderProducts(allProducts);
+}
+
+// ── Render products ──
+function renderProducts(list) {
+  const container = document.getElementById('productsContainer');
+  if (!list.length) {
+    container.innerHTML = '<div class="loading">Aucun produit trouvé.</div>';
+    return;
+  }
+
+  container.innerHTML = `<div class="products-grid">${list.map(p => productCard(p)).join('')}</div>`;
+}
+
+function productCard(p) {
+  const recettes = allRecettes[p.id] || [];
+  const ingredientsHTML = recettes.length
+    ? recettes.map(r => ingredientRow(r)).join('')
+    : `<div class="no-ingredients">Ma3ndouch recette — zid les ingrédients</div>`;
+
+  const desigOptions = allDesignations.map(d =>
+    `<option value="${d.id}">${d.nom} (${d.unite || ''})</option>`
+  ).join('');
+
+  const imgHTML = p.image
+    ? `<img src="${p.image}" class="product-img" style="width:52px;height:52px;border-radius:12px;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="product-img" style="display:none">🥤</div>`
+    : `<div class="product-img">🥤</div>`;
+
+  return `
+  <div class="product-card glass-card" id="card-${p.id}">
+    <div class="product-top">
+      ${imgHTML}
+      <div class="product-info">
+        <div class="product-name">${p.title}</div>
+        <div class="product-price">${parseFloat(p.price).toFixed(2)} DH</div>
+        <div class="product-cat">${p.category || ''}</div>
+      </div>
+    </div>
+
+    <div class="ingredients-list" id="ing-list-${p.id}">
+      ${ingredientsHTML}
+    </div>
+
+    <div class="add-ingredient-row" style="margin-top:10px;">
+      <select class="sel-desig" id="sel-${p.id}">
+        <option value="">— Choisir matière —</option>
+        ${desigOptions}
+      </select>
+      <input type="number" class="inp-qty" id="qty-${p.id}" placeholder="Qté" min="0.01" step="0.01" value="1">
+      <button class="btn-add-ing" onclick="addIngredient(${p.id})">+ Ajouter</button>
+    </div>
+  </div>`;
+}
+
+function ingredientRow(r) {
+  const desig = allDesignations.find(d => d.id === r.designation_id);
+  const nom   = desig ? desig.nom   : '?';
+  const unite = desig ? desig.unite : '';
+  return `
+  <div class="ingredient-row" id="ing-${r.id}">
+    <div class="ingredient-name">${nom}</div>
+    <div class="ingredient-qty">${r.quantite}</div>
+    <div class="ingredient-unit">${unite}</div>
+    <button class="ingredient-del" onclick="deleteIngredient(${r.id}, ${r.product_id})" title="Supprimer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>`;
+}
+
+// ── Add ingredient ──
+async function addIngredient(productId) {
+  const desigId = parseInt(document.getElementById(`sel-${productId}`).value);
+  const qty     = parseFloat(document.getElementById(`qty-${productId}`).value);
+
+  if (!desigId) { showToast('Choisir une matière', 'error'); return; }
+  if (!qty || qty <= 0) { showToast('Quantité invalide', 'error'); return; }
+
+  // Check if already exists
+  const existing = (allRecettes[productId] || []).find(r => r.designation_id === desigId);
+  if (existing) { showToast('Cette matière existe déjà — supprimer dabak', 'error'); return; }
+
+  const { data, error } = await db.from('recettes').insert([{
+    product_id: productId,
+    designation_id: desigId,
+    quantite: qty
+  }]).select().single();
+
+  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+
+  // Update local state
+  if (!allRecettes[productId]) allRecettes[productId] = [];
+  allRecettes[productId].push(data);
+
+  // Re-render ingredients for this card
+  refreshIngredients(productId);
+
+  // Reset inputs
+  document.getElementById(`sel-${productId}`).value = '';
+  document.getElementById(`qty-${productId}`).value = '1';
+
+  const desig = allDesignations.find(d => d.id === desigId);
+  showToast(`Zadt: ${desig?.nom} → ${qty} ${desig?.unite || ''}`);
+}
+
+// ── Delete ingredient ──
+async function deleteIngredient(recetteId, productId) {
+  const { error } = await db.from('recettes').delete().eq('id', recetteId);
+  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+
+  allRecettes[productId] = (allRecettes[productId] || []).filter(r => r.id !== recetteId);
+  refreshIngredients(productId);
+  showToast('Ingredient msuh');
+}
+
+// ── Refresh ingredients list inside a card ──
+function refreshIngredients(productId) {
+  const list = document.getElementById(`ing-list-${productId}`);
+  if (!list) return;
+  const recettes = allRecettes[productId] || [];
+  list.innerHTML = recettes.length
+    ? recettes.map(r => ingredientRow(r)).join('')
+    : `<div class="no-ingredients">Ma3ndouch recette — zid les ingrédients</div>`;
+}
+
+// ── Filter products ──
+function filterProducts() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allProducts.filter(p =>
+    p.title.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q)
+  );
+  renderProducts(filtered);
+}
+
+// ── Copy SQL ──
+function copySQL() {
+  const code = document.getElementById('sqlCode').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('SQL copiée !'));
+}
+
+// ── User info ──
+const u = JSON.parse(sessionStorage.getItem('papaya_user') || localStorage.getItem('papaya_user') || '{}');
+if (u?.name) document.getElementById('topUserName').textContent = u.name;
+if (u?.role) document.getElementById('topUserRole').textContent = u.role === 'owner' ? 'Propriétaire' : 'Employé';
+
+// ── Init ──
+loadAll();
+</script>
+</body>
+</html>
