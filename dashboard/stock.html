@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <link rel="icon" href="logo.icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock - Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #1b2e1e;
+    --orange:    #f97316;
+    --orange2:   #ea6a0a;
+    --glass:     rgba(255,255,255,0.06);
+    --glass-hov: rgba(255,255,255,0.10);
+    --border:    rgba(255,255,255,0.10);
+    --border-hov:rgba(249,115,22,0.35);
+    --shadow:    0 8px 32px rgba(0,0,0,0.35);
+    --white:     #ffffff;
+    --muted:     rgba(255,255,255,0.50);
+    --blur:      blur(18px);
+    --red:       #ef4444;
+    --green:     #22c55e;
+    --yellow:    #eab308;
+    --blue:      #3b82f6;
+  }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
+  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+
+  /* Topbar */
+  .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+  .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .btn-icon { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background .15s, color .15s; text-decoration: none; }
+  .btn-icon:hover { background: var(--glass-hov); color: white; }
+  .user-pill { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; }
+  .user-name { font-size: 13px; font-weight: 700; color: white; }
+  .user-role { font-size: 11px; font-weight: 600; color: var(--orange); }
+
+  /* Main */
+  .main { position: relative; z-index: 5; max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 14px; }
+  .page-title { font-size: 30px; font-weight: 700; color: white; font-family: 'Playfair Display', serif; }
+  .page-title span { color: var(--orange); font-style: italic; }
+  .page-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Glass card */
+  .glass-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { padding: 18px 20px; border-radius: 16px; }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 800; color: white; }
+  .stat-card.yellow { background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.2); }
+  .stat-card.yellow .stat-label { color: #ca8a04; }
+  .stat-card.yellow .stat-value { color: #eab308; }
+  .stat-card.red { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); }
+  .stat-card.red .stat-label { color: #dc2626; }
+  .stat-card.red .stat-value { color: #ef4444; }
+  .stat-card.blue { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2); }
+  .stat-card.blue .stat-label { color: #2563eb; }
+  .stat-card.blue .stat-value { color: #3b82f6; }
+
+  .stats-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .stat-card2 { padding: 16px 20px; }
+  .stat2-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .stat2-value { font-size: 22px; font-weight: 700; color: white; }
+  .stat2-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Buttons */
+  .btn-primary { background: var(--orange); color: white; border: none; border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 18px rgba(249,115,22,.35); transition: background .15s, transform .1s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary:hover { background: var(--orange2); }
+  .btn-primary:active { transform: scale(.97); }
+  .btn-green { background: #16a34a; color: white; border: none; border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-green:hover { background: #15803d; }
+  .btn-red { background: #dc2626; color: white; border: none; border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-red:hover { background: #b91c1c; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color .15s, color .15s; }
+  .btn-secondary:hover { border-color: rgba(255,255,255,.3); color: white; }
+  .btn-refresh { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color .15s, color .15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-refresh:hover { border-color: rgba(255,255,255,.3); color: white; }
+
+  /* Table card */
+  .table-card { overflow: hidden; }
+  .table-header { padding: 18px 22px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; gap: 10px; }
+  .table-title { font-size: 15px; font-weight: 700; color: white; }
+  .count-badge { background: rgba(249,115,22,.15); color: var(--orange); border: 1px solid rgba(249,115,22,.25); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+  .table-filters { display: flex; align-items: center; gap: 8px; }
+  .filter-select { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 999px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 12px; outline: none; cursor: pointer; }
+  .filter-select option { background: #1b2e1e; }
+  .tbl { width: 100%; border-collapse: collapse; }
+  .tbl thead th { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: nowrap; }
+  .tbl tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background .12s; }
+  .tbl tbody tr:last-child { border-bottom: none; }
+  .tbl tbody tr:hover { background: rgba(255,255,255,0.03); }
+  .tbl td { padding: 13px 16px; font-size: 13px; color: white; vertical-align: middle; }
+  .tbl-empty { text-align: center; color: var(--muted); padding: 40px 0 !important; font-size: 14px; }
+  .tbl-scroll { overflow-x: auto; }
+
+  /* Status badges */
+  .badge { border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .badge-ok     { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+  .badge-low    { background: rgba(234,179,8,.12); color: #facc15; border: 1px solid rgba(234,179,8,.2); }
+  .badge-rupture{ background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid rgba(239,68,68,.2); }
+
+  /* Progress bar */
+  .stock-bar { width: 80px; height: 6px; background: rgba(255,255,255,.1); border-radius: 3px; overflow: hidden; }
+  .stock-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+  .bar-ok      { background: var(--green); }
+  .bar-low     { background: var(--yellow); }
+  .bar-rupture { background: var(--red); }
+
+  /* Action buttons */
+  .action-btn { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); transition: background .12s, color .12s; }
+  .action-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+  .action-btn.edit:hover { background: rgba(249,115,22,.12); color: var(--orange); }
+  .action-btn.delete:hover { background: rgba(239,68,68,.15); color: #fca5a5; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; z-index: 8000; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: #1e3522; border: 1px solid var(--border); border-radius: 20px; padding: 28px; max-width: 480px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.5); animation: modalIn .2s ease; }
+  @keyframes modalIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+  .modal-title { font-size: 17px; font-weight: 700; color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .modal-tabs { display: flex; gap: 6px; margin-bottom: 22px; background: rgba(255,255,255,.04); border-radius: 12px; padding: 4px; }
+  .modal-tab { flex: 1; padding: 8px 0; border: none; border-radius: 9px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; background: transparent; color: var(--muted); }
+  .modal-tab.active { background: var(--orange); color: white; }
+  .modal-form { display: none; flex-direction: column; gap: 14px; }
+  .modal-form.active { display: flex; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .form-input { width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; color: white; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .2s; }
+  .form-input:focus { border-color: rgba(249,115,22,.55); }
+  .form-input::placeholder { color: var(--muted); }
+  select.form-input option { background: #1b2e1e; }
+  .form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+  .btn-danger { background: #ef4444; color: white; border: none; border-radius: 999px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .btn-danger:hover { background: #dc2626; }
+
+  /* Movement type colors */
+  .mv-entree  { color: #4ade80; font-weight: 700; }
+  .mv-sortie  { color: #fca5a5; font-weight: 700; }
+  .mv-reset   { color: #93c5fd; font-weight: 700; }
+  .mv-ajust   { color: #fde047; font-weight: 700; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; z-index: 9000; background: rgba(30,50,34,.95); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; color: white; box-shadow: 0 8px 32px rgba(0,0,0,.4); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: rgba(52,168,83,.35); }
+  .toast.error   { border-color: rgba(239,68,68,.35); }
+
+  /* Confirm modal */
+  .confirm-box { max-width: 360px; }
+  .confirm-body { font-size: 14px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+
+  @media(max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid2 { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; }
+    .form-grid2 { grid-template-columns: 1fr; }
+  }
+  @media(max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="../api.js"></script>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <a class="nav-brand" href="/dashboard">
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+    <span class="brand-name">Papaya Juice</span>
+  </a>
+  <div class="topbar-right">
+    <a href="/dashboard" class="btn-icon" title="Dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </a>
+    <a href="/dashboard/admin" class="btn-icon" title="Menu">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    </a>
+    <div class="user-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div>
+        <div class="user-name" id="topUserName">Admin</div>
+        <div class="user-role" id="topUserRole">Propriétaire</div>
+      </div>
+    </div>
+    <button class="btn-icon" onclick="API.Auth.logout()" title="Déconnexion">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestion de <span>Stock</span></h1>
+      <p class="page-subtitle">Stock, reset et historique des mouvements.</p>
+    </div>
+    <div class="page-actions">
+      <button class="btn-refresh" onclick="loadAll()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Actualiser
+      </button>
+      <button class="btn-primary" onclick="openModal('designation')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter designation
+      </button>
+      <button class="btn-green" onclick="openModal('mouvement')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        Mouvement stock
+      </button>
+      <button class="btn-red" onclick="confirmResetGlobal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+        Reset global
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="glass-card stat-card">
+      <div class="stat-label">Articles suivis</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="glass-card stat-card yellow">
+      <div class="stat-label">Stock faible</div>
+      <div class="stat-value" id="statFaible">0</div>
+    </div>
+    <div class="glass-card stat-card red">
+      <div class="stat-label">Rupture</div>
+      <div class="stat-value" id="statRupture">0</div>
+    </div>
+    <div class="glass-card stat-card blue">
+      <div class="stat-label">Valeur stock (achat)</div>
+      <div class="stat-value" id="statValeur">0.00 DH</div>
+    </div>
+  </div>
+  <div class="stats-grid2">
+    <div class="glass-card stat-card2">
+      <div class="stat2-label">Articles critiques (faible + rupture)</div>
+      <div class="stat2-value" id="statCritiques">0</div>
+      <div class="stat2-sub">Priorité de réassort recommandée</div>
+    </div>
+    <div class="glass-card stat-card2">
+      <div class="stat2-label">Mouvements affichés</div>
+      <div class="stat2-value" id="statMvts">0</div>
+      <div class="stat2-sub">Filtrés par designation/type disponibles</div>
+    </div>
+  </div>
+
+  <!-- Contrôle de stock -->
+  <div class="glass-card table-card" style="margin-bottom: 20px;">
+    <div class="table-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="table-title">Contrôle de stock</span>
+        <span class="count-badge" id="stockCount">0</span>
+      </div>
+      <div class="table-filters">
+        <input id="searchStock" type="text" placeholder="Rechercher..." style="background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:999px;color:white;font-family:inherit;font-size:12px;padding:6px 14px;outline:none;width:150px;" oninput="filterStock()">
+        <select class="filter-select" id="filterStatut" onchange="filterStock()">
+          <option value="">Tous les statuts</option>
+          <option value="ok">✅ OK</option>
+          <option value="faible">⚠️ Faible</option>
+          <option value="rupture">🔴 Rupture</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Désignation</th>
+            <th>SKU</th>
+            <th>Stock actuel</th>
+            <th>Barre</th>
+            <th>Unité</th>
+            <th>Prix achat/u</th>
+            <th>Valeur</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="stockTbody">
+          <tr><td colspan="9" class="tbl-empty">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Historique mouvements -->
+  <div class="glass-card table-card">
+    <div class="table-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="table-title">Historique des mouvements</span>
+      </div>
+      <div class="table-filters">
+        <select class="filter-select" id="filterDesignation" onchange="filterMvt()">
+          <option value="">Tous les articles</option>
+        </select>
+        <select class="filter-select" id="filterType" onchange="filterMvt()">
+          <option value="">Tous les types</option>
+          <option value="entree">Entrée</option>
+          <option value="sortie">Sortie</option>
+          <option value="reset">Reset</option>
+          <option value="ajustement">Ajustement</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Article</th>
+            <th>Type</th>
+            <th>Qté</th>
+            <th>Avant</th>
+            <th>Après</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="mvtTbody">
+          <tr><td colspan="7" class="tbl-empty">Aucun mouvement pour le moment.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ MODAL Ajouter/Modifier Désignation ═══ -->
+<div class="modal-overlay" id="modalDesignation">
+  <div class="modal-box">
+    <div class="modal-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+      <span id="modalDesigTitle">Nouvelle désignation</span>
+    </div>
+
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('desig')" id="tabDesig">Ajouter désignation</button>
+      <button class="modal-tab" onclick="switchTab('mvt')" id="tabMvt">Entrée / Sortie / Reset</button>
+    </div>
+
+    <!-- Tab: Désignation -->
+    <div class="modal-form active" id="formDesig">
+      <input type="hidden" id="editDesigId">
+      <div class="form-group">
+        <label class="form-label">Désignation *</label>
+        <input type="text" class="form-input" id="inpDesigNom" placeholder="ex: Café, Sucre, Lait...">
+      </div>
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">SKU (optionnel)</label>
+          <input type="text" class="form-input" id="inpDesigSKU" placeholder="ex: CAF-001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unité</label>
+          <select class="form-input" id="inpDesigUnite">
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="ml">ml</option>
+            <option value="L">L</option>
+            <option value="pcs">pcs</option>
+            <option value="boite">boîte</option>
+            <option value="sachet">sachet</option>
+            <option value="unite">unité</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock initial</label>
+          <input type="number" class="form-input" id="inpDesigStock" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prix achat / unité</label>
+          <input type="number" class="form-input" id="inpDesigPrix" value="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seuil d'alerte (stock faible)</label>
+        <input type="number" class="form-input" id="inpDesigSeuil" value="10" min="0" placeholder="ex: 10">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('designation')">Annuler</button>
+        <button class="btn-primary" onclick="saveDesignation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="btnDesigLabel">Valider</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab: Mouvement -->
+    <div class="modal-form" id="formMvt">
+      <div class="form-group">
+        <label class="form-label">Désignation *</label>
+        <select class="form-input" id="inpMvtDesig"></select>
+      </div>
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select class="form-input" id="inpMvtType">
+            <option value="entree">📥 Entrée</option>
+            <option value="sortie">📤 Sortie</option>
+            <option value="reset">🔄 Reset (nouveau stock)</option>
+            <option value="ajustement">✏️ Ajustement</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantité *</label>
+          <input type="number" class="form-input" id="inpMvtQty" value="1" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note (optionnel)</label>
+        <input type="text" class="form-input" id="inpMvtNote" placeholder="ex: Livraison fournisseur...">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('designation')">Annuler</button>
+        <button class="btn-primary" onclick="saveMouvement()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL Confirm ═══ -->
+<div class="modal-overlay" id="modalConfirm">
+  <div class="modal-box confirm-box">
+    <div class="modal-title" id="confirmTitle">Confirmer</div>
+    <div class="confirm-body" id="confirmBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('confirm')">Annuler</button>
+      <button class="btn-danger" id="confirmOkBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Auth check ──
+if (sessionStorage.getItem('papaya_auth') !== '1') { window.location.replace('/dashboard'); }
+(function() {
+  const token = localStorage.getItem('papaya_token');
+  if (!token) return;
+  try {
+    const p = JSON.parse(atob(token.split('.')[1]));
+    if (p.exp && Date.now() / 1000 > p.exp) {
+      ['papaya_token','papaya_user'].forEach(k => localStorage.removeItem(k));
+      ['papaya_auth','papaya_user'].forEach(k => sessionStorage.removeItem(k));
+      alert('Session expirée.'); window.location.replace('/dashboard');
+    }
+  } catch(e) {}
+})();
+
+// ── Supabase ──
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+const apiH = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('papaya_token') });
+
+// ── State ──
+let allDesignations = [];
+let allMouvements   = [];
+
+// ── Toast ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Load all ──
+async function loadAll() {
+  await Promise.all([loadDesignations(), loadMouvements()]);
+  updateStats();
+  populateMvtSelect();
+  populateMvtFilter();
+}
+
+async function loadDesignations() {
+  const { data, error } = await db.from('stock_designations').select('*').order('nom', { ascending: true });
+  if (error) { showToast('Erreur chargement stock: ' + error.message, 'error'); return; }
+  allDesignations = data || [];
+  renderStock(allDesignations);
+}
+
+async function loadMouvements() {
+  const { data, error } = await db.from('stock_mouvements').select('*').order('created_at', { ascending: false }).limit(200);
+  if (error) return;
+  allMouvements = data || [];
+  renderMvt(allMouvements);
+}
+
+// ── Render stock table ──
+function renderStock(list) {
+  const tbody = document.getElementById('stockTbody');
+  document.getElementById('stockCount').textContent = list.length;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="tbl-empty">Aucun article de stock pour le moment.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(d => {
+    const seuil = d.seuil_alerte ?? 10;
+    const stock = parseFloat(d.stock_actuel) || 0;
+    const prix  = parseFloat(d.prix_achat)   || 0;
+    const valeur = (stock * prix).toFixed(2);
+    let statut, badgeClass, barClass, barPct;
+    if (stock <= 0)           { statut = 'Rupture'; badgeClass = 'badge-rupture'; barClass = 'bar-rupture'; barPct = 0; }
+    else if (stock <= seuil)  { statut = 'Faible';  badgeClass = 'badge-low';     barClass = 'bar-low';     barPct = Math.min(100, (stock / seuil) * 60 + 5); }
+    else                      { statut = 'OK';       badgeClass = 'badge-ok';      barClass = 'bar-ok';      barPct = Math.min(100, (stock / (seuil * 3)) * 100); }
+    return `<tr>
+      <td style="font-weight:600">${d.nom}</td>
+      <td style="color:var(--muted);font-family:monospace;font-size:12px">${d.sku || '—'}</td>
+      <td style="font-weight:700">${stock} <span style="color:var(--muted);font-size:11px">${d.unite || ''}</span></td>
+      <td><div class="stock-bar"><div class="stock-bar-fill ${barClass}" style="width:${barPct}%"></div></div></td>
+      <td style="color:var(--muted)">${d.unite || '—'}</td>
+      <td>${prix > 0 ? prix.toFixed(2) + ' DH' : '—'}</td>
+      <td style="color:#93c5fd">${parseFloat(valeur) > 0 ? valeur + ' DH' : '—'}</td>
+      <td><span class="badge ${badgeClass}">${statut}</span></td>
+      <td>
+        <button class="action-btn edit" onclick="editDesignation(${d.id})" title="Modifier">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <button class="action-btn" onclick="openMvtFor(${d.id})" title="Mouvement" style="color:#4ade80">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </button>
+        <button class="action-btn delete" onclick="confirmDelete(${d.id}, '${d.nom.replace(/'/g,"\\'")}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render mouvements ──
+function renderMvt(list) {
+  const tbody = document.getElementById('mvtTbody');
+  document.getElementById('statMvts').textContent = list.length;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">Aucun mouvement pour le moment.</td></tr>';
+    return;
+  }
+  const typeMap = { entree: ['📥 Entrée', 'mv-entree'], sortie: ['📤 Sortie', 'mv-sortie'], reset: ['🔄 Reset', 'mv-reset'], ajustement: ['✏️ Ajust.', 'mv-ajust'] };
+  tbody.innerHTML = list.map(m => {
+    const [label, cls] = typeMap[m.type] || [m.type, ''];
+    const date = new Date(m.created_at).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const desig = allDesignations.find(d => d.id === m.designation_id);
+    return `<tr>
+      <td style="color:var(--muted);font-size:12px">${date}</td>
+      <td style="font-weight:600">${desig ? desig.nom : m.designation_id}</td>
+      <td><span class="${cls}">${label}</span></td>
+      <td style="font-weight:700">${parseFloat(m.quantite) > 0 ? '+' : ''}${m.quantite}</td>
+      <td style="color:var(--muted)">${m.stock_avant ?? '—'}</td>
+      <td style="font-weight:700">${m.stock_apres ?? '—'}</td>
+      <td style="color:var(--muted);font-size:12px">${m.note || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Stats ──
+function updateStats() {
+  const total    = allDesignations.length;
+  const faible   = allDesignations.filter(d => { const s = parseFloat(d.stock_actuel)||0; const seuil = d.seuil_alerte??10; return s > 0 && s <= seuil; }).length;
+  const rupture  = allDesignations.filter(d => (parseFloat(d.stock_actuel)||0) <= 0).length;
+  const valeur   = allDesignations.reduce((sum, d) => sum + (parseFloat(d.stock_actuel)||0) * (parseFloat(d.prix_achat)||0), 0);
+  document.getElementById('statTotal').textContent    = total;
+  document.getElementById('statFaible').textContent   = faible;
+  document.getElementById('statRupture').textContent  = rupture;
+  document.getElementById('statValeur').textContent   = valeur.toFixed(2) + ' DH';
+  document.getElementById('statCritiques').textContent = faible + rupture;
+}
+
+// ── Filters ──
+function filterStock() {
+  const q = document.getElementById('searchStock').value.toLowerCase();
+  const s = document.getElementById('filterStatut').value;
+  let list = allDesignations.filter(d => {
+    const matchQ = !q || d.nom.toLowerCase().includes(q) || (d.sku||'').toLowerCase().includes(q);
+    const stock = parseFloat(d.stock_actuel)||0;
+    const seuil = d.seuil_alerte ?? 10;
+    const statut = stock <= 0 ? 'rupture' : stock <= seuil ? 'faible' : 'ok';
+    const matchS = !s || statut === s;
+    return matchQ && matchS;
+  });
+  renderStock(list);
+}
+
+function filterMvt() {
+  const desigId = document.getElementById('filterDesignation').value;
+  const type    = document.getElementById('filterType').value;
+  let list = allMouvements.filter(m => {
+    const matchD = !desigId || String(m.designation_id) === desigId;
+    const matchT = !type    || m.type === type;
+    return matchD && matchT;
+  });
+  renderMvt(list);
+}
+
+function populateMvtSelect() {
+  const sel = document.getElementById('inpMvtDesig');
+  sel.innerHTML = allDesignations.map(d => `<option value="${d.id}">${d.nom} (${d.stock_actuel ?? 0} ${d.unite || ''})</option>`).join('');
+}
+
+function populateMvtFilter() {
+  const sel = document.getElementById('filterDesignation');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les articles</option>' +
+    allDesignations.map(d => `<option value="${d.id}">${d.nom}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+// ── Modal ──
+function openModal(type) {
+  if (type === 'designation') {
+    document.getElementById('editDesigId').value = '';
+    document.getElementById('inpDesigNom').value = '';
+    document.getElementById('inpDesigSKU').value = '';
+    document.getElementById('inpDesigUnite').value = 'g';
+    document.getElementById('inpDesigStock').value = '0';
+    document.getElementById('inpDesigPrix').value = '0';
+    document.getElementById('inpDesigSeuil').value = '10';
+    document.getElementById('modalDesigTitle').textContent = 'Nouvelle désignation';
+    document.getElementById('btnDesigLabel').textContent = 'Valider';
+    switchTab('desig');
+    document.getElementById('modalDesignation').classList.add('open');
+  } else if (type === 'mouvement') {
+    populateMvtSelect();
+    document.getElementById('inpMvtQty').value = '1';
+    document.getElementById('inpMvtNote').value = '';
+    switchTab('mvt');
+    document.getElementById('modalDesignation').classList.add('open');
+  } else if (type === 'confirm') {
+    document.getElementById('modalConfirm').classList.add('open');
+  }
+}
+
+function closeModal(type) {
+  if (type === 'designation') document.getElementById('modalDesignation').classList.remove('open');
+  else if (type === 'confirm') document.getElementById('modalConfirm').classList.remove('open');
+}
+
+function switchTab(tab) {
+  document.getElementById('tabDesig').classList.toggle('active', tab === 'desig');
+  document.getElementById('tabMvt').classList.toggle('active', tab === 'mvt');
+  document.getElementById('formDesig').classList.toggle('active', tab === 'desig');
+  document.getElementById('formMvt').classList.toggle('active', tab === 'mvt');
+}
+
+function openMvtFor(desigId) {
+  populateMvtSelect();
+  document.getElementById('inpMvtDesig').value = desigId;
+  document.getElementById('inpMvtQty').value = '1';
+  document.getElementById('inpMvtNote').value = '';
+  switchTab('mvt');
+  document.getElementById('modalDesignation').classList.add('open');
+}
+
+function editDesignation(id) {
+  const d = allDesignations.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('editDesigId').value = id;
+  document.getElementById('inpDesigNom').value = d.nom || '';
+  document.getElementById('inpDesigSKU').value = d.sku || '';
+  document.getElementById('inpDesigUnite').value = d.unite || 'g';
+  document.getElementById('inpDesigStock').value = d.stock_actuel ?? 0;
+  document.getElementById('inpDesigPrix').value = d.prix_achat ?? 0;
+  document.getElementById('inpDesigSeuil').value = d.seuil_alerte ?? 10;
+  document.getElementById('modalDesigTitle').textContent = 'Modifier désignation';
+  document.getElementById('btnDesigLabel').textContent = 'Enregistrer';
+  switchTab('desig');
+  document.getElementById('modalDesignation').classList.add('open');
+}
+
+// ── Save Désignation ──
+async function saveDesignation() {
+  const id    = document.getElementById('editDesigId').value;
+  const nom   = document.getElementById('inpDesigNom').value.trim();
+  const sku   = document.getElementById('inpDesigSKU').value.trim() || null;
+  const unite = document.getElementById('inpDesigUnite').value;
+  const stock = parseFloat(document.getElementById('inpDesigStock').value) || 0;
+  const prix  = parseFloat(document.getElementById('inpDesigPrix').value)  || 0;
+  const seuil = parseInt(document.getElementById('inpDesigSeuil').value)   || 10;
+
+  if (!nom) { showToast('Le nom est obligatoire', 'error'); return; }
+
+  const payload = { nom, sku, unite, stock_actuel: stock, prix_achat: prix, seuil_alerte: seuil };
+
+  let error;
+  if (id) {
+    const res = await db.from('stock_designations').update(payload).eq('id', id);
+    error = res.error;
+  } else {
+    // Enregistrer mouvement initial si stock > 0
+    const res = await db.from('stock_designations').insert([payload]).select().single();
+    error = res.error;
+    if (!error && stock > 0) {
+      await db.from('stock_mouvements').insert([{
+        designation_id: res.data.id, type: 'entree',
+        quantite: stock, stock_avant: 0, stock_apres: stock, note: 'Stock initial'
+      }]);
+    }
+  }
+
+  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  showToast(id ? 'Désignation modifiée !' : 'Désignation ajoutée !');
+  closeModal('designation');
+  loadAll();
+}
+
+// ── Save Mouvement ──
+async function saveMouvement() {
+  const desigId = parseInt(document.getElementById('inpMvtDesig').value);
+  const type    = document.getElementById('inpMvtType').value;
+  const qty     = parseFloat(document.getElementById('inpMvtQty').value) || 0;
+  const note    = document.getElementById('inpMvtNote').value.trim() || null;
+
+  if (!desigId || qty <= 0) { showToast('Désignation et quantité requises', 'error'); return; }
+
+  const desig = allDesignations.find(d => d.id === desigId);
+  if (!desig) { showToast('Désignation introuvable', 'error'); return; }
+
+  const stockAvant = parseFloat(desig.stock_actuel) || 0;
+  let stockApres;
+  if      (type === 'entree')     stockApres = stockAvant + qty;
+  else if (type === 'sortie')     stockApres = Math.max(0, stockAvant - qty);
+  else if (type === 'reset')      stockApres = qty;
+  else if (type === 'ajustement') stockApres = qty;
+
+  // Update stock
+  const { error: e1 } = await db.from('stock_designations').update({ stock_actuel: stockApres }).eq('id', desigId);
+  if (e1) { showToast('Erreur: ' + e1.message, 'error'); return; }
+
+  // Log mouvement
+  const qtyLog = type === 'sortie' ? -qty : qty;
+  await db.from('stock_mouvements').insert([{
+    designation_id: desigId, type,
+    quantite: qtyLog, stock_avant: stockAvant, stock_apres: stockApres, note
+  }]);
+
+  showToast('Mouvement enregistré !');
+  closeModal('designation');
+  loadAll();
+}
+
+// ── Delete ──
+let deleteTarget = null;
+function confirmDelete(id, nom) {
+  deleteTarget = id;
+  document.getElementById('confirmTitle').textContent = 'Supprimer "' + nom + '"';
+  document.getElementById('confirmBody').textContent = 'Cette action supprimera la désignation et tout son historique. Irréversible.';
+  document.getElementById('confirmOkBtn').onclick = doDelete;
+  openModal('confirm');
+}
+
+async function doDelete() {
+  if (!deleteTarget) return;
+  await db.from('stock_mouvements').delete().eq('designation_id', deleteTarget);
+  const { error } = await db.from('stock_designations').delete().eq('id', deleteTarget);
+  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  showToast('Désignation supprimée !');
+  closeModal('confirm');
+  deleteTarget = null;
+  loadAll();
+}
+
+// ── Reset global ──
+function confirmResetGlobal() {
+  document.getElementById('confirmTitle').textContent = '⚠️ Reset global';
+  document.getElementById('confirmBody').textContent = 'Remettre TOUS les stocks à 0 ? Cette action est irréversible.';
+  document.getElementById('confirmOkBtn').onclick = doResetGlobal;
+  openModal('confirm');
+}
+
+async function doResetGlobal() {
+  const { error } = await db.from('stock_designations').update({ stock_actuel: 0 }).neq('id', 0);
+  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  // Log
+  const inserts = allDesignations.map(d => ({
+    designation_id: d.id, type: 'reset',
+    quantite: 0, stock_avant: parseFloat(d.stock_actuel)||0, stock_apres: 0, note: 'Reset global'
+  }));
+  if (inserts.length) await db.from('stock_mouvements').insert(inserts);
+  showToast('Reset global effectué !');
+  closeModal('confirm');
+  loadAll();
+}
+
+// ── Close modals on overlay click ──
+document.getElementById('modalDesignation').addEventListener('click', e => { if (e.target === document.getElementById('modalDesignation')) closeModal('designation'); });
+document.getElementById('modalConfirm').addEventListener('click', e => { if (e.target === document.getElementById('modalConfirm')) closeModal('confirm'); });
+
+// ── User info ──
+const u = JSON.parse(sessionStorage.getItem('papaya_user') || localStorage.getItem('papaya_user') || '{}');
+if (u?.name) document.getElementById('topUserName').textContent = u.name;
+if (u?.role) document.getElementById('topUserRole').textContent = u.role === 'owner' ? 'Propriétaire' : 'Employé';
+
+// ── Init ──
+loadAll();
+</script>
+</body>
+</html>
