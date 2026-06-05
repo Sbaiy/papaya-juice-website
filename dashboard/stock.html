@@ -821,6 +821,31 @@ const u = JSON.parse(sessionStorage.getItem('papaya_user') || localStorage.getIt
 if (u?.name) document.getElementById('topUserName').textContent = u.name;
 if (u?.role) document.getElementById('topUserRole').textContent = u.role === 'owner' ? 'Propriétaire' : 'Employé';
 
+// ── Realtime ──
+db.channel('stock-realtime')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_designations' }, (payload) => {
+    if (payload.eventType === 'INSERT') {
+      allDesignations.push(payload.new);
+      allDesignations.sort((a, b) => a.nom.localeCompare(b.nom));
+    } else if (payload.eventType === 'UPDATE') {
+      const idx = allDesignations.findIndex(d => d.id === payload.new.id);
+      if (idx !== -1) allDesignations[idx] = payload.new;
+    } else if (payload.eventType === 'DELETE') {
+      allDesignations = allDesignations.filter(d => d.id !== payload.old.id);
+    }
+    filterStock();
+    updateStats();
+    populateMvtSelect();
+    populateMvtFilter();
+  })
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stock_mouvements' }, (payload) => {
+    allMouvements.unshift(payload.new);
+    if (allMouvements.length > 200) allMouvements.pop();
+    document.getElementById('statMvts').textContent = allMouvements.length;
+    filterMvt();
+  })
+  .subscribe();
+
 // ── Init ──
 loadAll();
 </script>
