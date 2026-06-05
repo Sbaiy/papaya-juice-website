@@ -1,28 +1,28 @@
 /* ═══════════════════════════════════════════════════════
-   SERVICE WORKER — Papaya Juice  (v3 — Cache + Notifs)
+   SERVICE WORKER — Papaya Juice  (v4 — Cache + Notifs)
    ✓ Cache images produits (Supabase CDN)
    ✓ Cache fonts Google
    ✓ Cache assets statiques (logo, icons)
    ✓ Network-first pour l'API backend
+   ✓ Network-first pour les pages HTML (produits toujours à jour)
    ✓ Notifications push
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_STATIC  = 'papaya-static-v3';   // assets statiques du site
-const CACHE_IMAGES  = 'papaya-images-v3';   // images produits (Supabase / CDN)
-const CACHE_FONTS   = 'papaya-fonts-v3';    // Google Fonts
+const CACHE_STATIC  = 'papaya-static-v4';
+const CACHE_IMAGES  = 'papaya-images-v4';
+const CACHE_FONTS   = 'papaya-fonts-v4';
 
-/* Assets à pré-cacher au premier chargement */
 const STATIC_ASSETS = [
   '/logo.png',
   '/sw.js',
 ];
 
-/* ── Install : pré-cache les assets statiques ── */
+/* ── Install ── */
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_STATIC).then(cache =>
-      cache.addAll(STATIC_ASSETS).catch(() => {/* silencieux si un asset manque */})
+      cache.addAll(STATIC_ASSETS).catch(() => {})
     )
   );
 });
@@ -37,11 +37,11 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* ── Fetch : stratégie par type de ressource ── */
+/* ── Fetch ── */
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // ── 1. API backend → Network-first (toujours fraîche) ──
+  // ── 1. API backend → Network-first ──
   if (url.hostname.includes('railway.app') || url.pathname.startsWith('/api/')) {
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
@@ -49,18 +49,24 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ── 2. Images produits Supabase / CDN → Cache-first ──
+  // ── 2. Supabase API (données produits, commandes) → Network-first ──
+  if (url.hostname.includes('supabase.co') && url.pathname.includes('/rest/')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // ── 3. Images produits Supabase / CDN → Cache-first ──
   const isImage = /\.(png|jpg|jpeg|webp|svg|gif|avif)(\?.*)?$/i.test(url.pathname);
-  if (isImage || url.hostname.includes('supabase.co') || url.hostname.includes('storage.googleapis.com')) {
+  if (isImage || (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) || url.hostname.includes('storage.googleapis.com')) {
     e.respondWith(
       caches.open(CACHE_IMAGES).then(async cache => {
         const cached = await cache.match(e.request);
-        if (cached) return cached;                     // ← retourné du cache Chrome
+        if (cached) return cached;
         try {
           const fresh = await fetch(e.request);
-          if (fresh && fresh.status === 200) {
-            cache.put(e.request, fresh.clone());        // ← stocké pour la prochaine fois
-          }
+          if (fresh && fresh.status === 200) cache.put(e.request, fresh.clone());
           return fresh;
         } catch {
           return cached || new Response('', { status: 404 });
@@ -70,7 +76,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ── 3. Google Fonts → Cache-first ──
+  // ── 4. Google Fonts → Cache-first ──
   if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
     e.respondWith(
       caches.open(CACHE_FONTS).then(async cache => {
@@ -84,15 +90,24 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ── 4. Assets statiques du site → Cache-first avec fallback réseau ──
+  // ── 5. Pages HTML → Network-first (produits/menu toujours à jour) ──
+  const accept = e.request.headers.get('accept') || '';
+  const isHTML = accept.includes('text/html') || url.pathname.endsWith('.html')
+    || url.pathname === '/' || !url.pathname.includes('.');
+  if (url.origin === self.location.origin && isHTML) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // ── 6. Autres assets statiques (js, css, icons) → Cache-first ──
   if (url.origin === self.location.origin) {
     e.respondWith(
       caches.match(e.request).then(cached => cached || fetch(e.request))
     );
     return;
   }
-
-  // ── 5. Tout le reste → réseau normal ──
 });
 
 /* ══════════════════════════════════════════
@@ -131,7 +146,6 @@ self.addEventListener('notificationclick', e => {
 self.addEventListener('message', e => {
   if (!e.data) return;
 
-  // Notification manuelle depuis la page
   if (e.data.type === 'NOTIFY') {
     self.registration.showNotification(e.data.title || 'Papaya Juice', {
       body:     e.data.body || '',
@@ -145,7 +159,6 @@ self.addEventListener('message', e => {
     return;
   }
 
-  // Pré-cacher une image spécifique à la demande
   if (e.data.type === 'CACHE_IMAGE' && e.data.url) {
     caches.open(CACHE_IMAGES).then(async cache => {
       const already = await cache.match(e.data.url);
