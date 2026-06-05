@@ -314,6 +314,9 @@ body > * { position: relative; z-index: 1; }
 ═══════════════════════════ */
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
@@ -598,11 +601,14 @@ async function cancelOrder() {
   const btn = document.getElementById('cancelBtn');
   btn.disabled=true; btn.textContent='⏳';
   try {
-    const { data: cancelData, error } = await _supabase
-      .from('orders').update({status:'annulé', updated_at: new Date().toISOString()})
-      .eq('id', parseInt(orderId)).select().single();
-    if (error) throw error;
-    await _broadcastUpdate('update_order', { ...cancelData, status: 'annulé' });
+    const res = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || 'Erreur'); }
+    const cancelData = await res.json();
+    await _broadcastUpdate('update_order', { ...cancelData, status: 'annule' });
     applyStatus('annulé','',null);
     currentStatus = 'annulé';
   } catch(e) {

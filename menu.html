@@ -706,6 +706,11 @@ const _broadcastReadyPromise = new Promise(resolve => {
       localStorage.removeItem(CACHE_KEY);
       loadMenuAndCategories();
     })
+    .on('broadcast', { event: 'update_categories' }, () => {
+      // إعادة تحميل الكاتيغوريات (صور، أسماء) وإعادة بناء category bar
+      localStorage.removeItem(CACHE_KEY);
+      loadMenuAndCategories();
+    })
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
     });
@@ -1080,23 +1085,25 @@ async function submitOrder() {
     const total = cartTotal();
 
     try {
-        const { data, error } = await _supabase
-            .from('orders')
-            .insert([{
-                items:        JSON.stringify(items),
-                total:        parseFloat(total.toFixed(2)),
-                status:       'paiement',
-                source:       'menu',
+        // نمرو على الـ backend API — كيحسب total côté serveur ويمنع التلاعب بالأسعار
+        const res = await fetch(BACKEND_URL + '/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items,
                 table_number: tableNum || null,
                 note:         note     || null,
-                created_at:   new Date().toISOString()
-            }])
-            .select('id')
-            .single();
-        if (error) throw error;
+                source:       'menu'
+            })
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Erreur ${res.status}`);
+        }
+        const data = await res.json();
 
         // Broadcast للـ commandes-live + kiosk بدون egress
-        await _broadcastOrder('new_order', { ...data, items: JSON.stringify(items), total: parseFloat(total.toFixed(2)), status: 'paiement', table_number: tableNum || null, source: 'menu' });
+        await _broadcastOrder('new_order', { ...data, items: JSON.stringify(items), total: data.total, status: 'paiement', table_number: tableNum || null, source: 'menu' });
 
         closeOrderModal();
         closeCart();
@@ -1173,7 +1180,12 @@ async function loadMenuAndCategories() {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
             const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_TTL) { applyProducts(data); return; }
+            // كاش صالح — نعرض المنتجات من الكاش لكن نعيد بناء category bar بالداتا الجديدة
+            if (Date.now() - timestamp < CACHE_TTL) {
+                // applyProducts كتبني category bar — allCategories محملة فوق بالداتا الجديدة
+                applyProducts(data);
+                return;
+            }
         }
 
         let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order');
