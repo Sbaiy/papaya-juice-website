@@ -181,7 +181,8 @@ select option { background: #1a241c; color: #fff; }
     border-radius: 50%; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold;
 }
 
-.td-cat { font-weight: 600; color: #eceff1; white-space: nowrap; }
+.td-cat { font-weight: 600; color: #eceff1; white-space: nowrap; cursor: pointer; }
+.td-cat:hover { color: var(--primary); }
 .td-name, .td-desc { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #eceff1; cursor: pointer; }
 .td-desc { color: rgba(255,255,255,0.5); font-weight: 400; }
 .td-name:hover, .td-desc:hover { color: var(--primary); }
@@ -432,7 +433,14 @@ async function loadCategoriesSelect(keepValue) {
         const label = cat.name_fr || cat.name_en || cat.name_ar || 'Sans nom';
         select.innerHTML += `<option value="${label}">${label}</option>`;
     });
-    if (prev) select.value = prev;
+    // Restaurer la valeur précédente (le label stocké dans products.category)
+    if (prev) {
+        select.value = prev;
+        // Si la valeur n'existe plus (catégorie renommée), ne pas bloquer
+        if (!select.value && dbCategories.length > 0) {
+            select.selectedIndex = 0;
+        }
+    }
 }
 
 function addNewCategory() {
@@ -529,6 +537,44 @@ async function deleteProduct(id){
     }
 }
 
+function makeCategoryEditable(id, currentCat) {
+    const cell = document.getElementById('cat-cell-' + id);
+    if (cell.querySelector('select')) return;
+    let opts = "<option value='' disabled>Choisir...</option>";
+    dbCategories.forEach(cat => {
+        const label = cat.name_fr || cat.name_en || cat.name_ar || 'Sans nom';
+        opts += `<option value="${label}" ${label === currentCat ? 'selected' : ''}>${label}</option>`;
+    });
+    cell.innerHTML = `<select class="inline-input" id="catselect-${id}" style="width:auto;padding:4px 8px;font-size:12px;">${opts}</select>`;
+    const sel = document.getElementById('catselect-' + id);
+    sel.focus();
+    const pencilIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+    let isSaving = false;
+    async function saveCat() {
+        if (isSaving) return; isSaving = true;
+        const newCat = sel.value;
+        if (!newCat || newCat === currentCat) {
+            cell.innerHTML = currentCat;
+            cell.onclick = () => makeCategoryEditable(id, currentCat);
+            return;
+        }
+        try {
+            await apiCall('PUT', '/api/menu/products/' + id, { category: newCat });
+            let p = globalProductsArray.find(p => p.id === id);
+            if (p) p.category = newCat;
+            cell.innerHTML = newCat;
+            cell.onclick = () => makeCategoryEditable(id, newCat);
+        } catch(e) {
+            alert('Erreur: ' + e.message);
+            cell.innerHTML = currentCat;
+            cell.onclick = () => makeCategoryEditable(id, currentCat);
+        }
+    }
+    sel.addEventListener('change', saveCat);
+    sel.addEventListener('blur', () => { if (!isSaving) { cell.innerHTML = currentCat; cell.onclick = () => makeCategoryEditable(id, currentCat); } });
+    sel.addEventListener('keydown', e => { if (e.key === 'Escape') { cell.innerHTML = currentCat; cell.onclick = () => makeCategoryEditable(id, currentCat); } });
+}
+
 async function loadProducts(){ 
     const list = document.getElementById('productsList'); 
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
@@ -588,7 +634,7 @@ async function loadProducts(){
                         <div class="img-badge">+</div>
                     </div>
                 </td>
-                <td class="td-cat">${product.category}</td>
+                <td class="td-cat" id="cat-cell-${product.id}" onclick="makeCategoryEditable(${product.id}, '${(product.category||'').replace(/'/g,"\\'")}')">${product.category}</td>
                 <td id="name-cell-${product.id}">
                     <div class="td-name" onclick="makeFieldEditable(${product.id}, 'title', '${(product.title||'').replace(/'/g,"\\'")}')">
                         ${pencilIcon} ${product.title}
