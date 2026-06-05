@@ -482,7 +482,7 @@ async function addProduct(){
     const price = document.getElementById('price').value; 
     const category = document.getElementById('categorySelect').value; 
     if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
-    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
+    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
 }
 
 async function startEdit(id) {
@@ -506,7 +506,7 @@ async function updateProduct() {
     const price = document.getElementById('price').value;
     const category = document.getElementById('categorySelect').value;
     if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
-    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
+    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
 }
 
 function clearForm() {
