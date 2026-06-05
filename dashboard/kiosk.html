@@ -897,7 +897,8 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
 
     let itemsRows = '';
     cartItems.forEach(i => {
-        const price = (i.product.price * i.qty).toFixed(2);
+        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const price = (unitPrice * i.qty).toFixed(2);
         itemsRows += itemLine(i.qty, i.product.title, price) + '\n';
     });
 
