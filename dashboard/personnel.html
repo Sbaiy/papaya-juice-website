@@ -398,12 +398,12 @@ let openSessions = new Set(); // IDs des employés avec session ouverte
 
 async function loadEmployees() {
   try {
-    [employees] = await Promise.all([
+    const [personnelData, pointagesData] = await Promise.all([
       apiFetch('/personnel'),
-      apiFetch('/pointages?open=1').then(data => {
-        openSessions = new Set((data || []).map(p => p.employee_id));
-      }).catch(() => { openSessions = new Set(); })
+      apiFetch('/pointages?open=1').catch(() => [])
     ]);
+    employees = personnelData || [];
+    openSessions = new Set((pointagesData || []).map(p => p.employee_id));
     renderEmployees();
     populateSalarySelect();
     loadWeeklyRecap();
@@ -664,7 +664,7 @@ function getWeekBounds(offset) {
   const day = now.getUTCDay(); // 0=dim, 1=lun...
   const diffToMonday = (day === 0 ? -6 : 1 - day);
   const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToMonday + offset * 7, 0, 0, 0, 0));
-  const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6, 23, 59, 59, 999));
+  const sunday = new Date(monday.getTime() + 6 * 24 * 60 * 60 * 1000 - 1);
   return { monday, sunday };
 }
 
