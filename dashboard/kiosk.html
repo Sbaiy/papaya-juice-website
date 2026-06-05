@@ -392,6 +392,7 @@
             <span style="font-size:18px">🛒</span>
             <span class="cart-title">Commande en cours</span>
             <span class="cart-badge" id="cartBadge">0</span>
+            <button id="btnClearHeader" onclick="clearCart()" title="Vider le panier" style="display:none;margin-left:6px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:2px 7px;cursor:pointer;transition:background 0.15s,color 0.15s;font-family:'DM Sans',sans-serif;">🗑️</button>
         </div>
         <div class="cart-body" id="cartBody">
             <div class="cart-empty" id="cartEmpty">
@@ -415,7 +416,6 @@
                 <div class="cart-row total"><span>Total</span><span id="total">0.00 DH</span></div>
             </div>
             <button class="btn-order" id="btnOrder" disabled onclick="submitOrder()">Envoyer la commande</button>
-            <button class="btn-clear" onclick="clearCart()">🗑️ Vider le panier</button>
         </div>
     </aside>
 </div>
@@ -802,6 +802,13 @@ function changeQty(productId, delta) {
     if (cart[idx].qty <= 0) cart.splice(idx, 1);
     renderCart();
 }
+function changePrice(productId, delta) {
+    const idx = cart.findIndex(i => i.product.id === productId);
+    if (idx < 0) return;
+    const current = cart[idx].customPrice ?? cart[idx].product.price;
+    cart[idx].customPrice = Math.max(0, parseFloat((current + delta).toFixed(2)));
+    renderCart();
+}
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
 function clearCart() { cart = []; renderCart(); }
 
@@ -814,13 +821,13 @@ function renderCart() {
     const items = document.getElementById('cartItems');
     const summary = document.getElementById('cartSummary');
     const btnOrder = document.getElementById('btnOrder');
-    if (!cart.length) { empty.style.display='flex'; items.style.display='none'; summary.style.display='none'; btnOrder.disabled=true; return; }
+    const btnClearHeader = document.getElementById('btnClearHeader'); if (!cart.length) { empty.style.display='flex'; items.style.display='none'; summary.style.display='none'; btnOrder.disabled=true; btnClearHeader.style.display='none'; return; } btnClearHeader.style.display='inline-block';
     empty.style.display='none'; items.style.display='block'; summary.style.display='block'; btnOrder.disabled=false;
     items.innerHTML = cart.map(({product:p, qty}) => {
         const imgEl = p.image ? `<img class="cart-item-img" src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
-        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div><div class="cart-item-price">${(p.price*qty).toFixed(2)} DH</div><div class="cart-item-controls"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
+        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div><div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)">−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${Number(cart.find(i=>i.product.id===${p.id})?.customPrice??p.price).toFixed(2)} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
-    const sub = cart.reduce((s,i) => s+i.product.price*i.qty, 0);
+    const sub = cart.reduce((s,i) => s+(i.customPrice??i.product.price)*i.qty, 0);
     document.getElementById('subtotal').textContent = sub.toFixed(2)+' DH';
     document.getElementById('total').textContent = sub.toFixed(2)+' DH';
 }
@@ -1048,7 +1055,7 @@ async function submitOrder() {
     try {
         const orderPayload = {
             table_number: tableVal,
-            items: cart.map(({product,qty}) => ({id:product.id,title:product.title,price:parseFloat(product.price),qty,category:product.category||''})),
+            items: cart.map(({product,qty,customPrice}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||''})),
             total: cart.reduce((s,i) => s+parseFloat(i.product.price)*i.qty, 0),
             status: 'pending',
             source: 'kiosk'
