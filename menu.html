@@ -1174,33 +1174,29 @@ document.getElementById('orderModalOverlay').addEventListener('click', (e) => {
    LOAD PRODUCTS
 ════════════════════════ */
 const CACHE_KEY = 'papaya_menu_cache';
-const CACHE_TTL = 5 * 60 * 1000;
 
 async function loadMenuAndCategories() {
     try {
         const { data: catData } = await _supabase.from('categories').select('*').order('sort_order', { ascending: true });
         allCategories = catData || [];
 
+        // عرض الكاش فوراً إذا كان موجود (stale-while-revalidate)
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            // كاش صالح — نعرض المنتجات من الكاش لكن نعيد بناء category bar بالداتا الجديدة
-            if (Date.now() - timestamp < CACHE_TTL) {
-                // applyProducts كتبني category bar — allCategories محملة فوق بالداتا الجديدة
-                applyProducts(data);
-                return;
-            }
+            const { data } = JSON.parse(cached);
+            applyProducts(data);
         }
 
+        // دايماً نجيب البيانات الجديدة من Supabase في الخلفية
         let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order');
         if (error) {
-            const old = localStorage.getItem(CACHE_KEY);
-            if (old) { applyProducts(JSON.parse(old).data); return; }
-            showError(); return;
+            if (!cached) showError();
+            return;
         }
 
-        _cachedRawProducts = products || []; // نحفظو كل المنتجات للـ realtime
+        _cachedRawProducts = products || [];
         localStorage.setItem(CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
+        // نحدث الـ UI بالبيانات الجديدة دايماً
         applyProducts(products);
     } catch {
         const old = localStorage.getItem(CACHE_KEY);
