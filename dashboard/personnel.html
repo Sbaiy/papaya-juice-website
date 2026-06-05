@@ -648,14 +648,11 @@ let currentWeekOffset = 0; // 0 = semaine en cours, -1 = semaine dernière...
 
 function getWeekBounds(offset) {
   const now = new Date();
-  const day = now.getDay(); // 0=dim, 1=lun...
+  // Utiliser UTC pour éviter les problèmes de timezone (Maroc = UTC+1)
+  const day = now.getUTCDay(); // 0=dim, 1=lun...
   const diffToMonday = (day === 0 ? -6 : 1 - day);
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday + offset * 7);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToMonday + offset * 7, 0, 0, 0, 0));
+  const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6, 23, 59, 59, 999));
   return { monday, sunday };
 }
 
