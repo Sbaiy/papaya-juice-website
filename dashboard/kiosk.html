@@ -450,6 +450,43 @@
   </div>
 </div>
 
+<!-- ── MODAL MODIFIER COMMANDE ── -->
+<div id="modifierModal" class="modal-overlay" style="display:none; z-index:6000;">
+  <div style="background:#1c2128;border:1px solid rgba(255,255,255,0.1);border-radius:20px;width:680px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.8);overflow:hidden;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:14px;padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="width:40px;height:40px;background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">➕</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:17px;">Modifier la commande</div>
+        <div style="font-size:12px;color:var(--muted);" id="modif-subtitle">Ajouter des articles</div>
+      </div>
+      <button onclick="closeModifierModal()" style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--muted);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+    </div>
+    <!-- Commande existante (résumé) -->
+    <div id="modif-existing" style="padding:12px 24px 0;font-size:12px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:12px;"></div>
+    <!-- Body: grille produits + panier nouveaux articles -->
+    <div style="display:flex;flex:1;overflow:hidden;">
+      <!-- Catalogue produits -->
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="modif-products">
+        <div style="text-align:center;padding:30px;color:var(--muted);">Chargement…</div>
+      </div>
+      <!-- Nouveau panier -->
+      <div style="width:220px;border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;padding:14px 16px;gap:8px;overflow-y:auto;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Ajout en cours</div>
+        <div id="modif-cart" style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:20px;">Aucun article ajouté</div>
+        </div>
+        <div id="modif-supplement" style="font-size:13px;font-weight:700;color:var(--orange);text-align:right;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;"></div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid rgba(255,255,255,0.08);">
+      <button onclick="closeModifierModal()" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.06);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--muted);">Annuler</button>
+      <button id="modif-confirm-btn" onclick="confirmModifierOrder()" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--orange);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;">✅ Confirmer l'ajout</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL CLOTURE ── -->
 <div id="clotureModal" class="modal-overlay" style="display:none; z-index:4000;">
     <div class="modal-content">
@@ -1243,10 +1280,205 @@ ${o.status === 'preparing' ? `<button onclick="updateOrderStatusFromKiosk('${o.i
             style="padding:6px 14px;border-radius:8px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">✅ Prêt</button>` : ''}
 ${o.status === 'ready' ? `<button onclick="updateOrderStatusFromKiosk('${o.id}', 'done')"
             style="padding:6px 14px;border-radius:8px;background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">🏁 Terminer</button>` : ''}
-${o.status === 'done' || o.status === 'termine' ? `<button onclick="reprintOrder('${orderJson}')" title="Réimprimer"
-            style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🖨️</button>` : ''}
+${(o.status !== 'cancelled' && o.status !== 'annule' && o.status !== 'annulé') ? `<button onclick="openModifierModal('${orderJson}')" title="Ajouter des articles"
+            style="width:36px;height:36px;border-radius:8px;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.3);color:#fb923c;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px;">➕</button>` : ''}
+${o.status === 'done' || o.status === 'termine' ? `<button onclick="printAdditionOrder('${orderJson}')" title="Imprimer addition"
+            style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px;">🧾</button>` : ''}
         </div>`;
     }).join('');
+}
+
+// ── MODIFIER COMMANDE ──
+let _modifOrderId = null;
+let _modifNewCart = []; // nouveaux articles seulement
+let _modifAllProducts = null;
+
+async function openModifierModal(encodedOrder) {
+    const o = JSON.parse(decodeURIComponent(encodedOrder));
+    _modifOrderId = o.id;
+    _modifNewCart = [];
+    const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+    document.getElementById('modif-subtitle').textContent = `Commande #${idShort} — Table ${o.table_number||'?'}`;
+
+    // Résumé existant
+    const existingItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+    document.getElementById('modif-existing').innerHTML =
+        `<span style="color:var(--muted);">Articles existants : </span>` +
+        existingItems.map(i=>`<span style="color:var(--text);">${i.qty||1}× ${i.title||i.name||''}</span>`).join(', ') +
+        `<span style="color:var(--orange);font-weight:700;float:right;">${parseFloat(o.total||0).toFixed(2)} DH</span>`;
+
+    document.getElementById('modifierModal').style.display = 'flex';
+    _renderModifCart();
+
+    // Charger produits si pas encore fait
+    if (!_modifAllProducts) {
+        document.getElementById('modif-products').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Chargement…</div>';
+        try {
+            const token = localStorage.getItem('papaya_token');
+            const res = await fetch(BACKEND_URL + '/api/menu/products', { headers: { 'Authorization': 'Bearer ' + token } });
+            const data = await res.json();
+            _modifAllProducts = Array.isArray(data) ? data : (data.data || data.products || []);
+        } catch(e) {
+            document.getElementById('modif-products').innerHTML = `<div style="text-align:center;padding:30px;color:#f87171;">❌ ${e.message}</div>`;
+            return;
+        }
+    }
+    _renderModifProducts();
+}
+
+function closeModifierModal() {
+    document.getElementById('modifierModal').style.display = 'none';
+    _modifOrderId = null;
+    _modifNewCart = [];
+}
+
+function _renderModifProducts() {
+    const container = document.getElementById('modif-products');
+    if (!_modifAllProducts || !_modifAllProducts.length) {
+        container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Aucun produit</div>';
+        return;
+    }
+    container.innerHTML = _modifAllProducts
+        .filter(p => p.disponible !== false)
+        .map(p => `
+        <div onclick="addToModifCart(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+            style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;cursor:pointer;transition:background .15s;"
+            onmouseover="this.style.background='rgba(251,146,60,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+            <span style="font-size:13px;font-weight:600;">${p.title||p.nom||''}</span>
+            <span style="font-size:13px;color:var(--orange);font-weight:700;">${parseFloat(p.price||p.prix||0).toFixed(2)} DH</span>
+        </div>`).join('');
+}
+
+function addToModifCart(product) {
+    const price = parseFloat(product.price || product.prix || 0);
+    const existing = _modifNewCart.find(i => i.id === product.id);
+    if (existing) {
+        existing.qty++;
+    } else {
+        _modifNewCart.push({ id: product.id, title: product.title||product.nom||'', price, qty: 1 });
+    }
+    _renderModifCart();
+}
+
+function removeFromModifCart(id) {
+    const idx = _modifNewCart.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    _modifNewCart[idx].qty--;
+    if (_modifNewCart[idx].qty <= 0) _modifNewCart.splice(idx, 1);
+    _renderModifCart();
+}
+
+function _renderModifCart() {
+    const cartEl = document.getElementById('modif-cart');
+    const suppEl = document.getElementById('modif-supplement');
+    if (!_modifNewCart.length) {
+        cartEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:20px;">Aucun article ajouté</div>';
+        suppEl.innerHTML = '';
+        return;
+    }
+    cartEl.innerHTML = _modifNewCart.map(i => `
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="flex:1;font-size:12px;font-weight:600;">${i.qty}× ${i.title}</span>
+            <span style="font-size:12px;color:var(--orange);">${(i.price*i.qty).toFixed(2)}</span>
+            <button onclick="removeFromModifCart(${i.id})" style="width:22px;height:22px;border-radius:6px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);color:#f87171;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
+        </div>`).join('');
+    const supplement = _modifNewCart.reduce((s,i)=>s+i.price*i.qty,0);
+    suppEl.innerHTML = `+${supplement.toFixed(2)} DH`;
+}
+
+async function confirmModifierOrder() {
+    if (!_modifOrderId || !_modifNewCart.length) {
+        showToast('⚠️ Ajoutez au moins un article');
+        return;
+    }
+    const btn = document.getElementById('modif-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Envoi…';
+    try {
+        const token = localStorage.getItem('papaya_token');
+        const res = await fetch(BACKEND_URL + '/api/orders/' + _modifOrderId + '/add-items', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ items: _modifNewCart })
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Erreur serveur'); }
+        const updatedOrder = await res.json();
+
+        // Imprimer l'addition (ticket des nouveaux articles seulement)
+        const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
+        if (cfg.apiKey && cfg.cashPrinter) {
+            await _printAdditionTicket(updatedOrder, _modifNewCart);
+        }
+
+        // Mettre à jour histAllOrders
+        const idx = histAllOrders.findIndex(x => x.id === updatedOrder.id);
+        if (idx !== -1) histAllOrders[idx] = { ...histAllOrders[idx], ...updatedOrder, items: updatedOrder.items };
+        _histUpdateUI();
+
+        showToast('✅ Commande modifiée !');
+        closeModifierModal();
+    } catch(e) {
+        showToast('❌ ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmer l\'ajout';
+    }
+}
+
+// Imprimer addition (ticket caisse) pour les nouveaux articles
+async function _printAdditionTicket(order, newItems) {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
+    if (!cfg.apiKey || !cfg.cashPrinter) return;
+    try {
+        const idShort = String(order.id||'').slice(-6).padStart(6,'0');
+        const now = new Date().toLocaleString('fr-FR');
+        const sep = '--------------------------------\n';
+        let ticket = `\n       PAPAYA JUICE\n         ADDITION\n${sep}`;
+        ticket += `Commande #${idShort}  Table: ${order.table_number||'?'}\n`;
+        ticket += `${now}\n${sep}`;
+        newItems.forEach(i => {
+            const name = (i.title||'').substring(0,20).padEnd(20,' ');
+            const price = (parseFloat(i.price||0)*i.qty).toFixed(2).padStart(8,' ');
+            ticket += `${i.qty}x ${name} ${price}\n`;
+        });
+        ticket += `${sep}SUPPLEMENT:         ${newItems.reduce((s,i)=>s+i.price*i.qty,0).toFixed(2)} DH\n`;
+        ticket += `TOTAL COMMANDE:     ${parseFloat(order.total||0).toFixed(2)} DH\n`;
+        const ESC = '\x1B', GS = '\x1D';
+        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x01' + GS + 'V' + '\x41' + '\x03';
+        const bytes = []; for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
+        const uint8 = new Uint8Array(bytes); let binary = ''; uint8.forEach(b => binary += String.fromCharCode(b));
+        const base64 = btoa(binary);
+        await fetch('https://api.printnode.com/printjobs',{method:'POST',headers:{'Authorization':'Basic '+btoa(cfg.apiKey+':'),'Content-Type':'application/json'},body:JSON.stringify({printerId:parseInt(cfg.cashPrinter),title:'Addition',contentType:'raw_base64',content:base64,source:'Kiosk'})});
+    } catch(e) { console.warn('Impression addition:', e.message); }
+}
+
+// Imprimer addition complète depuis historique (tous les articles)
+async function printAdditionOrder(encodedOrder) {
+    const o = JSON.parse(decodeURIComponent(encodedOrder));
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
+    if (!cfg.apiKey || !cfg.cashPrinter) { showToast('⚠️ PrintNode non configuré'); return; }
+    const allItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+    try {
+        const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+        const now = new Date().toLocaleString('fr-FR');
+        const sep = '--------------------------------\n';
+        let ticket = `\n       PAPAYA JUICE\n         ADDITION\n${sep}`;
+        ticket += `Commande #${idShort}  Table: ${o.table_number||'?'}\n`;
+        ticket += `${now}\n${sep}`;
+        allItems.forEach(i => {
+            const name = (i.title||i.name||'').substring(0,20).padEnd(20,' ');
+            const price = (parseFloat(i.price||0)*(i.qty||1)).toFixed(2).padStart(8,' ');
+            ticket += `${i.qty||1}x ${name} ${price}\n`;
+        });
+        ticket += `${sep}À PAYER:            ${parseFloat(o.total||0).toFixed(2)} DH\n`;
+        const ESC = '\x1B', GS = '\x1D';
+        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x01' + GS + 'V' + '\x41' + '\x03';
+        const bytes = []; for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
+        const uint8 = new Uint8Array(bytes); let binary = ''; uint8.forEach(b => binary += String.fromCharCode(b));
+        const base64 = btoa(binary);
+        await fetch('https://api.printnode.com/printjobs',{method:'POST',headers:{'Authorization':'Basic '+btoa(cfg.apiKey+':'),'Content-Type':'application/json'},body:JSON.stringify({printerId:parseInt(cfg.cashPrinter),title:'Addition',contentType:'raw_base64',content:base64,source:'Kiosk'})});
+        showToast('✅ Addition imprimée !');
+    } catch(e) { showToast('❌ Erreur impression: '+e.message); }
 }
 
 async function reprintOrder(encodedOrder) {
