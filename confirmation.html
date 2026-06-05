@@ -601,10 +601,9 @@ async function cancelOrder() {
   const btn = document.getElementById('cancelBtn');
   btn.disabled=true; btn.textContent='⏳';
   try {
-    const res = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'cancelled' })
+    const res = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error || 'Erreur'); }
     const cancelData = await res.json();
