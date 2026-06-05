@@ -703,14 +703,42 @@ let _broadcastReady = false;
 const _broadcastReadyPromise = new Promise(resolve => {
   _broadcastChannel
     .on('broadcast', { event: 'menu_updated' }, () => {
-      // Admin updated the menu — clear cache and reload products immediately
-      localStorage.removeItem('papaya_menu_cache');
+      localStorage.removeItem(CACHE_KEY);
       loadMenuAndCategories();
     })
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
     });
 });
+
+// ── Supabase Realtime — تحديث فوري بدون refresh ──
+let _cachedRawProducts = []; // كل المنتجات بدون فلتر disponible
+
+_supabase
+  .channel('products-realtime')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'products' }, (payload) => {
+    // منتج جديد — نزيدو فقط إذا disponible
+    const p = payload.new;
+    _cachedRawProducts = _cachedRawProducts.filter(x => x.id !== p.id);
+    _cachedRawProducts.push(p);
+    localStorage.removeItem(CACHE_KEY);
+    applyProducts(_cachedRawProducts);
+  })
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, (payload) => {
+    // تعديل منتج (inactive أو تغيير بيانات)
+    const p = payload.new;
+    _cachedRawProducts = _cachedRawProducts.map(x => x.id === p.id ? p : x);
+    localStorage.removeItem(CACHE_KEY);
+    applyProducts(_cachedRawProducts);
+  })
+  .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'products' }, (payload) => {
+    // حذف منتج — يتمسح فوراً من Menu
+    const id = payload.old.id;
+    _cachedRawProducts = _cachedRawProducts.filter(x => x.id !== id);
+    localStorage.removeItem(CACHE_KEY);
+    applyProducts(_cachedRawProducts);
+  })
+  .subscribe();
 async function _broadcastOrder(event, orderData) {
   if (!_broadcastReady) await _broadcastReadyPromise;
   // محاولة أولى
@@ -1155,6 +1183,7 @@ async function loadMenuAndCategories() {
             showError(); return;
         }
 
+        _cachedRawProducts = products || []; // نحفظو كل المنتجات للـ realtime
         localStorage.setItem(CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
         applyProducts(products);
     } catch {
