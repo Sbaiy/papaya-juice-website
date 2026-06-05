@@ -503,6 +503,7 @@ async function logout() {
   sessionStorage.clear();
   localStorage.removeItem('papaya_token');
   localStorage.removeItem('papaya_user');
+  localStorage.removeItem('live_reset_ts');
   window.location.href = '/dashboard';
 }
 
