@@ -591,8 +591,8 @@ async function loadOrders() {
     const filtered_new = (resetTs
       ? newOrders.filter(o => new Date(o.created_at) > new Date(resetTs))
       : newOrders
-    // Masquer commandes non encore confirmées (pending = avant confirme kiosk)
-    ).filter(o => o._rawStatus !== 'pending' && o._rawStatus !== 'paid');
+    // Masquer uniquement kiosk pending (pas encore confirmé) — menu pending = commande réelle
+    ).filter(o => !(o._rawStatus === 'pending' && o.source === 'kiosk') && o._rawStatus !== 'paid');
     checkAlerts(filtered_new);
     allOrders = filtered_new;
     updateStats(); updateCounts();
@@ -841,12 +841,11 @@ async function quickStatus(orderId, newStatus) {
     const updated = await res.json();
     // Broadcast avec source préservée
     _broadcastUpdate('update_order', { ...updated, source: source || updated.source });
-    // Préserver source dans allOrders avant loadOrders (DB peut retourner source: null pour anciens orders)
-    const savedSources = {};
-    allOrders.forEach(o => { if (o.source) savedSources[o.id] = o.source; });
-    await loadOrders();
-    allOrders = allOrders.map(o => ({ ...o, source: o.source || savedSources[o.id] || null }));
-    renderOrders();
+    // Update local state directement sans recharger toute la liste
+    const o = _normalizeOrder({ ...updated, source: source || updated.source });
+    const idx = allOrders.findIndex(x => x.id === o.id);
+    if (idx !== -1) allOrders[idx] = { ...allOrders[idx], ...o };
+    updateStats(); updateCounts(); renderOrders();
   } catch (e) { console.error(e); }
 }
 function openStatusModal(orderId, currentStatus) {
@@ -897,6 +896,8 @@ _liveChannel
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
     const o = _normalizeOrder({ ...payload });
     if (!_shouldShowOrder(o)) return;
+    // Éviter les doublons
+    if (allOrders.find(x => x.id === o.id)) return;
     checkAlerts([o]);
     allOrders = [o, ...allOrders];
     updateStats(); updateCounts(); renderOrders();
