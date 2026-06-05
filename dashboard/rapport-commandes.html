@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport Commandes - Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #1b2e1e;
+      --orange:    #f97316;
+      --orange2:   #ea6a0a;
+      --glass:     rgba(255,255,255,0.06);
+      --glass-hov: rgba(255,255,255,0.10);
+      --border:    rgba(255,255,255,0.10);
+      --border-hov:rgba(249,115,22,0.35);
+      --shadow:    0 8px 32px rgba(0,0,0,0.35);
+      --white:     #ffffff;
+      --muted:     rgba(255,255,255,0.50);
+      --blur:      blur(18px);
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+
+    /* ── Topbar ── */
+    .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .btn-icon { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background .15s, color .15s; text-decoration: none; }
+    .btn-icon:hover { background: var(--glass-hov); color: white; }
+    .user-pill { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; background: transparent; cursor: pointer; transition: border-color .15s; }
+    .user-pill:hover { border-color: rgba(249,115,22,.4); }
+    .user-name { font-size: 13px; font-weight: 700; color: white; }
+    .user-role { font-size: 11px; font-weight: 600; color: var(--orange); }
+
+    /* ── Nav tabs ── */
+    .nav-tabs { position: relative; z-index: 10; margin: 10px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 6px 10px; gap: 4px; }
+    .nav-tab { display: flex; align-items: center; gap: 6px; padding: 9px 18px; font-size: 14px; font-weight: 500; color: var(--muted); border: none; background: none; cursor: pointer; border-radius: 999px; transition: color .15s, background .15s; font-family: inherit; text-decoration: none; white-space: nowrap; }
+    .nav-tab:hover { color: white; background: rgba(255,255,255,.06); }
+    .nav-tab.active { color: var(--orange); background: rgba(249,115,22,.12); font-weight: 700; }
+    .nav-dropdown { position: relative; }
+    .dd-chevron { transition: transform .25s; }
+    .nav-dropdown.open .dd-chevron { transform: rotate(180deg); }
+    .nav-dropdown.open .dropdown-trigger { color: var(--orange); background: rgba(249,115,22,.12); }
+    .dropdown-menu { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); min-width: 200px; background: rgba(27,46,30,0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.13); border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); padding: 8px; display: none; flex-direction: column; z-index: 200; }
+    .nav-dropdown.open .dropdown-menu { display: flex; }
+    .dd-item { display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.80); text-decoration: none; transition: background .15s, color .15s; cursor: pointer; border: none; background: transparent; font-family: inherit; width: 100%; }
+    .dd-item:hover { background: rgba(249,115,22,0.12); color: white; }
+
+    /* ── Main ── */
+    .main { position: relative; z-index: 5; max-width: 1280px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 30px; font-weight: 700; color: white; font-family: 'Playfair Display', serif; }
+    .page-title span { color: var(--orange); font-style: italic; }
+    .page-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Glass card ── */
+    .glass-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+
+    /* ── Filtre bar ── */
+    .filter-bar { padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .filter-input { background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 500; padding: 9px 14px; transition: border-color .15s, background .15s; outline: none; min-width: 150px; }
+    .filter-input:focus { border-color: rgba(249,115,22,.5); background: rgba(255,255,255,0.10); }
+    .filter-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.6); cursor: pointer; }
+    .filter-select { background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 10px; color: white; font-family: inherit; font-size: 14px; font-weight: 500; padding: 9px 14px; transition: border-color .15s; outline: none; cursor: pointer; }
+    .filter-select option { background: #1b2e1e; }
+    .btn-filter { background: var(--orange); color: white; border: none; border-radius: 10px; padding: 10px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s, transform .1s; display: flex; align-items: center; gap: 8px; }
+    .btn-filter:hover { background: var(--orange2); }
+    .btn-filter:active { transform: scale(.97); }
+    .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: color .15s, border-color .15s; }
+    .btn-reset:hover { color: white; border-color: rgba(255,255,255,.25); }
+
+    /* ── Shortcuts rapides ── */
+    .shortcuts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .shortcut-btn { background: var(--glass); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: all .15s; }
+    .shortcut-btn:hover { color: white; border-color: rgba(255,255,255,.25); background: var(--glass-hov); }
+    .shortcut-btn.active { color: var(--orange); border-color: rgba(249,115,22,.4); background: rgba(249,115,22,.10); }
+
+    /* ── Stats cards ── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card { padding: 22px; display: flex; flex-direction: column; }
+    .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+    .stat-icon svg { width: 22px; height: 22px; }
+    .stat-icon.orange { background: rgba(249,115,22,.2); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+    .stat-icon.green  { background: rgba(52,168,83,.2); color: #7de09a; border: 1px solid rgba(52,168,83,.3); }
+    .stat-icon.blue   { background: rgba(66,133,244,.2); color: #7ab3ff; border: 1px solid rgba(66,133,244,.3); }
+    .stat-icon.purple { background: rgba(139,92,246,.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
+    .stat-label { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: white; line-height: 1; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .stat-value.loading { opacity: .35; }
+
+    /* ── Breakdown par status ── */
+    .breakdown-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+    .breakdown-card { padding: 16px 18px; border-radius: 14px; display: flex; flex-direction: column; gap: 4px; }
+    .bd-label { font-size: 12px; font-weight: 600; }
+    .bd-count { font-size: 22px; font-weight: 800; color: white; }
+    .bd-pct { font-size: 11px; }
+    .bd-pending  { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.25); }
+    .bd-pending .bd-label, .bd-pending .bd-pct { color: #fdba74; }
+    .bd-preparing{ background: rgba(66,133,244,.12); border: 1px solid rgba(66,133,244,.25); }
+    .bd-preparing .bd-label, .bd-preparing .bd-pct { color: #7ab3ff; }
+    .bd-ready    { background: rgba(139,92,246,.12); border: 1px solid rgba(139,92,246,.25); }
+    .bd-ready .bd-label, .bd-ready .bd-pct { color: #c4b5fd; }
+    .bd-delivered{ background: rgba(52,168,83,.12); border: 1px solid rgba(52,168,83,.25); }
+    .bd-delivered .bd-label, .bd-delivered .bd-pct { color: #7de09a; }
+    .bd-cancelled{ background: rgba(220,38,38,.12); border: 1px solid rgba(220,38,38,.25); }
+    .bd-cancelled .bd-label, .bd-cancelled .bd-pct { color: #fca5a5; }
+
+    /* ── Table commandes ── */
+    .table-section { margin-top: 4px; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .table-title { font-size: 16px; font-weight: 700; }
+    .table-count { font-size: 13px; color: var(--muted); }
+    .export-btn { background: transparent; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+    .export-btn:hover { color: white; border-color: rgba(255,255,255,.3); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .12s; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody td { padding: 12px 16px; font-size: 13px; font-weight: 500; color: white; }
+    td.muted { color: var(--muted); }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-pending    { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+    .badge-preparing  { background: rgba(66,133,244,.15); color: #7ab3ff; border: 1px solid rgba(66,133,244,.3); }
+    .badge-ready      { background: rgba(139,92,246,.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
+    .badge-delivered  { background: rgba(52,168,83,.15);  color: #7de09a; border: 1px solid rgba(52,168,83,.3); }
+    .badge-cancelled  { background: rgba(220,38,38,.15);  color: #fca5a5; border: 1px solid rgba(220,38,38,.3); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-text { font-size: 14px; }
+    .loading-row td { color: var(--muted); text-align: center; padding: 40px; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+    .pag-info { font-size: 13px; color: var(--muted); }
+    .pag-btns { display: flex; gap: 6px; }
+    .pag-btn { background: var(--glass); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer; transition: all .15s; }
+    .pag-btn:hover:not(:disabled) { color: white; border-color: rgba(255,255,255,.25); }
+    .pag-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .pag-btn.active { color: var(--orange); border-color: rgba(249,115,22,.4); background: rgba(249,115,22,.10); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1000px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .breakdown-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px) { .stats-row { grid-template-columns: 1fr 1fr; } .breakdown-grid { grid-template-columns: 1fr 1fr; } .filter-bar { flex-direction: column; align-items: stretch; } .filter-input, .filter-select { min-width: unset; } .topbar, .nav-tabs { margin-left: 10px; margin-right: 10px; } .page-header { flex-direction: column; } }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } .breakdown-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div class="nav-brand">
+    <div class="brand-icon">🍹</div>
+    <span class="brand-name">Papaya Juice</span>
+  </div>
+  <div class="topbar-right">
+    <a href="/dashboard" class="btn-icon" title="Dashboard">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </a>
+    <div class="user-pill" onclick="logout()">
+      <div>
+        <div class="user-name" id="userName">—</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- ── Nav ── -->
+<nav class="nav-tabs">
+  <a href="/dashboard" class="nav-tab">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a href="/dashboard/commandes-live" class="nav-tab">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    Live
+  </a>
+  <a href="/dashboard/rapport-commandes" class="nav-tab active">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Rapport
+  </a>
+  <div class="nav-dropdown" id="moreDropdown">
+    <button class="nav-tab dropdown-trigger" onclick="toggleMoreDropdown()">
+      Plus
+      <svg class="dd-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dd-item" href="/dashboard/stock">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>Stock
+      </a>
+      <a class="dd-item" href="/dashboard/personnel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Personnel
+      </a>
+      <a class="dd-item" href="/dashboard/historique-clotures">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Historique
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Rapport <span>Commandes</span></h1>
+      <p class="page-subtitle">Filtrer et analyser les commandes par période</p>
+    </div>
+  </div>
+
+  <!-- Shortcuts rapides -->
+  <div class="shortcuts">
+    <button class="shortcut-btn" onclick="setShortcut('today')">Aujourd'hui</button>
+    <button class="shortcut-btn" onclick="setShortcut('yesterday')">Hier</button>
+    <button class="shortcut-btn" onclick="setShortcut('week')">7 derniers jours</button>
+    <button class="shortcut-btn" onclick="setShortcut('month')">Ce mois</button>
+    <button class="shortcut-btn" onclick="setShortcut('lastmonth')">Mois dernier</button>
+  </div>
+
+  <!-- Filtre bar -->
+  <div class="glass-card filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">De</label>
+      <input type="date" class="filter-input" id="dateFrom">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">À</label>
+      <input type="date" class="filter-input" id="dateTo">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Statut</label>
+      <select class="filter-select filter-input" id="statusFilter">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="preparing">En préparation</option>
+        <option value="ready">Prêt</option>
+        <option value="delivered">Livré / Terminé</option>
+        <option value="cancelled">Annulé</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Source</label>
+      <select class="filter-select filter-input" id="sourceFilter">
+        <option value="">Toutes les sources</option>
+        <option value="kiosk">Kiosk</option>
+        <option value="qr">QR Table</option>
+        <option value="dashboard">Dashboard</option>
+      </select>
+    </div>
+    <button class="btn-filter" onclick="applyFilter()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Rechercher
+    </button>
+    <button class="btn-reset" onclick="resetFilter()">Réinitialiser</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="glass-card stat-card">
+      <div class="stat-icon orange">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <div class="stat-label">Total commandes</div>
+      <div class="stat-value loading" id="statTotal">—</div>
+      <div class="stat-sub" id="statPeriod">Sélectionner une période</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="stat-label">Chiffre d'affaires</div>
+      <div class="stat-value loading" id="statRevenue">—</div>
+      <div class="stat-sub" id="statAvgOrder">Commandes livrées</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="stat-label">Panier moyen</div>
+      <div class="stat-value loading" id="statAvg">—</div>
+      <div class="stat-sub">Par commande livrée</div>
+    </div>
+    <div class="glass-card stat-card">
+      <div class="stat-icon purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="stat-label">Taux de réussite</div>
+      <div class="stat-value loading" id="statRate">—</div>
+      <div class="stat-sub">Livrées / Total</div>
+    </div>
+  </div>
+
+  <!-- Breakdown par statut -->
+  <div class="breakdown-grid" id="breakdownGrid">
+    <div class="breakdown-card bd-pending">
+      <div class="bd-label">⏳ En attente</div>
+      <div class="bd-count loading" id="bdPending">—</div>
+      <div class="bd-pct" id="bdPendingPct"></div>
+    </div>
+    <div class="breakdown-card bd-preparing">
+      <div class="bd-label">⚡ En préparation</div>
+      <div class="bd-count loading" id="bdPreparing">—</div>
+      <div class="bd-pct" id="bdPreparingPct"></div>
+    </div>
+    <div class="breakdown-card bd-ready">
+      <div class="bd-label">✔️ Prêt</div>
+      <div class="bd-count loading" id="bdReady">—</div>
+      <div class="bd-pct" id="bdReadyPct"></div>
+    </div>
+    <div class="breakdown-card bd-delivered">
+      <div class="bd-label">✅ Livré</div>
+      <div class="bd-count loading" id="bdDelivered">—</div>
+      <div class="bd-pct" id="bdDeliveredPct"></div>
+    </div>
+    <div class="breakdown-card bd-cancelled">
+      <div class="bd-label">🚫 Annulé</div>
+      <div class="bd-count loading" id="bdCancelled">—</div>
+      <div class="bd-pct" id="bdCancelledPct"></div>
+    </div>
+  </div>
+
+  <!-- Table des commandes -->
+  <div class="glass-card table-section" style="padding: 22px 24px;">
+    <div class="table-header">
+      <div>
+        <span class="table-title">Liste des commandes</span>
+        <span class="table-count" id="tableCount"></span>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter CSV
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date & Heure</th>
+            <th>Table</th>
+            <th>Articles</th>
+            <th>Total</th>
+            <th>Statut</th>
+            <th>Source</th>
+            <th>Serveur</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody">
+          <tr class="loading-row"><td colspan="8">Sélectionner une période pour afficher les commandes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="paginationBar" style="display:none;">
+      <div class="pag-info" id="pagInfo"></div>
+      <div class="pag-btns" id="pagBtns"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Auth ──────────────────────────────────────────────────────────
+const _token = localStorage.getItem('papaya_token');
+const _user  = JSON.parse(localStorage.getItem('papaya_user') || '{}');
+if (!_token) { window.location.href = '/dashboard'; }
+document.getElementById('userName').textContent = _user?.name || _user?.email?.split('@')[0] || 'Admin';
+document.getElementById('userRole').textContent  = _user?.role || 'Admin';
+
+function logout() {
+  localStorage.removeItem('papaya_token');
+  localStorage.removeItem('papaya_user');
+  sessionStorage.clear();
+  window.location.href = '/dashboard';
+}
+
+// ── Nav dropdown ──────────────────────────────────────────────────
+function toggleMoreDropdown() {
+  document.getElementById('moreDropdown').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#moreDropdown')) document.getElementById('moreDropdown').classList.remove('open');
+});
+
+// ── State ─────────────────────────────────────────────────────────
+let allData      = [];      // résultats complets
+let currentPage  = 1;
+const PAGE_SIZE  = 50;
+let activeShortcut = '';
+
+// ── Shortcuts rapides ─────────────────────────────────────────────
+function setShortcut(key) {
+  activeShortcut = key;
+  document.querySelectorAll('.shortcut-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const today = new Date();
+  const fmt   = d => d.toISOString().split('T')[0];
+
+  let from, to;
+  if (key === 'today') {
+    from = to = fmt(today);
+  } else if (key === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    from = to = fmt(y);
+  } else if (key === 'week') {
+    const w = new Date(today); w.setDate(w.getDate() - 6);
+    from = fmt(w); to = fmt(today);
+  } else if (key === 'month') {
+    from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+    to   = fmt(today);
+  } else if (key === 'lastmonth') {
+    const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lme = new Date(today.getFullYear(), today.getMonth(), 0);
+    from = fmt(lm); to = fmt(lme);
+  }
+
+  document.getElementById('dateFrom').value = from;
+  document.getElementById('dateTo').value   = to;
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('sourceFilter').value = '';
+  applyFilter();
+}
+
+// ── Init dates par défaut (aujourd'hui) ───────────────────────────
+(function initDates() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dateFrom').value = today;
+  document.getElementById('dateTo').value   = today;
+  document.querySelector('.shortcut-btn').classList.add('active');
+  applyFilter();
+})();
+
+// ── Appliquer filtre ──────────────────────────────────────────────
+async function applyFilter() {
+  setLoadingState();
+  currentPage = 1;
+
+  const from   = document.getElementById('dateFrom').value;
+  const to     = document.getElementById('dateTo').value;
+  const status = document.getElementById('statusFilter').value;
+  const source = document.getElementById('sourceFilter').value;
+
+  // Période label
+  let periodLabel = 'Période sélectionnée';
+  if (from === to && from) {
+    const d = new Date(from + 'T00:00:00');
+    periodLabel = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  } else if (from && to) {
+    periodLabel = `${new Date(from+'T00:00:00').toLocaleDateString('fr-FR', {day:'numeric',month:'short'})} → ${new Date(to+'T00:00:00').toLocaleDateString('fr-FR', {day:'numeric',month:'short',year:'numeric'})}`;
+  }
+  document.getElementById('statPeriod').textContent = periodLabel;
+
+  try {
+    let query = db.from('orders')
+      .select('id, order_number, items, total, status, source, table_number, serveur, note, created_at, updated_at')
+      .order('created_at', { ascending: false });
+
+    if (from) query = query.gte('created_at', `${from}T00:00:00.000Z`);
+    if (to)   query = query.lte('created_at', `${to}T23:59:59.999Z`);
+    if (status) query = query.eq('status', status);
+    if (source) query = query.eq('source', source);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    allData = data || [];
+    updateStats(allData);
+    renderTable(currentPage);
+    renderPagination();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('ordersTableBody').innerHTML =
+      `<tr class="loading-row"><td colspan="8">❌ Erreur: ${err.message}</td></tr>`;
+  }
+}
+
+function resetFilter() {
+  document.querySelectorAll('.shortcut-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value   = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('sourceFilter').value = '';
+  allData = [];
+  setLoadingState();
+  document.getElementById('ordersTableBody').innerHTML =
+    `<tr class="loading-row"><td colspan="8">Sélectionner une période pour afficher les commandes...</td></tr>`;
+  document.getElementById('paginationBar').style.display = 'none';
+}
+
+// ── Stats ─────────────────────────────────────────────────────────
+function updateStats(data) {
+  const total    = data.length;
+  const delivered = data.filter(o => ['delivered','done','termine'].includes(o.status)).length;
+  const cancelled = data.filter(o => ['cancelled','annule','annulé'].includes(o.status)).length;
+  const pending   = data.filter(o => ['pending','paiement'].includes(o.status)).length;
+  const preparing = data.filter(o => ['preparing','en_preparation'].includes(o.status)).length;
+  const ready     = data.filter(o => ['ready','pret'].includes(o.status)).length;
+
+  const revenue   = data
+    .filter(o => !['cancelled','annule','annulé'].includes(o.status))
+    .reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+  const avgOrder  = delivered > 0
+    ? (data.filter(o => ['delivered','done','termine'].includes(o.status)).reduce((s,o) => s + (parseFloat(o.total)||0), 0) / delivered)
+    : 0;
+  const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
+
+  // Animate values
+  animateVal('statTotal',   total,                     '',    true);
+  animateVal('statRevenue', revenue,                   ' DH', false, 2);
+  animateVal('statAvg',     avgOrder,                  ' DH', false, 2);
+  document.getElementById('statRate').classList.remove('loading');
+  document.getElementById('statRate').textContent = total > 0 ? `${rate}%` : '—';
+
+  // Breakdown
+  const pct = n => total > 0 ? ` (${Math.round((n/total)*100)}%)` : '';
+  setBreakdown('bdPending',   pending,   pct(pending));
+  setBreakdown('bdPreparing', preparing, pct(preparing));
+  setBreakdown('bdReady',     ready,     pct(ready));
+  setBreakdown('bdDelivered', delivered, pct(delivered));
+  setBreakdown('bdCancelled', cancelled, pct(cancelled));
+
+  document.getElementById('tableCount').textContent = total > 0 ? ` — ${total} commandes` : '';
+}
+
+function setBreakdown(id, val, pct) {
+  const el = document.getElementById(id);
+  el.classList.remove('loading');
+  el.textContent = val;
+  document.getElementById(id + 'Pct').textContent = pct;
+}
+
+function animateVal(id, target, suffix, isInt, decimals = 0) {
+  const el = document.getElementById(id);
+  el.classList.remove('loading');
+  if (target === 0) { el.textContent = isInt ? '0' + suffix : '0.00' + suffix; return; }
+  let start = 0;
+  const dur = 600, steps = 20, step = target / steps;
+  const iv = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = isInt
+      ? Math.round(start).toLocaleString('fr-FR') + suffix
+      : start.toFixed(decimals).replace('.', ',') + suffix;
+    if (start >= target) clearInterval(iv);
+  }, dur / steps);
+}
+
+// ── Table ─────────────────────────────────────────────────────────
+function renderTable(page) {
+  const tbody = document.getElementById('ordersTableBody');
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = allData.slice(start, start + PAGE_SIZE);
+
+  if (allData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Aucune commande trouvée pour cette période</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = slice.map(o => {
+    const date = new Date(o.created_at);
+    const dateStr  = date.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const timeStr  = date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+    const items    = Array.isArray(o.items) ? o.items : (typeof o.items === 'string' ? JSON.parse(o.items || '[]') : []);
+    const itemsStr = items.slice(0, 2).map(i => `${i.qty||1}× ${i.title||i.name||'?'}`).join(', ') + (items.length > 2 ? ` +${items.length-2}` : '');
+    const total    = parseFloat(o.total || 0).toFixed(2).replace('.', ',') + ' DH';
+    const badge    = statusBadge(o.status);
+    const source   = o.source ? `<span style="font-size:11px;color:var(--muted)">${o.source}</span>` : '<span class="muted">—</span>';
+    const num      = o.order_number || `#${o.id}`;
+
+    return `<tr>
+      <td style="font-weight:700;color:var(--orange)">${num}</td>
+      <td class="muted">${dateStr} <span style="color:rgba(255,255,255,.35)">${timeStr}</span></td>
+      <td>${o.table_number || '<span class="muted">—</span>'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${items.map(i=>`${i.qty||1}× ${i.title||i.name}`).join(', ')}">${itemsStr || '<span class="muted">—</span>'}</td>
+      <td style="font-weight:700">${total}</td>
+      <td>${badge}</td>
+      <td>${source}</td>
+      <td class="muted">${o.serveur || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function statusBadge(s) {
+  const map = {
+    pending:     ['badge-pending',   '⏳ En attente'],
+    paiement:    ['badge-pending',   '⏳ En attente'],
+    preparing:   ['badge-preparing', '⚡ En prép.'],
+    en_preparation: ['badge-preparing','⚡ En prép.'],
+    ready:       ['badge-ready',     '✔️ Prêt'],
+    pret:        ['badge-ready',     '✔️ Prêt'],
+    delivered:   ['badge-delivered', '✅ Livré'],
+    termine:     ['badge-delivered', '✅ Terminé'],
+    done:        ['badge-delivered', '✅ Terminé'],
+    cancelled:   ['badge-cancelled', '🚫 Annulé'],
+    annule:      ['badge-cancelled', '🚫 Annulé'],
+    annulé:      ['badge-cancelled', '🚫 Annulé'],
+  };
+  const [cls, label] = map[s] || ['badge-pending', s || '—'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ── Pagination ────────────────────────────────────────────────────
+function renderPagination() {
+  const total   = allData.length;
+  const pages   = Math.ceil(total / PAGE_SIZE);
+  const bar     = document.getElementById('paginationBar');
+  if (pages <= 1) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end   = Math.min(currentPage * PAGE_SIZE, total);
+  document.getElementById('pagInfo').textContent = `${start}–${end} sur ${total}`;
+
+  let btns = '';
+  btns += `<button class="pag-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Préc.</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (pages > 7 && Math.abs(i - currentPage) > 2 && i !== 1 && i !== pages) { btns += i === 2 || i === pages - 1 ? '<span style="padding:0 6px;color:var(--muted)">…</span>' : ''; continue; }
+    btns += `<button class="pag-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  btns += `<button class="pag-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>Suiv. →</button>`;
+  document.getElementById('pagBtns').innerHTML = btns;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(allData.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable(p);
+  renderPagination();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Loading state ─────────────────────────────────────────────────
+function setLoadingState() {
+  ['statTotal','statRevenue','statAvg','statRate','bdPending','bdPreparing','bdReady','bdDelivered','bdCancelled'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('loading'); el.textContent = '—'; }
+  });
+  ['bdPendingPct','bdPreparingPct','bdReadyPct','bdDeliveredPct','bdCancelledPct'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
+  document.getElementById('ordersTableBody').innerHTML =
+    `<tr class="loading-row"><td colspan="8">Chargement...</td></tr>`;
+}
+
+// ── Export CSV ────────────────────────────────────────────────────
+function exportCSV() {
+  if (!allData.length) return;
+  const headers = ['#','Date','Heure','Table','Articles','Total','Statut','Source','Serveur','Note'];
+  const rows = allData.map(o => {
+    const d    = new Date(o.created_at);
+    const items = Array.isArray(o.items) ? o.items : (typeof o.items === 'string' ? JSON.parse(o.items||'[]') : []);
+    return [
+      o.order_number || o.id,
+      d.toLocaleDateString('fr-FR'),
+      d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
+      o.table_number || '',
+      items.map(i=>`${i.qty||1}x ${i.title||i.name||''}`).join(' | '),
+      parseFloat(o.total||0).toFixed(2),
+      o.status || '',
+      o.source || '',
+      o.serveur || '',
+      (o.note || '').replace(/,/g, ' ')
+    ].join(',');
+  });
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `commandes_${document.getElementById('dateFrom').value}_${document.getElementById('dateTo').value}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
