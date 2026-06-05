@@ -280,6 +280,8 @@ body::before {
 .card-time { padding: 0 16px 10px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
 .card-divider { border: none; border-top: 1px solid var(--border); margin: 0 16px; }
 .card-articles { padding: 12px 16px; }
+.new-items-badge { display:inline-block; background:#f97316; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px; margin-bottom:8px; letter-spacing:0.5px; }
+.article-row.is-new { background:#fff7ed; border-left:3px solid #f97316; border-radius:4px; padding-left:6px; margin-bottom:3px; }
 .articles-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .article-row {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -741,7 +743,16 @@ function buildCard(order) {
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
   let items = [];
   try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
-  const itemsHTML = items.map(item => `<div class="article-row"><div class="article-left"><div><span class="qty">${item.qty || item.quantity || 1}x</span><span class="name"> ${item.title || item.name || item.product_name || ''}</span></div>${item.category ? `<div class="cat">${item.category}</div>` : ''}</div><div class="article-price">${((item.price || 0) * (item.qty || item.quantity || 1)).toFixed(2)} DH</div></div>`).join('');
+  const newItemIds = (order._new_items || []).map(i => i.id);
+  const newItemTitles = (order._new_items || []).map(i => (i.title || i.name || '').toLowerCase());
+  const itemsHTML = items.map(item => {
+    const isNew = order._new_items && (
+      (item.id && newItemIds.includes(item.id)) ||
+      newItemTitles.includes((item.title || item.name || '').toLowerCase())
+    );
+    return `<div class="article-row${isNew ? ' is-new' : ''}"><div class="article-left"><div><span class="qty">${item.qty || item.quantity || 1}x</span><span class="name"> ${item.title || item.name || item.product_name || ''}</span></div>${item.category ? `<div class="cat">${item.category}</div>` : ''}</div><div class="article-price">${((item.price || 0) * (item.qty || item.quantity || 1)).toFixed(2)} DH</div></div>`;
+  }).join('');
+  const newItemsBadge = order._new_items && order._new_items.length ? `<div class="new-items-badge">➕ ${order._new_items.length} article(s) ajouté(s)</div>` : '';
   const serveur = order.serveur || order.server || order.waiter || '';
   const tableNum = order.table_number || order.table || '';
   const note = order.note || order.notes || '';
@@ -769,7 +780,7 @@ function buildCard(order) {
     <div class="card-time">🕐 ${time}</div>
     ${ticketTear}
     <hr class="card-divider">
-    <div class="card-articles"><div class="articles-title">Articles :</div>${itemsHTML || '<div style="color:#9ca3af;font-size:13px;padding:6px 0;">Aucun article</div>'}</div>
+    <div class="card-articles">${newItemsBadge}<div class="articles-title">Articles :</div>${itemsHTML || '<div style="color:#9ca3af;font-size:13px;padding:6px 0;">Aucun article</div>'}</div>
     <div class="card-total"><span class="total-label">Total :</span><span class="total-amount">${parseFloat(order.total || 0).toFixed(2)} DH</span></div>
     ${serveur ? `<div class="card-serveur">👤 Serveur : <span>${serveur}</span></div>` : ''}
     ${note ? `<div class="card-note">📝 ${note}</div>` : ''}
@@ -904,6 +915,10 @@ _liveChannel
   })
   .on('broadcast', { event: 'update_order' }, ({ payload }) => {
     const o = _normalizeOrder({ ...payload });
+    // Conserver new_items si présents (articles ajoutés depuis kiosk en mode modif)
+    if (payload.new_items && Array.isArray(payload.new_items)) {
+      o._new_items = payload.new_items;
+    }
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) {
       // Préserver source/table_number si le payload update ne les contient pas

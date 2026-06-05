@@ -1116,9 +1116,9 @@ async function submitOrder() {
                     body: JSON.stringify({ status: 'preparing' })
                 });
                 const finalOrder = statusRes.ok ? await statusRes.json() : updatedOrder;
-                _broadcastOrder('update_order', { ...finalOrder, status: 'en_preparation' });
+                _broadcastOrder('update_order', { ...finalOrder, status: 'en_preparation', new_items: newItems });
             } catch(e) {
-                _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation' });
+                _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation', new_items: newItems });
             }
 
             // 3. Imprimer ticket cuisine des nouveaux articles + addition supplément
