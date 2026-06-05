@@ -1063,19 +1063,25 @@ async function submitOrder() {
         await printViaPrintNode(kitchenTicket, 'kitchen');
         await printViaPrintNode(additionTicket, 'cash');
 
-        // Mettre status en_preparation
+        // Mettre status en_preparation — دابا قبل broadcast باش الداتابيس وcommandes-live متزامنين
         if (orderId) {
             try {
                 const token = localStorage.getItem('papaya_token');
-                await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
+                const statusRes = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify({ status: 'preparing' })
                 });
-            } catch(e) { console.warn('Status update failed:', e); }
+                const updatedOrder = statusRes.ok ? await statusRes.json() : createdOrder;
+                // Broadcast بعد ما تكمل الـ API call — status صحيح فالداتابيس
+                if (createdOrder) _broadcastOrder('new_order', { ...updatedOrder, status: 'en_preparation' });
+            } catch(e) {
+                console.warn('Status update failed:', e);
+                if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
+            }
+        } else {
+            if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
         }
-        // Broadcast للـ commandes-live بدون egress
-        if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
         showToast('✅ Commande envoyée !');
         clearCart();
     } catch(err) {
