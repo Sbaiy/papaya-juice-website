@@ -913,6 +913,10 @@ _liveChannel
       o.items = payload.new_items; // remplacer les items par les nouveaux seulement
       // Recalculer le total des nouveaux articles uniquement
       o._new_total = payload.new_items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+    } else {
+      // Pas de new_items = update de status normal → effacer les overrides
+      delete o._new_items;
+      delete o._new_total;
     }
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) {
