@@ -530,6 +530,10 @@ h1.menu-title {
     box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
     transform: translateY(100%);
     transition: transform .4s cubic-bezier(0.4,0,0.2,1);
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 .recl-overlay.active .recl-modal { transform: translateY(0); }
 .recl-handle {
@@ -640,7 +644,7 @@ h1.menu-title {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
             Menu
         </a>
-        <a href="#" onclick="openReclamation(); closeDrawer(); return false;">
+        <a href="javascript:void(0)" onclick="openReclamation(); closeDrawer();">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             Réclamation
         </a>
