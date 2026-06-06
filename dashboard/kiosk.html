@@ -1155,15 +1155,20 @@ async function submitOrder() {
             status: 'pending',
             source: 'kiosk'
         };
-        // ── Imprimer IMMÉDIATEMENT (fire & forget, pas d'await) ──
+        // ── Imprimer + vider panier IMMÉDIATEMENT (fire & forget) ──
         const ticketTotal = orderPayload.total.toFixed(2);
         const tempId = String(Date.now()).slice(-4);
-        const kitchenTicket  = generateKitchenTicket(cart, tableVal, tempId);
-        const additionTicket = generateTextTicket(cart, tableVal, ticketTotal, tempId);
+        const cartSnapshot = [...cart];
+        const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, tempId);
+        const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, tempId);
         printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
         printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
+        showToast('✅ Commande envoyée !');
+        clearCart();
+        btnOrder.textContent = 'Envoyer la commande';
+        btnOrder.disabled = false;
 
-        // ── Créer la commande en arrière-plan ──
+        // ── Enregistrer + broadcaster en arrière-plan ──
         const createdOrder = await API.orders.create(orderPayload);
         const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
 
@@ -1185,8 +1190,6 @@ async function submitOrder() {
         } else {
             if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
         }
-        showToast('✅ Commande envoyée !');
-        clearCart();
     } catch(err) {
         showToast('❌ Erreur: ' + err.message);
         btnOrder.disabled = false;
