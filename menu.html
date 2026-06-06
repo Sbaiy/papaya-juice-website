@@ -238,16 +238,19 @@ h1.menu-title {
       padding: 8px 18px 8px 12px;
       cursor: pointer;
       position: fixed;
-      top: 90px;
-      left: 5%;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 999;
-      transition: background .2s, color .2s, border-color .2s, top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+      transition: background .2s, color .2s, border-color .2s, opacity 0.3s ease, transform 0.3s ease;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      white-space: nowrap;
   }
   .back-btn:hover { background: rgba(255,98,0,0.15); color: white; border-color: rgba(255,98,0,0.35); }
-  .back-btn.nav-hidden { top: -60px; opacity: 0; pointer-events: none; }
+  .back-btn.nav-hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
   @media (max-width: 768px) {
-      .back-btn { top: 68px !important; }
-      .back-btn.nav-hidden { top: -60px !important; }
+      .back-btn { bottom: 100px !important; }
   }
   .active-cat-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 22px; margin-top: 0; }
 
@@ -1476,14 +1479,11 @@ const header = document.getElementById('mainHeader');
 window.addEventListener('scroll', () => {
     if (cartIsOpen || _scrollLocked) return;
     const st = window.pageYOffset || document.documentElement.scrollTop;
-    const backBtn = document.getElementById('backBtn');
     if (st > lastST && st > 100) {
         header.classList.add('hide-nav');
-        if (backBtn) backBtn.classList.add('nav-hidden');
         closeDropdown();
     } else {
         header.classList.remove('hide-nav');
-        if (backBtn) backBtn.classList.remove('nav-hidden');
     }
     lastST = st <= 0 ? 0 : st;
 }, { passive: true });
