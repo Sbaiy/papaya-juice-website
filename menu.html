@@ -517,10 +517,15 @@ h1.menu-title {
 /* ── RÉCLAMATION MODAL ── */
 .recl-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    z-index: 1300; display: none; align-items: flex-end; justify-content: center;
+    z-index: 1300;
+    display: flex; align-items: flex-end; justify-content: center;
     backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .35s ease, visibility .35s ease;
 }
-.recl-overlay.active { display: flex; }
+.recl-overlay.active {
+    opacity: 1; visibility: visible; pointer-events: all;
+}
 .recl-modal {
     background: rgba(20,32,22,0.98);
     border: 1px solid rgba(255,255,255,0.10);
@@ -529,7 +534,7 @@ h1.menu-title {
     padding: 28px 22px 40px;
     box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
     transform: translateY(100%);
-    transition: transform .4s cubic-bezier(0.4,0,0.2,1);
+    transition: transform .42s cubic-bezier(0.32,0.72,0,1);
 }
 .recl-overlay.active .recl-modal { transform: translateY(0); }
 .recl-handle {
@@ -640,7 +645,7 @@ h1.menu-title {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
             Menu
         </a>
-        <a id="drawerReclBtn" href="javascript:void(0)">
+        <a href="#" onclick="openReclamation(); closeDrawer(); return false;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             Réclamation
         </a>
@@ -1564,6 +1569,7 @@ document.getElementById('reclOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeReclamation();
 });
 
+
 async function submitReclamation() {
     const message = document.getElementById('reclMessage').value.trim();
     if (!message) { document.getElementById('reclMessage').focus(); return; }
@@ -1635,13 +1641,6 @@ function closeDrawer() {
 window.onload = () => {
     detectTableFromURL();
     loadMenuAndCategories();
-
-    document.getElementById('drawerReclBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        openReclamation();
-        closeDrawer();
-    });
 };
 </script>
 </body>
