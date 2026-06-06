@@ -243,7 +243,7 @@ h1.menu-title {
   }
   .back-btn:hover { background: rgba(255,98,0,0.15); color: white; border-color: rgba(255,98,0,0.35); }
   .back-btn.nav-hidden { top: -60px; opacity: 0; pointer-events: none; }
-  .active-cat-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 22px; margin-top: 140px; }
+  .active-cat-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 22px; margin-top: 0; }
 
 /* ── GRID ── */
 .menu-grid {
@@ -627,7 +627,7 @@ h1.menu-title {
     </nav>
 </div>
 
-<h1 class="menu-title">Our <span style="color:var(--primary)">Menu</span></h1>
+<h1 class="menu-title" id="menuMainTitle">Our <span style="color:var(--primary)">Menu</span></h1>
 
 <!-- Table Banner — shown when table detected from URL -->
 <div class="table-banner" id="tableBanner">
@@ -649,7 +649,6 @@ h1.menu-title {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         <span id="backBtnLabel">Retour</span>
     </button>
-    <div class="active-cat-title" id="activeCatTitle"></div>
     <div class="menu-grid" id="menuGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
     </div>
@@ -1309,12 +1308,13 @@ function buildCategoriesGrid() {
 function showCategoriesView() {
     document.getElementById('categoriesView').style.display = '';
     document.getElementById('productsView').style.display   = 'none';
+    document.getElementById('menuMainTitle').innerHTML = 'Our <span style="color:var(--primary)">Menu</span>';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function openCategory(catName) {
     activeCategory = catName;
-    document.getElementById('activeCatTitle').textContent = catName;
+    document.getElementById('menuMainTitle').innerHTML = `<span style="color:var(--primary)">${catName}</span>`;
     document.getElementById('categoriesView').style.display = 'none';
     document.getElementById('productsView').style.display   = '';
 
