@@ -702,7 +702,7 @@ async function toggleDisponibilite(id, isChecked) {
     const row = document.getElementById('row-' + id);
     if (isChecked) { row.classList.remove('indisponible'); } 
     else { row.classList.add('indisponible'); }
-    try { await apiCall('PUT', '/api/menu/products/' + id, { disponible: isChecked }); } catch(e) { console.error(e); }
+    try { await apiCall('PUT', '/api/menu/products/' + id, { disponible: isChecked }); await broadcastMenuUpdate(); } catch(e) { console.error(e); }
 }
 
 function makePriceEditable(id, currentPrice) {
