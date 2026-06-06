@@ -197,12 +197,14 @@ h1.menu-title {
 /* ── CATEGORIES GRID ── */
   .cats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
       max-width: 1200px;
       width: 90%;
       margin: 0 auto 40px;
   }
+  @media(min-width: 600px) { .cats-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media(min-width: 900px) { .cats-grid { grid-template-columns: repeat(4, 1fr); } }
   .cat-card {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.10);
