@@ -518,14 +518,16 @@ h1.menu-title {
 .recl-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     z-index: 1300;
-    display: flex; align-items: flex-end; justify-content: center;
+    display: none; align-items: flex-end; justify-content: center;
     backdrop-filter: blur(6px);
-    opacity: 0; visibility: hidden; pointer-events: none;
-    overflow: hidden;
-    transition: opacity .35s ease, visibility .35s ease;
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+.recl-overlay.visible {
+    display: flex;
 }
 .recl-overlay.active {
-    opacity: 1; visibility: visible; pointer-events: all;
+    opacity: 1;
 }
 .recl-modal {
     background: rgba(20,32,22,0.98);
@@ -1556,7 +1558,13 @@ function resetReclPhotos() {
 }
 
 function openReclamation() {
-    document.getElementById('reclOverlay').classList.add('active');
+    const overlay = document.getElementById('reclOverlay');
+    overlay.classList.add('visible');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            overlay.classList.add('active');
+        });
+    });
     document.getElementById('reclName').value = '';
     document.getElementById('reclMessage').value = '';
     resetReclPhotos();
@@ -1565,7 +1573,11 @@ function openReclamation() {
     }
 }
 function closeReclamation() {
-    document.getElementById('reclOverlay').classList.remove('active');
+    const overlay = document.getElementById('reclOverlay');
+    overlay.classList.remove('active');
+    overlay.addEventListener('transitionend', () => {
+        overlay.classList.remove('visible');
+    }, { once: true });
 }
 document.getElementById('reclOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeReclamation();
