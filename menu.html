@@ -194,6 +194,39 @@ h1.menu-title {
   animation: cardSlideDown 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* ── CATEGORIES GRID ── */
+  .cats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      width: 90%;
+      margin: 0 auto 40px;
+  }
+  .cat-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 20px;
+      padding: 28px 16px 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background .22s, border-color .22s, transform .22s, box-shadow .22s;
+      text-align: center;
+      animation: catCardIn .4s ease both;
+  }
+  .cat-card:hover { background: rgba(255,98,0,0.10); border-color: rgba(255,98,0,0.45); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+  .cat-card:active { transform: scale(0.97); }
+  @keyframes catCardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  .cat-card-img-wrap { width: 76px; height: 76px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; overflow: hidden; transition: transform .22s; }
+  .cat-card:hover .cat-card-img-wrap { transform: scale(1.08); border-color: rgba(255,98,0,0.5); }
+  .cat-card-img-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .cat-card-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.3; }
+  .cat-card-count { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 500; }
+  .back-btn { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 50px; color: rgba(255,255,255,0.75); font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; padding: 8px 18px 8px 12px; cursor: pointer; width: fit-content; margin: 0 0 18px 5%; transition: background .2s, color .2s, border-color .2s; }
+  .back-btn:hover { background: rgba(255,98,0,0.15); color: white; border-color: rgba(255,98,0,0.35); }
+  .active-cat-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 22px; }
+
 /* ── GRID ── */
 .menu-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -585,8 +618,23 @@ h1.menu-title {
     <span class="tbl-change" onclick="changeTable()">Changer</span>
 </div>
 
-<div class="menu-grid" id="menuGrid">
-    <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
+<!-- CATEGORIES VIEW -->
+<div id="categoriesView">
+    <div class="cats-grid" id="catsGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading…</div>
+    </div>
+</div>
+
+<!-- PRODUCTS VIEW -->
+<div id="productsView" style="display:none;">
+    <button class="back-btn" id="backBtn" onclick="showCategoriesView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        <span id="backBtnLabel">Retour</span>
+    </button>
+    <div class="active-cat-title" id="activeCatTitle"></div>
+    <div class="menu-grid" id="menuGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
+    </div>
 </div>
 
 <button class="cart-fab" id="cartFab">
@@ -1193,30 +1241,20 @@ function applyProducts(products) {
         });
     }
     allProducts = filtered;
-    const productCatNames = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-    buildCategoryBar(productCatNames);
-    displayProducts(allProducts);
-    attachCardClicks();
+    buildCategoriesGrid();
 }
 
 /* ════════════════════════
-   CATEGORY BAR
+   CATEGORIES VIEW
 ════════════════════════ */
-function buildCategoryBar(productCatNames) {
-    const bar = document.getElementById('catBar');
-    bar.innerHTML = '';
-    const allBtn = document.createElement('button');
-    allBtn.className = 'cat-pill all-toggle active';
-    allBtn.id = 'allMenuBtn';
-    allBtn.innerHTML = 'Category <span class="arrow-icon">▾</span>';
-    bar.appendChild(allBtn);
+function buildCategoriesGrid() {
+    const grid = document.getElementById('catsGrid');
+    grid.innerHTML = '';
 
-    const dropdown = document.createElement('div');
-    dropdown.className = 'cat-dropdown';
-    dropdown.id = 'catDropdown';
-    bar.appendChild(dropdown);
+    const dbCatNames = allCategories.map(c => c.name_fr || c.name_en || c.name_ar);
+    const productCatNames = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
 
-    const dbCatNames  = allCategories.map(c => c.name_fr || c.name_en || c.name_ar);
+    // Merge: DB categories first (ordered), then any extras from products
     const orderedCats = [
         ...allCategories.filter(c => {
             const name = c.name_fr || c.name_en || c.name_ar;
@@ -1225,126 +1263,50 @@ function buildCategoryBar(productCatNames) {
         ...productCatNames.filter(n => !dbCatNames.includes(n)).map(n => ({ name: n, image: null }))
     ];
 
-    // Build pills synchronously — نحسبو عرض كل pill من عدد حروفها (تقريب كافي)
-    const dropW = Math.min(window.innerWidth * 0.90, 500) - 20;
-    const AVG_CHAR_W = 8; // px per character approx
-    const PILL_PADDING = 28; // padding left+right
-    const IMG_W = 22; // image + gap if exists
-    const GAP = 8;
+    if (!orderedCats.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Aucune catégorie disponible.</div>`;
+        return;
+    }
 
-    const rows = [];
-    let currentRow = [];
-    let currentWidth = 0;
+    orderedCats.forEach((catObj, idx) => {
+        const count = allProducts.filter(p => p.category === catObj.name).length;
+        const card  = document.createElement('div');
+        card.className = 'cat-card';
+        card.style.animationDelay = (idx * 60) + 'ms';
 
-    orderedCats.forEach(catObj => {
-        const w = catObj.name.length * AVG_CHAR_W + PILL_PADDING + (catObj.image ? IMG_W : 0);
-        const gap = currentRow.length > 0 ? GAP : 0;
-        if (currentRow.length > 0 && currentWidth + gap + w > dropW) {
-            rows.push(currentRow);
-            currentRow = [{ catObj, w }];
-            currentWidth = w;
-        } else {
-            currentRow.push({ catObj, w });
-            currentWidth += gap + w;
-        }
-    });
-    if (currentRow.length) rows.push(currentRow);
+        const imgHTML = catObj.image
+            ? `<div class="cat-card-img-wrap"><img src="${catObj.image}" alt="${catObj.name}" onerror="this.parentElement.innerHTML='🍹'"></div>`
+            : `<div class="cat-card-img-wrap">🍹</div>`;
 
-    // Build rows immediately
-    rows.forEach((rowItems, rowIndex) => {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'cat-dropdown-row';
-        rowEl.dataset.rowIndex = rowIndex;
-        rowItems.forEach(({ catObj }) => {
-            const pill = document.createElement('button');
-            pill.className = 'cat-pill';
-            pill.style.cssText = 'font-size:12px;padding:7px 14px;flex-shrink:0;white-space:nowrap;';
-            if (catObj.image) {
-                pill.innerHTML = `<img src="${catObj.image}" style="width:16px;height:16px;border-radius:3px;object-fit:cover;border:1px solid rgba(255,255,255,0.2)" onerror="this.style.display='none'"> ${catObj.name}`;
-            } else {
-                pill.textContent = catObj.name;
-            }
-            pill.addEventListener('click', () => onCategoryClick(catObj.name, pill));
-            rowEl.appendChild(pill);
-        });
-        dropdown.appendChild(rowEl);
-    });
+        card.innerHTML = `
+            ${imgHTML}
+            <div class="cat-card-name">${catObj.name}</div>
+            <div class="cat-card-count">${count} produit${count > 1 ? 's' : ''}</div>`;
 
-    allBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (dropdown.classList.contains('open')) {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!bar.contains(e.target)) closeDropdown();
+        card.addEventListener('click', () => openCategory(catObj.name));
+        grid.appendChild(card);
     });
 }
 
-function openDropdown() {
-    const dropdown = document.getElementById('catDropdown');
-    const header = document.getElementById('mainHeader');
-    if (dropdown && header) {
-        const hr = header.getBoundingClientRect();
-        dropdown.style.top = (hr.bottom + 10) + 'px';
-    }
-    dropdown?.classList.add('open');
-    document.getElementById('allMenuBtn')?.classList.add('open');
-
-    if (dropdown) {
-        const rows = dropdown.querySelectorAll('.cat-dropdown-row');
-        // 1. Reset all rows instantly to hidden state (no transition)
-        rows.forEach(r => {
-            r.classList.remove('animate-row');
-            r.style.transition = 'none';
-            r.style.opacity    = '0';
-            r.style.transform  = 'translateY(-22px)';
-        });
-        // 2. Force reflow — browser commits the hidden state before animating
-        void dropdown.offsetWidth;
-        // 3. Animate each row in with stagger via CSS transition
-        rows.forEach((r, idx) => {
-            const d = idx * 80;
-            r.style.transition = `opacity 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms, transform 0.4s cubic-bezier(0.22,0.61,0.36,1) ${d}ms`;
-            r.style.opacity    = '1';
-            r.style.transform  = 'translateY(0)';
-        });
-    }
+function showCategoriesView() {
+    document.getElementById('categoriesView').style.display = '';
+    document.getElementById('productsView').style.display   = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function closeDropdown() {
-    const dropdown = document.getElementById('catDropdown');
-    if (dropdown) {
-        dropdown.querySelectorAll('.cat-dropdown-row').forEach(r => {
-            r.style.transition = '';
-            r.style.opacity    = '';
-            r.style.transform  = '';
-        });
-    }
-    dropdown?.classList.remove('open');
-    document.getElementById('allMenuBtn')?.classList.remove('open');
-}
+function openCategory(catName) {
+    activeCategory = catName;
+    document.getElementById('activeCatTitle').textContent = catName;
+    document.getElementById('categoriesView').style.display = 'none';
+    document.getElementById('productsView').style.display   = '';
 
-function onCategoryClick(category, pill) {
-    document.querySelectorAll('#catDropdown .cat-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    activeCategory = category;
-    displayProducts(allProducts.filter(p => p.category === category));
+    const filtered = allProducts.filter(p => p.category === catName);
+    displayProducts(filtered);
     attachCardClicks();
-    closeDropdown();
-    _scrollLocked = true;
-    const header = document.getElementById('mainHeader');
-    const headerH = header ? header.getBoundingClientRect().height : 80;
-    const title = document.querySelector('h1.menu-title');
-    const scrollTarget = title
-        ? title.getBoundingClientRect().top + window.pageYOffset - headerH - 16
-        : 0;
-    window.scrollTo({ top: Math.max(0, scrollTarget) });
-    setTimeout(() => { _scrollLocked = false; lastST = window.pageYOffset; }, 100);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function closeDropdown() {}  // kept for compatibility with openModal
 
 
 /* ════════════════════════
