@@ -1387,26 +1387,97 @@ async function _printAdditionTicket(order, newItems) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
     if (!cfg.apiKey || !cfg.cashPrinter) return;
     try {
-        const idShort = String(order.id||'').slice(-6).padStart(6,'0');
-        const now = new Date().toLocaleString('fr-FR');
-        const sep = '--------------------------------\n';
-        let ticket = `\n       PAPAYA JUICE\n         ADDITION\n${sep}`;
-        ticket += `Commande #${idShort}  Table: ${order.table_number||'?'}\n`;
-        ticket += `${now}\n${sep}`;
-        newItems.forEach(i => {
-            const name = (i.title||'').substring(0,20).padEnd(20,' ');
-            const price = (parseFloat(i.price||0)*i.qty).toFixed(2).padStart(8,' ');
-            ticket += `${i.qty}x ${name} ${price}\n`;
-        });
-        ticket += `${sep}SUPPLEMENT:         ${newItems.reduce((s,i)=>s+i.price*i.qty,0).toFixed(2)} DH\n`;
-        ticket += `TOTAL COMMANDE:     ${parseFloat(order.total||0).toFixed(2)} DH\n`;
-        const ESC = '\x1B', GS = '\x1D';
-        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x05' + GS + 'V' + '\x41' + '\x03';
-        const bytes = []; for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
-        const uint8 = new Uint8Array(bytes); let binary = ''; uint8.forEach(b => binary += String.fromCharCode(b));
-        const base64 = btoa(binary);
-        await fetch('https://api.printnode.com/printjobs',{method:'POST',headers:{'Authorization':'Basic '+btoa(cfg.apiKey+':'),'Content-Type':'application/json'},body:JSON.stringify({printerId:parseInt(cfg.cashPrinter),title:'Addition',contentType:'raw_base64',content:base64,source:'Kiosk'})});
+        // Récupérer tous les items (anciens + nouveaux)
+        const existingItems = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
+        // Construire cartItems format compatible avec generateTextTicket
+        const allCartItems = existingItems.map(i => ({
+            product: { title: i.title || i.name || '', price: parseFloat(i.price || 0), category: i.category || '' },
+            qty: i.qty || i.quantity || 1,
+            customPrice: parseFloat(i.price || 0)
+        }));
+        const tableVal = order.table_number || 'comptoir';
+        const total = parseFloat(order.total || 0).toFixed(2);
+        // Générer le ticket avec le même format que le ticket original
+        // mais avec header ADDITION
+        const ticketContent = generateAdditionTicket(allCartItems, tableVal, total, order.id, newItems);
+        await printViaPrintNode(ticketContent, 'cash');
     } catch(e) { console.warn('Impression addition:', e.message); }
+}
+
+function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    const userName = document.getElementById('userName').textContent || 'Kiosk';
+    const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
+    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : `N° ${table.replace('T','')}`;
+    const supplement = newItems.reduce((s,i) => s + parseFloat(i.price||0)*(i.qty||1), 0).toFixed(2);
+
+    const W = 42;
+    const sep1 = '-'.repeat(W);
+    const sep2 = '='.repeat(W);
+
+    const center = (txt) => {
+        const pad = Math.max(0, Math.floor((W - txt.length) / 2));
+        return ' '.repeat(pad) + txt;
+    };
+
+    const itemLine = (qty, name, price, isNew) => {
+        const qtyStr   = `${qty}x`;
+        const priceStr = `${price} DH`;
+        const marker   = isNew ? '+' : ' ';
+        const maxName  = W - qtyStr.length - 1 - priceStr.length - 1 - 1;
+        const nameStr  = name.substring(0, maxName).padEnd(maxName, ' ');
+        return `${marker}${qtyStr} ${nameStr} ${priceStr}`;
+    };
+
+    const newTitles = newItems.map(i => (i.title||i.name||'').toLowerCase());
+    let itemsRows = '';
+    cartItems.forEach(i => {
+        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const price = (unitPrice * i.qty).toFixed(2);
+        const isNew = newTitles.includes((i.product.title||'').toLowerCase());
+        itemsRows += itemLine(i.qty, i.product.title, price, isNew) + '\n';
+    });
+
+    const totalLabel = 'TOTAL A PAYER:';
+    const totalStr   = `${total} DH`;
+    const totalPad   = Math.max(1, W - totalLabel.length - totalStr.length);
+    const totalLine  = totalLabel + ' '.repeat(totalPad) + totalStr;
+
+    const suppLabel  = 'SUPPLEMENT:';
+    const suppStr    = `${supplement} DH`;
+    const suppPad    = Math.max(1, W - suppLabel.length - suppStr.length);
+    const suppLine   = suppLabel + ' '.repeat(suppPad) + suppStr;
+
+    const qteHeader   = 'Qte';
+    const totalHeader = 'Total';
+    const artHeader   = 'Article'.padEnd(W - qteHeader.length - 2 - totalHeader.length - 1, ' ');
+    const headerLine  = ` ${qteHeader} ${artHeader} ${totalHeader}`;
+
+    const plainTicket = [
+        '\x1B\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + '\x1B\x21\x00\n',
+        center('ADDITION'),
+        sep1,
+        `Ticket N: #${ticketNum}`,
+        `Date: ${dateStr} - ${timeStr}`,
+        `Table: ${tableDisplay}`,
+        `Serveur: ${userName}`,
+        sep1,
+        headerLine,
+        '',
+        itemsRows.trimEnd(),
+        sep1,
+        suppLine,
+        sep2,
+        totalLine,
+        sep2,
+        center('Merci de votre visite !'),
+        center('A bientot !'),
+        '',
+    ].join('\n');
+
+    return `<pre style="font-family:'Courier New',monospace;font-size:10px;line-height:1.6;white-space:pre;">${plainTicket}</pre>`;
 }
 
 // Imprimer addition complète depuis historique (tous les articles)
