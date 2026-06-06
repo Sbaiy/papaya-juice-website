@@ -1067,8 +1067,10 @@ async function ocpImprimer() {
     if (_pendingPrintCart.length) {
         const kitchenTicket  = generateKitchenTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintOrder);
         const additionTicket = generateTextTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintTotal, _pendingPrintOrder);
-        await printViaPrintNode(kitchenTicket, 'kitchen');
-        await printViaPrintNode(additionTicket, 'cash');
+        await Promise.all([
+            printViaPrintNode(kitchenTicket, 'kitchen'),
+            printViaPrintNode(additionTicket, 'cash')
+        ]);
     }
     // Mettre status en_preparation (visible dans commandes-live + confirmation client)
     if (_pendingPrintOrder) {
@@ -1124,8 +1126,10 @@ async function submitOrder() {
             // 3. Imprimer ticket cuisine des nouveaux articles + addition supplément
             const tableVal = _modifMode.tableNumber || 'Comptoir';
             const kitchenTicket = generateKitchenTicket(cart, tableVal, _modifMode.orderId);
-            await printViaPrintNode(kitchenTicket, 'kitchen');
-            await _printAdditionTicket(updatedOrder, newItems);
+            await Promise.all([
+                printViaPrintNode(kitchenTicket, 'kitchen'),
+                _printAdditionTicket(updatedOrder, newItems)
+            ]);
 
             // 4. Mettre à jour histAllOrders si ouvert
             const idx = histAllOrders.findIndex(x => x.id === updatedOrder.id);
@@ -1161,8 +1165,10 @@ async function submitOrder() {
         // Imprimer directement
         const kitchenTicket  = generateKitchenTicket(cart, tableVal, orderId);
         const additionTicket = generateTextTicket(cart, tableVal, ticketTotal, orderId);
-        await printViaPrintNode(kitchenTicket, 'kitchen');
-        await printViaPrintNode(additionTicket, 'cash');
+        await Promise.all([
+            printViaPrintNode(kitchenTicket, 'kitchen'),
+            printViaPrintNode(additionTicket, 'cash')
+        ]);
 
         // Mettre status en_preparation
         if (orderId) {
