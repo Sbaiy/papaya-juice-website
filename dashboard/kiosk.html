@@ -1067,10 +1067,9 @@ async function ocpImprimer() {
     if (_pendingPrintCart.length) {
         const kitchenTicket  = generateKitchenTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintOrder);
         const additionTicket = generateTextTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintTotal, _pendingPrintOrder);
-        await Promise.all([
-            printViaPrintNode(kitchenTicket, 'kitchen'),
-            printViaPrintNode(additionTicket, 'cash')
-        ]);
+        // Fire & forget — tickets partent immédiatement
+        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
     }
     // Mettre status en_preparation (visible dans commandes-live + confirmation client)
     if (_pendingPrintOrder) {
@@ -1123,13 +1122,11 @@ async function submitOrder() {
                 _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation', new_items: newItems });
             }
 
-            // 3. Imprimer ticket cuisine des nouveaux articles + addition supplément
+            // 3. Imprimer ticket cuisine des nouveaux articles + addition supplément (fire & forget)
             const tableVal = _modifMode.tableNumber || 'Comptoir';
             const kitchenTicket = generateKitchenTicket(cart, tableVal, _modifMode.orderId);
-            await Promise.all([
-                printViaPrintNode(kitchenTicket, 'kitchen'),
-                _printAdditionTicket(updatedOrder, newItems)
-            ]);
+            printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+            _printAdditionTicket(updatedOrder, newItems).catch(e => console.warn('Addition print:', e));
 
             // 4. Mettre à jour histAllOrders si ouvert
             const idx = histAllOrders.findIndex(x => x.id === updatedOrder.id);
@@ -1158,17 +1155,17 @@ async function submitOrder() {
             status: 'pending',
             source: 'kiosk'
         };
-        const createdOrder = await API.orders.create(orderPayload);
+        // ── Imprimer IMMÉDIATEMENT (fire & forget, pas d'await) ──
         const ticketTotal = orderPayload.total.toFixed(2);
-        const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
+        const tempId = String(Date.now()).slice(-4);
+        const kitchenTicket  = generateKitchenTicket(cart, tableVal, tempId);
+        const additionTicket = generateTextTicket(cart, tableVal, ticketTotal, tempId);
+        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
 
-        // Imprimer directement
-        const kitchenTicket  = generateKitchenTicket(cart, tableVal, orderId);
-        const additionTicket = generateTextTicket(cart, tableVal, ticketTotal, orderId);
-        await Promise.all([
-            printViaPrintNode(kitchenTicket, 'kitchen'),
-            printViaPrintNode(additionTicket, 'cash')
-        ]);
+        // ── Créer la commande en arrière-plan ──
+        const createdOrder = await API.orders.create(orderPayload);
+        const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
 
         // Mettre status en_preparation
         if (orderId) {
