@@ -521,6 +521,7 @@ h1.menu-title {
     display: flex; align-items: flex-end; justify-content: center;
     backdrop-filter: blur(6px);
     opacity: 0; visibility: hidden; pointer-events: none;
+    overflow: hidden;
     transition: opacity .35s ease, visibility .35s ease;
 }
 .recl-overlay.active {
@@ -535,6 +536,7 @@ h1.menu-title {
     box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
     transform: translateY(100%);
     transition: transform .42s cubic-bezier(0.32,0.72,0,1);
+    flex-shrink: 0;
 }
 .recl-overlay.active .recl-modal { transform: translateY(0); }
 .recl-handle {
