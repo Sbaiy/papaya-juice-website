@@ -1401,7 +1401,7 @@ async function _printAdditionTicket(order, newItems) {
         ticket += `${sep}SUPPLEMENT:         ${newItems.reduce((s,i)=>s+i.price*i.qty,0).toFixed(2)} DH\n`;
         ticket += `TOTAL COMMANDE:     ${parseFloat(order.total||0).toFixed(2)} DH\n`;
         const ESC = '\x1B', GS = '\x1D';
-        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x01' + GS + 'V' + '\x41' + '\x03';
+        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x05' + GS + 'V' + '\x41' + '\x03';
         const bytes = []; for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
         const uint8 = new Uint8Array(bytes); let binary = ''; uint8.forEach(b => binary += String.fromCharCode(b));
         const base64 = btoa(binary);
