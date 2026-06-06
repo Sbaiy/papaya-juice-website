@@ -1445,19 +1445,18 @@ async function reprintOrder(encodedOrder) {
     try {
         const now = new Date(o.created_at||Date.now()).toLocaleString('fr-FR');
         const sep = '--------------------------------\n';
-        let ticket = `\n    PAPAYA JUICE - REIMPRESSION\n${sep}`;
-        ticket += `#${String(o.id||'').slice(-6).padStart(6,'0')}  Table: ${o.table_number||'?'}\n`;
-        ticket += `Date: ${now}\n${sep}`;
+        let ticket = `\n       PAPAYA JUICE\n      RÉIMPRESSION\n${sep}`;
+        ticket += `Commande #${String(o.id||'').slice(-6).padStart(6,'0')}  Table: ${o.table_number||'?'}\n`;
+        ticket += `${now}\n${sep}`;
         const reimpItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
         reimpItems.forEach(i => {
-            const name = (i.title||'').substring(0,20).padEnd(20,' ');
-            const price = (parseFloat(i.price||0)*i.qty).toFixed(2).padStart(8,' ');
-            ticket += `${i.qty}x ${name} ${price}\n`;
+            const name = (i.title||i.name||'').substring(0,20).padEnd(20,' ');
+            const price = (parseFloat(i.price||0)*(i.qty||1)).toFixed(2).padStart(8,' ');
+            ticket += `${i.qty||1}x ${name} ${price}\n`;
         });
         ticket += `${sep}TOTAL:              ${parseFloat(o.total||0).toFixed(2)} DH\n`;
-        // ESC/POS: feed 1 line + auto-cut
         const ESC = '\x1B', GS = '\x1D';
-        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x01' + GS + 'V' + '\x41' + '\x03';
+        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x05' + GS + 'V' + '\x41' + '\x03';
         const bytes = [];
         for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
         const uint8 = new Uint8Array(bytes);
