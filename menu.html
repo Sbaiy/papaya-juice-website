@@ -239,8 +239,7 @@ h1.menu-title {
       cursor: pointer;
       position: fixed;
       bottom: 110px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 20px;
       z-index: 999;
       transition: background .2s, color .2s, border-color .2s, opacity 0.3s ease, transform 0.3s ease;
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -248,9 +247,9 @@ h1.menu-title {
       white-space: nowrap;
   }
   .back-btn:hover { background: rgba(255,98,0,0.15); color: white; border-color: rgba(255,98,0,0.35); }
-  .back-btn.nav-hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
+  .back-btn.nav-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
   @media (max-width: 768px) {
-      .back-btn { bottom: 100px !important; }
+      .back-btn { bottom: 100px !important; left: 16px !important; }
   }
   .active-cat-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 22px; margin-top: 0; }
 
@@ -1089,11 +1088,15 @@ function openCart() {
     cartIsOpen = true;
     document.getElementById('cartPanel').classList.add('open');
     document.getElementById('cartOverlay').classList.add('active');
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.classList.add('nav-hidden');
 }
 function closeCart() {
     cartIsOpen = false;
     document.getElementById('cartPanel').classList.remove('open');
     document.getElementById('cartOverlay').classList.remove('active');
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.classList.remove('nav-hidden');
 }
 
 document.getElementById('cartFab').addEventListener('click', openCart);
