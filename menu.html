@@ -483,6 +483,11 @@ h1.menu-title {
 @media (max-width: 768px) {
     header.main-header { flex-direction: row; gap: 8px; padding: 8px 14px; width: 92%; top: 10px; }
     h1.menu-title { font-size: 30px; margin-top: 100px; margin-bottom: 20px; }
+    .cats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 94% !important; }
+    .cat-card { padding: 16px 12px 14px !important; border-radius: 20px !important; gap: 10px !important; }
+    .cat-card-img-wrap { width: 90px !important; height: 90px !important; font-size: 36px !important; }
+    .cat-card-name { font-size: 13px !important; }
+    .cat-card-count { font-size: 11px !important; }
     .menu-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 94% !important; }
     .product-card { padding: 16px !important; border-radius: 20px !important; flex-direction: column !important; align-items: center !important; gap: 0 !important; }
     .product-card img { width: 120px !important; height: 120px !important; margin-bottom: 12px !important; }
@@ -1400,6 +1405,8 @@ function openModal(product) {
     modal.style.display = 'flex';
     requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
     header.classList.add('hide-nav');
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
 }
 
@@ -1413,6 +1420,8 @@ function closeModal() {
     overlay.classList.remove('active');
     setTimeout(() => { modal.style.display = 'none'; }, 400);
     header.classList.remove('hide-nav');
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.classList.remove('nav-hidden');
 }
 
 overlay.addEventListener('click', closeModal);
