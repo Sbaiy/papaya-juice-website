@@ -870,7 +870,7 @@ function renderCart() {
 
 // ── PRINT ──
 
-// Ticket simple pour la cuisine (sans prix)
+// Ticket cuisine avec prix
 function generateKitchenTicket(cartItems, table, orderId=null) {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
@@ -882,6 +882,15 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
     const sep2 = '-'.repeat(W);
     const center = (txt) => ' '.repeat(Math.max(0, Math.floor((W - txt.length) / 2))) + txt;
 
+    // Ligne article: qty + nom + prix collé à droite
+    const itemLine = (qty, name, price) => {
+        const qtyStr   = `${qty}x`;
+        const priceStr = `${price} DH`;
+        const maxName  = W - qtyStr.length - 1 - priceStr.length - 1;
+        const nameStr  = name.substring(0, maxName).padEnd(maxName, ' ');
+        return `${qtyStr} ${nameStr} ${priceStr}`;
+    };
+
     let lines = [
         '',
         center('*** BON DE CUISINE ***'),
@@ -892,10 +901,19 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
         sep2,
         ''
     ];
+
+    let total = 0;
     cartItems.forEach(i => {
-        lines.push(`  >> ${i.qty}x  ${i.product.title}`);
+        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const lineTotal = unitPrice * i.qty;
+        total += lineTotal;
+        lines.push('  >> ' + itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
     });
+
     lines.push('');
+    lines.push(sep2);
+    const totalStr = `TOTAL: ${total.toFixed(2)} DH`;
+    lines.push(' '.repeat(W - totalStr.length) + totalStr);
     lines.push(sep);
     lines.push('');
     return lines.join('\n');
@@ -1155,22 +1173,21 @@ async function submitOrder() {
             status: 'pending',
             source: 'kiosk'
         };
-        // ── Imprimer + vider panier IMMÉDIATEMENT (fire & forget) ──
-        const ticketTotal = orderPayload.total.toFixed(2);
-        const tempId = String(Date.now()).slice(-4);
+        // ── Enregistrer en DB d'abord pour avoir le vrai ID ──
         const cartSnapshot = [...cart];
-        const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, tempId);
-        const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, tempId);
+        const ticketTotal = orderPayload.total.toFixed(2);
+        const createdOrder = await API.orders.create(orderPayload);
+        const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
+
+        // ── Imprimer avec le vrai orderId ──
+        const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, orderId);
+        const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, orderId);
         printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
         printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
         showToast('✅ Commande envoyée !');
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
         btnOrder.disabled = false;
-
-        // ── Enregistrer + broadcaster en arrière-plan ──
-        const createdOrder = await API.orders.create(orderPayload);
-        const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
 
         // Mettre status en_preparation
         if (orderId) {
