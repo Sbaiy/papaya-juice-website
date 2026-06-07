@@ -1551,16 +1551,16 @@ async function validerCloture() {
         let totalJournee=0, nbrCommandes=0, clotureOrders=[];
         try {
             const token = localStorage.getItem('papaya_token');
+            // ── Fetch TOUTES les commandes sans limite ──
             const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
-            if (res.ok) {
-                const ordersRes = await res.json();
-                const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
+            const allOrders = res.ok ? (await res.json().then(r => Array.isArray(r) ? r : (r.data || []))) : [];
+            if (allOrders.length > 0) {
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
                 const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement'];
                 const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
                 clotureOrders = loginTime
-                    ? orders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status))
-                    : orders.filter(o => STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status));
+                    ? allOrders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status))
+                    : allOrders.filter(o => STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
