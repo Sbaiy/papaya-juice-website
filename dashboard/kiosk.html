@@ -625,6 +625,7 @@ let filteredProducts = [];
 let currentCategory = '';
 let searchQuery = '';
 let cart = [];
+let _localOrderCounter = parseInt(localStorage.getItem('papaya_order_counter') || '0');
 let _modifMode = null; // null = normal | { orderId, orderNumber, tableNumber } = mode ajout sur commande existante
 let categoryMap = {};
 let categoriesOrder = []; // ordered list from API
@@ -1173,25 +1174,29 @@ async function submitOrder() {
             status: 'pending',
             source: 'kiosk'
         };
-        // ── Snapshot + vider panier IMMÉDIATEMENT ──
+        // ── Snapshot + counter local + vider panier IMMÉDIATEMENT ──
         const cartSnapshot = [...cart];
         const ticketTotal = orderPayload.total.toFixed(2);
+        _localOrderCounter++;
+        localStorage.setItem('papaya_order_counter', _localOrderCounter);
+        const localId = _localOrderCounter;
+
+        // Imprimer IMMÉDIATEMENT avec l'ID local
+        const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, localId);
+        const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, localId);
+        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
+
         showToast('✅ Commande envoyée !');
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
         btnOrder.disabled = false;
 
-        // ── En arrière-plan : créer order → récupérer vrai ID → imprimer ──
+        // ── En arrière-plan : créer order + broadcast ──
         (async () => {
             try {
                 const createdOrder = await API.orders.create(orderPayload);
                 const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
-
-                // Imprimer avec le vrai ID
-                const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, orderId);
-                const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, orderId);
-                printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-                printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
 
                 // Mettre status en_preparation + broadcast
                 if (orderId) {
