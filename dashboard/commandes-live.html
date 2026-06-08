@@ -744,7 +744,12 @@ function buildCard(order) {
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
   let items = [];
   try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
-  const itemsHTML = items.map(item => `<div class="article-row"><div class="article-left"><div><span class="qty">${item.qty || item.quantity || 1}x</span><span class="name"> ${item.title || item.name || item.product_name || ''}</span></div>${item.category ? `<div class="cat">${item.category}</div>` : ''}</div><div class="article-price">${((item.price || 0) * (item.qty || item.quantity || 1)).toFixed(2)} DH</div></div>`).join('');
+  const itemsHTML = items.map(item => {
+    const extrasHtml = (item.extras && item.extras.length > 0)
+      ? `<div style="margin-top:3px;padding-left:4px;border-left:2px solid rgba(255,255,255,0.15);">${item.extras.map(e => `<div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">+ ${e.optionName || e.name || ''}${e.priceAdd > 0 ? ` <span style="color:rgba(255,255,255,0.3);">(+${parseFloat(e.priceAdd).toFixed(2)} DH)</span>` : ''}</div>`).join('')}</div>`
+      : '';
+    return `<div class="article-row"><div class="article-left"><div><span class="qty">${item.qty || item.quantity || 1}x</span><span class="name"> ${item.title || item.name || item.product_name || ''}</span></div>${extrasHtml}${item.category ? `<div class="cat">${item.category}</div>` : ''}</div><div class="article-price">${((item.price || 0) * (item.qty || item.quantity || 1)).toFixed(2)} DH</div></div>`;
+  }).join('');
   const newItemsBadge = order._new_items && order._new_items.length ? `<div class="new-items-badge">➕ AJOUT — ${order._new_items.length} article(s)</div>` : '';
   const serveur = order.serveur || order.server || order.waiter || '';
   const tableNum = order.table_number || order.table || '';
