@@ -463,19 +463,6 @@
   </div>
 </div>
 
-<!-- ── MODAL EXTRAS ── -->
-<div id="extrasModal" class="modal-overlay" style="display:none; z-index:5000;">
-  <div class="modal-content" style="max-width:420px;width:92%;">
-    <h3 style="margin-bottom:6px;" id="extrasModalTitle">🍟 Extras</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="extrasModalSub">Choisissez vos suppléments</p>
-    <div id="extrasModalList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;max-height:320px;overflow-y:auto;"></div>
-    <div class="modal-actions">
-      <button onclick="closeExtrasModal()" class="btn-cancel">Annuler</button>
-      <button onclick="confirmExtras()" class="btn-confirm" id="btnConfirmExtras">Ajouter au panier</button>
-    </div>
-  </div>
-</div>
-
 <!-- ── MODAL CLOTURE ── -->
 <div id="clotureModal" class="modal-overlay" style="display:none; z-index:4000;">
     <div class="modal-content">
@@ -823,106 +810,12 @@ function renderProducts() {
 }
 
 // ── CART ──
-// ── Cache des extras par product_id ──
-const _extrasCache = {};
-
-async function addToCart(productId) {
+function addToCart(productId) {
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
-
-    // Checker si ce produit a des extras
-    let extras = _extrasCache[productId];
-    if (extras === undefined) {
-        try {
-            const token = localStorage.getItem('papaya_token');
-            const res = await fetch(BACKEND_URL + '/api/extras/product/' + productId, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            extras = res.ok ? await res.json() : [];
-        } catch(e) { extras = []; }
-        _extrasCache[productId] = extras;
-    }
-
-    if (extras && extras.length > 0) {
-        openExtrasModal(product, extras);
-    } else {
-        const existing = cart.find(i => i.product.id === productId && !i._extrasKey);
-        if (existing) existing.qty++; else cart.push({ product, qty: 1, extras: [] });
-        renderCart();
-    }
-}
-
-// ── Extras Modal ──
-let _extrasPendingProduct = null;
-let _extrasPendingList    = [];
-let _extrasSelected       = {}; // extra_id → true/false
-
-function openExtrasModal(product, extras) {
-    _extrasPendingProduct = product;
-    _extrasPendingList    = extras;
-    _extrasSelected       = {};
-
-    document.getElementById('extrasModalTitle').textContent = product.title;
-    document.getElementById('extrasModalSub').textContent = 'Choisissez vos suppléments';
-
-    const list = document.getElementById('extrasModalList');
-    list.innerHTML = extras.map(e => `
-        <label style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;gap:10px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <input type="checkbox" value="${e.id}" onchange="toggleExtra(${e.id})"
-                    style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;"
-                    ${e.obligatoire ? 'checked disabled' : ''}>
-                <span style="font-size:14px;font-weight:600;color:var(--text);">${e.nom}</span>
-                ${e.obligatoire ? '<span style="font-size:10px;color:var(--orange);background:var(--orange-dim);padding:2px 7px;border-radius:20px;">Inclus</span>' : ''}
-            </div>
-            <span style="font-size:13px;font-weight:700;color:var(--orange);white-space:nowrap;">
-                ${e.prix > 0 ? '+' + parseFloat(e.prix).toFixed(2) + ' DH' : 'Gratuit'}
-            </span>
-        </label>
-    `).join('');
-
-    // Cocher les obligatoires
-    extras.filter(e => e.obligatoire).forEach(e => { _extrasSelected[e.id] = e; });
-
-    document.getElementById('extrasModal').style.display = 'flex';
-}
-
-function toggleExtra(extraId) {
-    const extra = _extrasPendingList.find(e => e.id === extraId);
-    if (!extra) return;
-    if (_extrasSelected[extraId]) delete _extrasSelected[extraId];
-    else _extrasSelected[extraId] = extra;
-}
-
-function closeExtrasModal() {
-    document.getElementById('extrasModal').style.display = 'none';
-    _extrasPendingProduct = null;
-    _extrasPendingList    = [];
-    _extrasSelected       = {};
-}
-
-function confirmExtras() {
-    if (!_extrasPendingProduct) return;
-    const selectedExtras = Object.values(_extrasSelected);
-    const extrasPrice    = selectedExtras.reduce((s, e) => s + parseFloat(e.prix || 0), 0);
-    const finalPrice     = parseFloat(_extrasPendingProduct.price) + extrasPrice;
-    const extrasKey      = selectedExtras.map(e => e.id).sort().join('-');
-
-    // Si même produit + mêmes extras → qty++
-    const existing = cart.find(i => i.product.id === _extrasPendingProduct.id && (i._extrasKey || '') === extrasKey);
-    if (existing) {
-        existing.qty++;
-    } else {
-        cart.push({
-            product: _extrasPendingProduct,
-            qty: 1,
-            customPrice: finalPrice,
-            extras: selectedExtras,
-            _extrasKey: extrasKey
-        });
-    }
+    const existing = cart.find(i => i.product.id === productId);
+    if (existing) existing.qty++; else cart.push({ product, qty: 1 });
     renderCart();
-    closeExtrasModal();
 }
 function changeQty(productId, delta) {
     const idx = cart.findIndex(i => i.product.id === productId);
@@ -1016,14 +909,6 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
         const lineTotal = unitPrice * i.qty;
         total += lineTotal;
         lines.push('  >> ' + itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
-        // Extras
-        if (i.extras && i.extras.length > 0) {
-            i.extras.forEach(e => {
-                const eLabel = '     + ' + e.nom;
-                const ePrix  = parseFloat(e.prix) > 0 ? '+' + parseFloat(e.prix).toFixed(2) + ' DH' : 'Inclus';
-                lines.push('     ' + eLabel.substring(0, W - 12).padEnd(W - 12) + ePrix);
-            });
-        }
     });
 
     lines.push('');
@@ -1068,15 +953,6 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
         const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
         const price = (unitPrice * i.qty).toFixed(2);
         itemsRows += itemLine(i.qty, i.product.title, price) + '\n';
-        // Extras
-        if (i.extras && i.extras.length > 0) {
-            i.extras.forEach(e => {
-                const eLabel = '  + ' + e.nom;
-                const ePrix  = parseFloat(e.prix) > 0 ? '+' + parseFloat(e.prix).toFixed(2) + ' DH' : 'Inclus';
-                const maxN   = W - ePrix.length - 1;
-                itemsRows += eLabel.substring(0, maxN).padEnd(maxN) + ' ' + ePrix + '\n';
-            });
-        }
     });
 
     // Total aligné à droite
