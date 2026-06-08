@@ -2360,14 +2360,18 @@ function confirmExtrasAndAdd() {
       }
     });
   });
-  closeExtrasSelModal();
-  _addToCartDirect(_eselProduct, selectedExtras);
+  const productToAdd = _eselProduct; // save before closing
+  document.getElementById('extrasSelModal').classList.remove('open');
+  _eselProduct = null;
+  _addToCartDirect(productToAdd, selectedExtras);
 }
 
 function skipExtrasAndAdd() {
   if (!_eselProduct) return;
-  closeExtrasSelModal();
-  _addToCartDirect(_eselProduct, []);
+  const productToAdd = _eselProduct;
+  document.getElementById('extrasSelModal').classList.remove('open');
+  _eselProduct = null;
+  _addToCartDirect(productToAdd, []);
 }
 
 function escHtmlKiosk(s) {
