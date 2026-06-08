@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <link rel="icon" href="/logo.icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extras - Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #1b2e1e;
+      --orange:    #f97316;
+      --orange2:   #ea6a0a;
+      --orange-dim:rgba(249,115,22,0.12);
+      --glass:     rgba(255,255,255,0.06);
+      --glass-hov: rgba(255,255,255,0.10);
+      --border:    rgba(255,255,255,0.10);
+      --border-hov:rgba(249,115,22,0.35);
+      --shadow:    0 8px 32px rgba(0,0,0,0.35);
+      --white:     #ffffff;
+      --muted:     rgba(255,255,255,0.50);
+      --blur:      blur(18px);
+      --red:       #ef4444;
+      --card:      rgba(255,255,255,0.05);
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+
+    .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #b45309); display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+    .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .btn-icon { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background .15s, color .15s; text-decoration: none; }
+    .btn-icon:hover { background: var(--glass-hov); color: white; }
+    .user-pill { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px; }
+    .user-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--white); }
+
+    .main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 24px 18px 80px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 22px; font-weight: 800; }
+    .page-title span { color: var(--orange); }
+
+    .btn-primary { padding: 10px 20px; background: linear-gradient(135deg, var(--orange), var(--orange2)); border: none; border-radius: 12px; color: white; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+    .btn-primary:hover { opacity: .85; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .btn-ghost { background: var(--glass); border: 1px solid var(--border); color: var(--white); padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .btn-ghost:hover { background: var(--glass-hov); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+    .tab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+    /* Cards */
+    .card { background: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color .15s; }
+    .card:hover { border-color: var(--border-hov); }
+    .card-info { flex: 1; }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .card-sub { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+    .badge { padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-orange { background: var(--orange-dim); color: var(--orange); }
+    .badge-green { background: rgba(34,197,94,.15); color: #22c55e; }
+    .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
+    .card-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* Form */
+    .form-card { background: var(--glass); border: 1px solid var(--border-hov); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .form-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--orange); }
+    .form-grid { display: grid; grid-template-columns: 1fr 120px auto; gap: 12px; align-items: end; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .form-input { padding: 10px 14px; background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 10px; color: var(--white); font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s; }
+    .form-input:focus { border-color: var(--orange); }
+    .form-check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding-top: 4px; }
+    .form-check input { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
+
+    /* Products linking */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+    .product-chip { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: border-color .15s, background .15s; font-size: 13px; font-weight: 600; }
+    .product-chip.linked { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
+    .product-chip:hover { border-color: var(--border-hov); }
+
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 14px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: 12px 22px; font-size: 13px; font-weight: 600; color: white; z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    .modal-box { background: #1e2d22; border: 1px solid var(--border); border-radius: 20px; padding: 24px; width: 92%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+    .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<nav class="topbar">
+  <a href="/dashboard.html" class="nav-brand">
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;"></div>
+    <span class="brand-name">Papaya Juice</span>
+  </a>
+  <div class="topbar-right">
+    <a href="/dashboard/admin.html" class="btn-icon" title="Admin">⚙️</a>
+    <div class="user-pill">
+      <div class="user-dot"></div>
+      <span class="user-name" id="userName">—</span>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">🍟 Gestion des <span>Extras</span></div>
+    <button class="btn-primary" onclick="openAddForm()">+ Nouvel extra</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('extras')">Extras</div>
+    <div class="tab" onclick="switchTab('link')">Lier aux produits</div>
+  </div>
+
+  <!-- ── TAB EXTRAS ── -->
+  <div id="tabExtras">
+    <!-- Formulaire ajout/édition -->
+    <div class="form-card" id="formCard" style="display:none;">
+      <div class="form-title" id="formTitle">➕ Nouvel extra</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nom de l'extra</label>
+          <input class="form-input" id="inNom" placeholder="ex: Café, Frite, Sauce…">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prix (DH)</label>
+          <input class="form-input" id="inPrix" type="number" min="0" step="0.5" placeholder="0">
+        </div>
+        <div>
+          <label class="form-check">
+            <input type="checkbox" id="inObligatoire">
+            <span>Obligatoire</span>
+          </label>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn-primary btn-sm" onclick="saveExtra()">Enregistrer</button>
+            <button class="btn-ghost" onclick="closeForm()">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste extras -->
+    <div id="extrasList"></div>
+  </div>
+
+  <!-- ── TAB LINK ── -->
+  <div id="tabLink" style="display:none;">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Sélectionnez un extra puis cochez les produits qui l'ont.</p>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label">Extra à configurer</label>
+      <select class="form-input" id="extraSelect" onchange="loadProductLinks()" style="cursor:pointer;">
+        <option value="">— Choisir un extra —</option>
+      </select>
+    </div>
+
+    <div id="linkSection" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:14px;font-weight:700;">Produits liés</span>
+        <button class="btn-primary btn-sm" onclick="saveLinks()">💾 Enregistrer</button>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+
+const getToken  = () => localStorage.getItem('papaya_token');
+const apiHdr    = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
+
+// ── Auth check ──
+const token = getToken();
+if (!token) { location.href = '/dashboard.html'; }
+try {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  document.getElementById('userName').textContent = payload.username || payload.name || 'Admin';
+} catch(e) {}
+
+// ── Toast ──
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ── State ──
+let allExtras   = [];
+let allProducts = [];
+let editingId   = null;
+let linkedProductIds = new Set();
+
+// ── Tabs ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='extras')||(i===1&&tab==='link')));
+  document.getElementById('tabExtras').style.display = tab === 'extras' ? '' : 'none';
+  document.getElementById('tabLink').style.display   = tab === 'link'   ? '' : 'none';
+  if (tab === 'link') populateExtraSelect();
+}
+
+// ════════════════════════════════════════
+//  EXTRAS TAB
+// ════════════════════════════════════════
+async function loadExtras() {
+  const res = await fetch(BACKEND_URL + '/api/extras/all', { headers: apiHdr() });
+  allExtras = res.ok ? await res.json() : [];
+  renderExtras();
+}
+
+function renderExtras() {
+  const el = document.getElementById('extrasList');
+  if (!allExtras.length) { el.innerHTML = '<div class="empty">Aucun extra — cliquez sur "+ Nouvel extra"</div>'; return; }
+  el.innerHTML = allExtras.map(e => `
+    <div class="card">
+      <div class="card-info">
+        <div class="card-title">${e.nom}</div>
+        <div class="card-sub">
+          <span class="badge badge-orange">${parseFloat(e.prix||0).toFixed(2)} DH</span>
+          ${e.obligatoire ? '<span class="badge badge-green">Obligatoire</span>' : '<span class="badge" style="background:rgba(255,255,255,.07);color:var(--muted)">Optionnel</span>'}
+          ${!e.actif ? '<span class="badge badge-red">Inactif</span>' : ''}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-ghost" onclick="editExtra(${e.id})">✏️ Modifier</button>
+        <button class="btn-primary btn-sm" style="background:${e.actif?'rgba(239,68,68,.2)':'var(--orange-dim)'};color:${e.actif?'#ef4444':'var(--orange)'};"
+          onclick="toggleActif(${e.id}, ${e.actif})">
+          ${e.actif ? 'Désactiver' : 'Activer'}
+        </button>
+        <button class="btn-primary btn-sm btn-danger" onclick="deleteExtra(${e.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddForm() {
+  editingId = null;
+  document.getElementById('formTitle').textContent = '➕ Nouvel extra';
+  document.getElementById('inNom').value = '';
+  document.getElementById('inPrix').value = '';
+  document.getElementById('inObligatoire').checked = false;
+  document.getElementById('formCard').style.display = '';
+  document.getElementById('inNom').focus();
+}
+
+function editExtra(id) {
+  const e = allExtras.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  document.getElementById('formTitle').textContent = '✏️ Modifier ' + e.nom;
+  document.getElementById('inNom').value = e.nom;
+  document.getElementById('inPrix').value = e.prix || 0;
+  document.getElementById('inObligatoire').checked = e.obligatoire;
+  document.getElementById('formCard').style.display = '';
+  document.getElementById('inNom').focus();
+}
+
+function closeForm() {
+  document.getElementById('formCard').style.display = 'none';
+  editingId = null;
+}
+
+async function saveExtra() {
+  const nom = document.getElementById('inNom').value.trim();
+  const prix = parseFloat(document.getElementById('inPrix').value) || 0;
+  const obligatoire = document.getElementById('inObligatoire').checked;
+  if (!nom) { showToast('❌ Nom requis'); return; }
+
+  const url    = editingId ? `/api/extras/${editingId}` : '/api/extras';
+  const method = editingId ? 'PUT' : 'POST';
+  const res = await fetch(BACKEND_URL + url, {
+    method, headers: apiHdr(),
+    body: JSON.stringify({ nom, prix, obligatoire })
+  });
+  if (res.ok) {
+    showToast(editingId ? '✅ Extra modifié' : '✅ Extra créé');
+    closeForm();
+    loadExtras();
+  } else {
+    const err = await res.json();
+    showToast('❌ ' + (err.error || 'Erreur'));
+  }
+}
+
+async function toggleActif(id, actif) {
+  await fetch(BACKEND_URL + '/api/extras/' + id, {
+    method: 'PUT', headers: apiHdr(),
+    body: JSON.stringify({ actif: !actif })
+  });
+  loadExtras();
+}
+
+async function deleteExtra(id) {
+  if (!confirm('Supprimer cet extra ?')) return;
+  const res = await fetch(BACKEND_URL + '/api/extras/' + id, { method: 'DELETE', headers: apiHdr() });
+  if (res.ok) { showToast('🗑️ Supprimé'); loadExtras(); }
+  else showToast('❌ Erreur suppression');
+}
+
+// ════════════════════════════════════════
+//  LINK TAB
+// ════════════════════════════════════════
+async function loadProducts() {
+  const res = await fetch(BACKEND_URL + '/api/menu/products');
+  allProducts = res.ok ? await res.json() : [];
+}
+
+function populateExtraSelect() {
+  const sel = document.getElementById('extraSelect');
+  sel.innerHTML = '<option value="">— Choisir un extra —</option>' +
+    allExtras.filter(e => e.actif).map(e => `<option value="${e.id}">${e.nom} (${parseFloat(e.prix||0).toFixed(2)} DH)</option>`).join('');
+  document.getElementById('linkSection').style.display = 'none';
+}
+
+async function loadProductLinks() {
+  const extraId = document.getElementById('extraSelect').value;
+  if (!extraId) { document.getElementById('linkSection').style.display = 'none'; return; }
+
+  // Charger tous les liens pour cet extra
+  linkedProductIds = new Set();
+  for (const p of allProducts) {
+    const res = await fetch(BACKEND_URL + '/api/extras/product/' + p.id);
+    if (res.ok) {
+      const extras = await res.json();
+      if (extras.some(e => e.id == extraId)) linkedProductIds.add(p.id);
+    }
+  }
+
+  renderProductGrid();
+  document.getElementById('linkSection').style.display = '';
+}
+
+function renderProductGrid() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = allProducts.map(p => `
+    <div class="product-chip ${linkedProductIds.has(p.id) ? 'linked' : ''}" onclick="toggleProduct(${p.id})" id="chip-${p.id}">
+      ${linkedProductIds.has(p.id) ? '✅' : '⬜'} ${p.title}
+    </div>
+  `).join('');
+}
+
+function toggleProduct(productId) {
+  if (linkedProductIds.has(productId)) linkedProductIds.delete(productId);
+  else linkedProductIds.add(productId);
+  renderProductGrid();
+}
+
+async function saveLinks() {
+  const extraId = parseInt(document.getElementById('extraSelect').value);
+  if (!extraId) return;
+
+  // Pour chaque produit — sync ses extras
+  let ok = 0;
+  for (const p of allProducts) {
+    const hasLink = linkedProductIds.has(p.id);
+    const res = await fetch(BACKEND_URL + '/api/extras/product/' + p.id);
+    const currentExtras = res.ok ? await res.json() : [];
+    const currentIds = currentExtras.map(e => e.id);
+
+    let newIds;
+    if (hasLink && !currentIds.includes(extraId)) {
+      newIds = [...currentIds, extraId];
+    } else if (!hasLink && currentIds.includes(extraId)) {
+      newIds = currentIds.filter(id => id !== extraId);
+    } else {
+      continue; // pas de changement
+    }
+
+    await fetch(BACKEND_URL + '/api/extras/product/' + p.id + '/sync', {
+      method: 'PUT', headers: apiHdr(),
+      body: JSON.stringify({ extra_ids: newIds })
+    });
+    ok++;
+  }
+
+  showToast(`✅ ${ok} produit(s) mis à jour`);
+}
+
+// ── Init ──
+(async () => {
+  await Promise.all([loadExtras(), loadProducts()]);
+})();
+</script>
+</body>
+</html>
