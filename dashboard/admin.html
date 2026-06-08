@@ -313,9 +313,17 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── Broadcast menu update to all connected clients (menu pages) ──
+let _broadcastChannel = null;
+function getBroadcastChannel() {
+  if (!_broadcastChannel) {
+    _broadcastChannel = _supabase.channel('papaya-broadcast');
+    _broadcastChannel.subscribe();
+  }
+  return _broadcastChannel;
+}
 async function broadcastMenuUpdate() {
   try {
-    await _supabase.channel('papaya-broadcast').send({
+    await getBroadcastChannel().send({
       type: 'broadcast',
       event: 'menu_updated',
       payload: { ts: Date.now() }
