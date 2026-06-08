@@ -1157,7 +1157,8 @@ async function submitOrder() {
     const note  = document.getElementById('omNote').value.trim();
     const items = Object.values(cart).map(({ product, qty }) => ({
         id: product.id, title: product.title,
-        price: parseFloat(product.price), qty, category: product.category || ''
+        price: parseFloat(product.price), qty, category: product.category || '',
+        extras: product.selectedExtras || []
     }));
 
     const total = cartTotal();
@@ -1402,7 +1403,11 @@ function displayProducts(list) {
             e.stopPropagation();
             const btn = e.currentTarget;
             btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
-            cartAddOne(product);
+            openModal(product); // open modal so user can select extras
+        });
+
+        card.addEventListener('click', () => {
+            openModal(product);
         });
 
         grid.appendChild(card);
