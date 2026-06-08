@@ -611,6 +611,7 @@ h1.menu-title {
     <h3 id="modalTitle"></h3>
     <span class="modal-price" id="modalPrice"></span>
     <p class="modal-desc" id="modalDesc"></p>
+    <div id="modalExtrasSection" style="width:100%;display:none;margin-bottom:10px;"></div>
     <div class="modal-qty-row">
         <button class="modal-qty-btn m-minus" id="modalMinus">−</button>
         <span class="modal-qty-display" id="modalQty">1</span>
@@ -1422,6 +1423,67 @@ const modalClose = document.getElementById('modalClose');
 let modalCurrentProduct = null;
 let modalQty = 1;
 
+let modalExtras = []; // { group, selectedOptionId }
+
+async function loadModalExtras(productId) {
+    const extrasSection = document.getElementById('modalExtrasSection');
+    extrasSection.style.display = 'none';
+    extrasSection.innerHTML = '';
+    modalExtras = [];
+    try {
+        const { data: links } = await _supabase
+            .from('product_extras')
+            .select('group_id, extras_groups(*, extras_options(*))')
+            .eq('product_id', productId);
+        if (!links || links.length === 0) return;
+        const groups = links.map(l => l.extras_groups).filter(Boolean);
+        if (groups.length === 0) return;
+        extrasSection.style.display = 'block';
+        extrasSection.innerHTML = groups.map(g => {
+            const opts = g.extras_options || [];
+            modalExtras.push({ group: g, selectedOptionId: g.is_mandatory ? (opts[0]?.id || null) : null });
+            const idx = modalExtras.length - 1;
+            return `<div style="margin-bottom:12px;text-align:left;">
+                <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
+                    ${g.name} ${g.is_mandatory ? '<span style="color:#ff6200;font-size:10px;">*Requis</span>' : '<span style="color:rgba(255,255,255,0.4);font-size:10px;">Optionnel</span>'}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn selected" data-optid="null" style="padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,98,0,0.5);background:rgba(255,98,0,0.15);color:#ff6200;font-size:12px;cursor:pointer;font-family:inherit;">Aucun</button>` : ''}
+                    ${opts.map(o => `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${g.is_mandatory && opts[0]?.id === o.id ? ' selected' : ''}" data-optid="${o.id}" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${g.is_mandatory && opts[0]?.id === o.id ? 'rgba(255,98,0,0.8)' : 'rgba(255,255,255,0.15)'};background:${g.is_mandatory && opts[0]?.id === o.id ? 'rgba(255,98,0,0.2)' : 'rgba(255,255,255,0.05)'};color:${g.is_mandatory && opts[0]?.id === o.id ? '#ff6200' : 'rgba(255,255,255,0.7)'};font-size:12px;cursor:pointer;font-family:inherit;">${o.name}${o.price_add > 0 ? ` +${o.price_add}` : ''}</button>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+        updateModalAddBtn();
+    } catch(e) { console.error('extras error', e); }
+}
+
+function selectExtra(groupIdx, optionId, btn) {
+    const group = modalExtras[groupIdx].group;
+    // deselect all in group
+    const container = btn.parentElement;
+    container.querySelectorAll('.extra-opt-btn').forEach(b => {
+        b.style.border = '1.5px solid rgba(255,255,255,0.15)';
+        b.style.background = 'rgba(255,255,255,0.05)';
+        b.style.color = 'rgba(255,255,255,0.7)';
+    });
+    // select clicked
+    btn.style.border = '1.5px solid rgba(255,98,0,0.8)';
+    btn.style.background = 'rgba(255,98,0,0.2)';
+    btn.style.color = '#ff6200';
+    modalExtras[groupIdx].selectedOptionId = optionId;
+    updateModalAddBtn();
+}
+
+function getExtrasTotal() {
+    let extra = 0;
+    modalExtras.forEach(({ group, selectedOptionId }) => {
+        if (!selectedOptionId) return;
+        const opt = (group.extras_options || []).find(o => o.id === selectedOptionId);
+        if (opt) extra += parseFloat(opt.price_add || 0);
+    });
+    return extra;
+}
+
 function openModal(product) {
     modalCurrentProduct = product;
     modalQty = cart[product.id] ? cart[product.id].qty : 1;
@@ -1430,6 +1492,9 @@ function openModal(product) {
     document.getElementById('modalPrice').textContent = product.price + ' DH';
     document.getElementById('modalDesc').textContent  = (product.description && product.description !== '-') ? product.description : '';
     document.getElementById('modalQty').textContent   = modalQty;
+    document.getElementById('modalExtrasSection').style.display = 'none';
+    document.getElementById('modalExtrasSection').innerHTML = '';
+    modalExtras = [];
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
@@ -1438,10 +1503,14 @@ function openModal(product) {
     const backBtn = document.getElementById('backBtn');
     if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
+    // load extras async
+    loadModalExtras(product.id);
 }
 
 function updateModalAddBtn() {
-    const total = (parseFloat(modalCurrentProduct?.price || 0) * modalQty).toFixed(0);
+    const base = parseFloat(modalCurrentProduct?.price || 0);
+    const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
+    const total = ((base + extrasAdd) * modalQty).toFixed(0);
     document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
@@ -1466,8 +1535,24 @@ document.getElementById('modalPlus').addEventListener('click', () => {
 
 document.getElementById('modalAddBtn').addEventListener('click', () => {
     if (!modalCurrentProduct) return;
+    // check required extras
+    for (const { group, selectedOptionId } of modalExtras) {
+        if (group.is_mandatory && !selectedOptionId) {
+            alert(`Veuillez choisir une option pour: ${group.name}`);
+            return;
+        }
+    }
+    // build selected extras info
+    const selectedExtras = modalExtras
+        .filter(({ selectedOptionId }) => selectedOptionId)
+        .map(({ group, selectedOptionId }) => {
+            const opt = (group.extras_options || []).find(o => o.id === selectedOptionId);
+            return { groupName: group.name, optionName: opt?.name, priceAdd: parseFloat(opt?.price_add || 0) };
+        });
+    const extrasTotal = selectedExtras.reduce((s, e) => s + e.priceAdd, 0);
+    const productWithExtras = { ...modalCurrentProduct, price: parseFloat(modalCurrentProduct.price) + extrasTotal, selectedExtras };
     delete cart[modalCurrentProduct.id];
-    for (let i = 0; i < modalQty; i++) cartAddOne(modalCurrentProduct);
+    for (let i = 0; i < modalQty; i++) cartAddOne(productWithExtras);
     closeModal();
 });
 
