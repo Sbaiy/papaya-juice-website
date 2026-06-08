@@ -621,6 +621,7 @@ async function _broadcastOrder(event, orderData) {
 let pendingAction = '';
 
 let allProducts = [];
+let _productExtrasCache = {}; // productId -> groups[] (loaded once at startup)
 let filteredProducts = [];
 let currentCategory = '';
 let searchQuery = '';
@@ -703,6 +704,20 @@ async function loadProducts() {
         buildCategoryNav();
         filteredProducts = allProducts;
         renderProducts();
+
+        // ── Preload ALL extras in background (no lag on click) ──
+        _productExtrasCache = {};
+        allProducts.forEach(async p => {
+            try {
+                const r = await fetch(API_BASE + `/extras/product/${p.id}`);
+                if (r.ok) {
+                    const groups = await r.json();
+                    _productExtrasCache[p.id] = groups || [];
+                } else {
+                    _productExtrasCache[p.id] = [];
+                }
+            } catch(e) { _productExtrasCache[p.id] = []; }
+        });
 
         // ── Preload ALL product images into browser memory cache ──
         // Toutes les images sont chargées en arrière-plan une seule fois.
@@ -810,19 +825,20 @@ function renderProducts() {
 }
 
 // ── CART ──
-async function addToCart(productId) {
+function addToCart(productId) {
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
-    // Check if product has extras — if yes, open extras selection modal
-    try {
-        const res = await fetch(API_BASE + `/extras/product/${productId}`);
-        const groups = res.ok ? await res.json() : [];
-        if (groups && groups.length > 0) {
-            openExtrasSelectionModal(product, groups);
-            return;
-        }
-    } catch(e) { /* no extras, add directly */ }
-    // No extras — add directly
+    // Use preloaded cache — zero lag
+    const groups = _productExtrasCache[productId];
+    if (groups === undefined) {
+        // Cache not ready yet (rare), fallback to direct add
+        _addToCartDirect(product, []);
+        return;
+    }
+    if (groups.length > 0) {
+        openExtrasSelectionModal(product, groups);
+        return;
+    }
     _addToCartDirect(product, []);
 }
 function _addToCartDirect(product, selectedExtras) {
