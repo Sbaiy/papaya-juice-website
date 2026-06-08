@@ -931,6 +931,13 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
         const lineTotal = unitPrice * i.qty;
         total += lineTotal;
         lines.push('  >> ' + itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
+        // Print extras below the item
+        if (i.extras && i.extras.length > 0) {
+            i.extras.forEach(e => {
+                const extLine = `     + ${e.optionName}${e.priceAdd > 0 ? ` (+${e.priceAdd.toFixed(2)} DH)` : ''}`;
+                lines.push(extLine);
+            });
+        }
     });
 
     lines.push('');
@@ -975,6 +982,12 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
         const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
         const price = (unitPrice * i.qty).toFixed(2);
         itemsRows += itemLine(i.qty, i.product.title, price) + '\n';
+        // Print extras below the item
+        if (i.extras && i.extras.length > 0) {
+            i.extras.forEach(e => {
+                itemsRows += `     + ${e.optionName}${e.priceAdd > 0 ? ` (+${e.priceAdd.toFixed(2)} DH)` : ''}\n`;
+            });
+        }
     });
 
     // Total aligné à droite
@@ -1805,8 +1818,15 @@ function _nopShowPopup() {
         : `${n} commandes reçues depuis le menu en ligne`;
 
     body.innerHTML = _nopPendingOrders.map(o => {
-        const items = (typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []))
-            .map(i => `${i.qty}× ${i.title}`).join(', ');
+        const rawItems = (typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []));
+        const items = rawItems.map(i => {
+            let line = `${i.qty}× ${i.title}`;
+            if (i.extras && i.extras.length > 0) {
+                const extStr = i.extras.map(e => `+ ${e.optionName}`).join(', ');
+                line += ` <span style="font-size:11px;color:rgba(255,255,255,0.45);"> (${extStr})</span>`;
+            }
+            return line;
+        }).join('<br>');
         const idShort = String(o.id || '').slice(-6).padStart(6, '0');
         const tableDisplay = !o.table_number ? 'Sans table'
             : o.table_number === 'emporter' ? 'À Emporter'
@@ -2214,7 +2234,7 @@ if ('serviceWorker' in navigator) {
     <div class="esel-footer">
       <div class="esel-total">Total: <span id="eselTotal">0.00 DH</span></div>
       <button class="esel-add-btn" id="eselAddBtn" onclick="confirmExtrasAndAdd()">Add to Order</button>
-      <button class="esel-skip" onclick="skipExtrasAndAdd()">Add without extras</button>
+      <button class="esel-skip" id="eselSkipBtn" onclick="skipExtrasAndAdd()">Add without extras</button>
     </div>
   </div>
 </div>
@@ -2235,6 +2255,10 @@ function openExtrasSelectionModal(product, groups) {
 
   document.getElementById('eselProductName').textContent = product.title;
   document.getElementById('eselProductPrice').textContent = Number(product.price).toFixed(2) + ' DH';
+  // Hide skip button if any group is mandatory
+  const hasMandatory = _eselGroups.some(g => g.is_mandatory);
+  const skipBtn = document.getElementById('eselSkipBtn');
+  if (skipBtn) skipBtn.style.display = hasMandatory ? 'none' : 'block';
   renderExtrasSelection();
   document.getElementById('extrasSelModal').classList.add('open');
 }
