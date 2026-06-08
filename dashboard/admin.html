@@ -591,7 +591,8 @@ async function loadProducts(){
         return; 
     } 
     
-    globalProductsArray = products; 
+    globalProductsArray = products;
+    setTimeout(loadExtrasBadges, 300);
     
     let tableHTML = `
     <div class="white-table-container">
@@ -960,11 +961,6 @@ async function loadExtrasBadges() {
   } catch(e) { /* silent */ }
 }
 // Hook into loadProducts to also refresh badges
-const _origLoadProducts = loadProducts;
-async function loadProducts() {
-  await _origLoadProducts.call(this);
-  setTimeout(loadExtrasBadges, 300);
-}
 </script>
 </body>
 </html>
