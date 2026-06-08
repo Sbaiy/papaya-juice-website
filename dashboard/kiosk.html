@@ -810,11 +810,25 @@ function renderProducts() {
 }
 
 // ── CART ──
-function addToCart(productId) {
+async function addToCart(productId) {
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
-    const existing = cart.find(i => i.product.id === productId);
-    if (existing) existing.qty++; else cart.push({ product, qty: 1 });
+    // Check if product has extras — if yes, open extras selection modal
+    try {
+        const res = await fetch(API_BASE + `/extras/product/${productId}`);
+        const groups = res.ok ? await res.json() : [];
+        if (groups && groups.length > 0) {
+            openExtrasSelectionModal(product, groups);
+            return;
+        }
+    } catch(e) { /* no extras, add directly */ }
+    // No extras — add directly
+    _addToCartDirect(product, []);
+}
+function _addToCartDirect(product, selectedExtras) {
+    const existing = cart.find(i => i.product.id === product.id && JSON.stringify(i.extras||[]) === JSON.stringify(selectedExtras));
+    if (existing && !selectedExtras.length) { existing.qty++; }
+    else { cart.push({ product, qty: 1, extras: selectedExtras }); }
     renderCart();
 }
 function changeQty(productId, delta) {
@@ -848,10 +862,18 @@ function renderCart() {
     items.innerHTML = cart.map(({product:p, qty}) => {
         const imgEl = p.image ? `<img class="cart-item-img" src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
         const cartItem = cart.find(i => i.product.id === p.id);
-        const displayPrice = Number(cartItem?.customPrice ?? p.price).toFixed(2);
-        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div><div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)">−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
+        const extrasPrice = (cartItem?.extras || []).reduce((s, e) => s + (e.priceAdd || 0), 0);
+        const basePrice = parseFloat(cartItem?.customPrice ?? p.price) || 0;
+        const displayPrice = (basePrice + extrasPrice).toFixed(2);
+        const extrasHtml = (cartItem?.extras || []).length > 0
+          ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.4;">${(cartItem.extras||[]).map(e=>`+ ${e.optionName}`).join(', ')}</div>`
+          : '';
+        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)">−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
-    const sub = cart.reduce((s,i) => s+(i.customPrice??i.product.price)*i.qty, 0);
+    const sub = cart.reduce((s,i) => {
+        const extrasPrice = (i.extras||[]).reduce((ea, e) => ea + (e.priceAdd || 0), 0);
+        return s + (parseFloat(i.customPrice ?? i.product.price) + extrasPrice) * i.qty;
+    }, 0);
     document.getElementById('subtotal').textContent = sub.toFixed(2)+' DH';
     document.getElementById('total').textContent = sub.toFixed(2)+' DH';
     // Mode ajout — mettre à jour le banner et le bouton
@@ -2094,6 +2116,262 @@ if ('serviceWorker' in navigator) {
         // Vérifier les mises à jour du SW toutes les 10 min
         setInterval(() => reg.update(), 10 * 60 * 1000);
     }).catch(err => console.warn('SW registration failed:', err));
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     EXTRAS SELECTION MODAL (kiosk)
+     ═══════════════════════════════════════════ -->
+<style>
+#extrasSelModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 4000;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+#extrasSelModal.open { display: flex; }
+.esel-box {
+  background: #1c2128; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px; width: 420px; max-width: 95vw; max-height: 88vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.65);
+  animation: eselSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes eselSlideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.esel-header {
+  padding: 16px 20px 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.esel-product-title { font-size: 16px; font-weight: 700; color: #fff; }
+.esel-product-price { font-size: 13px; color: var(--orange); font-weight: 600; margin-top: 3px; }
+.esel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.esel-group { margin-bottom: 20px; }
+.esel-group-title {
+  font-size: 13px; font-weight: 700; color: #eceff1; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.esel-req-badge {
+  background: rgba(231,76,60,0.18); color: #e74c3c;
+  font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 8px;
+}
+.esel-opt-badge {
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4);
+  font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 8px;
+}
+.esel-max-hint { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 8px; }
+.esel-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02); margin-bottom: 7px; cursor: pointer; transition: 0.16s;
+}
+.esel-option:hover { background: rgba(255,255,255,0.06); }
+.esel-option.selected { border-color: var(--orange); background: rgba(230,126,34,0.1); }
+.esel-radio {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.15s;
+}
+.esel-option.selected .esel-radio { border-color: var(--orange); background: var(--orange); }
+.esel-radio::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; display: none; }
+.esel-option.selected .esel-radio::after { display: block; }
+.esel-check {
+  width: 18px; height: 18px; border-radius: 4px; border: 2px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.15s;
+}
+.esel-option.selected .esel-check { border-color: var(--orange); background: var(--orange); }
+.esel-check-icon { display: none; }
+.esel-option.selected .esel-check-icon { display: block; }
+.esel-opt-name { flex: 1; font-size: 13.5px; font-weight: 500; color: #eceff1; }
+.esel-opt-price { font-size: 12px; color: var(--orange); font-weight: 700; }
+.esel-opt-price.free { color: rgba(255,255,255,0.3); }
+/* Quantity stepper for allow_multiple groups */
+.esel-qty-wrap { display: flex; align-items: center; gap: 6px; }
+.esel-qty-btn {
+  width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.07); color: #fff; font-size: 16px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.15s;
+}
+.esel-qty-btn:hover { background: rgba(255,255,255,0.15); }
+.esel-qty-val { font-size: 13px; font-weight: 700; min-width: 20px; text-align: center; color: #eceff1; }
+.esel-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+.esel-total { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+.esel-total span { color: var(--orange); font-weight: 700; }
+.esel-add-btn {
+  width: 100%; padding: 13px; border: none; border-radius: 10px;
+  background: var(--orange); color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; transition: 0.2s;
+}
+.esel-add-btn:hover { background: #d35400; }
+.esel-add-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+.esel-skip { background: none; border: none; width: 100%; color: rgba(255,255,255,0.35); font-size: 12px; cursor: pointer; margin-top: 8px; padding: 6px; transition: 0.15s; font-family: 'DM Sans', sans-serif; }
+.esel-skip:hover { color: rgba(255,255,255,0.6); }
+</style>
+
+<div id="extrasSelModal" onclick="if(event.target===this)closeExtrasSelModal()">
+  <div class="esel-box">
+    <div class="esel-header">
+      <div class="esel-product-title" id="eselProductName">Product</div>
+      <div class="esel-product-price" id="eselProductPrice"></div>
+    </div>
+    <div class="esel-body" id="eselBody"></div>
+    <div class="esel-footer">
+      <div class="esel-total">Total: <span id="eselTotal">0.00 DH</span></div>
+      <button class="esel-add-btn" id="eselAddBtn" onclick="confirmExtrasAndAdd()">Add to Order</button>
+      <button class="esel-skip" onclick="skipExtrasAndAdd()">Add without extras</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── EXTRAS SELECTION STATE ──
+let _eselProduct = null;
+let _eselGroups = [];
+// selections: { [groupId]: { [optionId]: qty } }
+let _eselSelections = {};
+
+function openExtrasSelectionModal(product, groups) {
+  _eselProduct = product;
+  _eselGroups = groups.filter(g => (g.extras_options || []).some(o => o.is_available !== false));
+  _eselSelections = {};
+  // Pre-init selections
+  _eselGroups.forEach(g => { _eselSelections[g.id] = {}; });
+
+  document.getElementById('eselProductName').textContent = product.title;
+  document.getElementById('eselProductPrice').textContent = Number(product.price).toFixed(2) + ' DH';
+  renderExtrasSelection();
+  document.getElementById('extrasSelModal').classList.add('open');
+}
+
+function closeExtrasSelModal() {
+  document.getElementById('extrasSelModal').classList.remove('open');
+  _eselProduct = null;
+}
+
+function renderExtrasSelection() {
+  const body = document.getElementById('eselBody');
+  body.innerHTML = _eselGroups.map(g => {
+    const options = (g.extras_options || []).filter(o => o.is_available !== false);
+    const maxSel = g.max_selections || 1;
+    const isMultipleQty = g.allow_multiple;
+    const isSingleChoice = maxSel === 1;
+    const groupSel = _eselSelections[g.id] || {};
+
+    const optHtml = options.map(opt => {
+      const qty = groupSel[opt.id] || 0;
+      const isSelected = qty > 0;
+      const priceLabel = parseFloat(opt.price_add) > 0 ? `+${parseFloat(opt.price_add).toFixed(2)} DH` : 'Free';
+      const priceClass = parseFloat(opt.price_add) > 0 ? '' : ' free';
+      const indicator = isSingleChoice
+        ? `<div class="esel-radio"></div>`
+        : `<div class="esel-check"><svg class="esel-check-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+      const qtyControl = (isMultipleQty && isSelected)
+        ? `<div class="esel-qty-wrap" onclick="event.stopPropagation()">
+            <button class="esel-qty-btn" onclick="changeExtraQty(${g.id},${opt.id},-1)">−</button>
+            <span class="esel-qty-val">${qty}</span>
+            <button class="esel-qty-btn" onclick="changeExtraQty(${g.id},${opt.id},1)">+</button>
+          </div>`
+        : '';
+      return `<div class="esel-option${isSelected?' selected':''}" onclick="toggleExtraOption(${g.id},${opt.id},${maxSel},${isMultipleQty})">
+        ${indicator}
+        <span class="esel-opt-name">${escHtmlKiosk(opt.name)}</span>
+        ${qtyControl}
+        <span class="esel-opt-price${priceClass}">${priceLabel}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="esel-group">
+      <div class="esel-group-title">
+        ${escHtmlKiosk(g.name)}
+        ${g.is_mandatory ? `<span class="esel-req-badge">Required</span>` : `<span class="esel-opt-badge">Optional</span>`}
+      </div>
+      ${maxSel > 1 ? `<div class="esel-max-hint">Choose up to ${maxSel} option${maxSel!==1?'s':''}</div>` : ''}
+      ${optHtml}
+    </div>`;
+  }).join('');
+
+  updateExtrasTotal();
+}
+
+function toggleExtraOption(groupId, optionId, maxSel, allowMultiple) {
+  const groupSel = _eselSelections[groupId] = _eselSelections[groupId] || {};
+  const currentQty = groupSel[optionId] || 0;
+
+  if (maxSel === 1) {
+    // Radio-style: deselect others
+    if (currentQty > 0) { delete groupSel[optionId]; }
+    else {
+      Object.keys(groupSel).forEach(k => delete groupSel[k]);
+      groupSel[optionId] = 1;
+    }
+  } else {
+    // Checkbox-style
+    if (currentQty > 0) { delete groupSel[optionId]; }
+    else {
+      const selectedCount = Object.keys(groupSel).length;
+      if (selectedCount >= maxSel) return; // max reached
+      groupSel[optionId] = 1;
+    }
+  }
+  renderExtrasSelection();
+}
+
+function changeExtraQty(groupId, optionId, delta) {
+  const groupSel = _eselSelections[groupId] = _eselSelections[groupId] || {};
+  const current = groupSel[optionId] || 0;
+  const newVal = current + delta;
+  if (newVal <= 0) delete groupSel[optionId];
+  else groupSel[optionId] = newVal;
+  renderExtrasSelection();
+}
+
+function updateExtrasTotal() {
+  if (!_eselProduct) return;
+  let extrasTotal = 0;
+  _eselGroups.forEach(g => {
+    const groupSel = _eselSelections[g.id] || {};
+    (g.extras_options || []).forEach(opt => {
+      const qty = groupSel[opt.id] || 0;
+      if (qty > 0) extrasTotal += parseFloat(opt.price_add || 0) * qty;
+    });
+  });
+  const total = parseFloat(_eselProduct.price) + extrasTotal;
+  document.getElementById('eselTotal').textContent = total.toFixed(2) + ' DH';
+
+  // Disable add button if mandatory groups not satisfied
+  const allSatisfied = _eselGroups.every(g => {
+    if (!g.is_mandatory) return true;
+    const groupSel = _eselSelections[g.id] || {};
+    return Object.keys(groupSel).length > 0;
+  });
+  const btn = document.getElementById('eselAddBtn');
+  btn.disabled = !allSatisfied;
+  btn.textContent = allSatisfied ? 'Add to Order' : 'Please select required options';
+}
+
+function confirmExtrasAndAdd() {
+  if (!_eselProduct) return;
+  // Build extras summary
+  const selectedExtras = [];
+  _eselGroups.forEach(g => {
+    const groupSel = _eselSelections[g.id] || {};
+    (g.extras_options || []).forEach(opt => {
+      const qty = groupSel[opt.id] || 0;
+      if (qty > 0) {
+        for (let i = 0; i < qty; i++) {
+          selectedExtras.push({ groupName: g.name, optionName: opt.name, priceAdd: parseFloat(opt.price_add || 0) });
+        }
+      }
+    });
+  });
+  closeExtrasSelModal();
+  _addToCartDirect(_eselProduct, selectedExtras);
+}
+
+function skipExtrasAndAdd() {
+  if (!_eselProduct) return;
+  closeExtrasSelModal();
+  _addToCartDirect(_eselProduct, []);
+}
+
+function escHtmlKiosk(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>

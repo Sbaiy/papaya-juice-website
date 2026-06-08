@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extras Manager — Papaya Juice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --primary: #c0392b;
+  --dark-bg: #141d16;
+  --input-bg: rgba(255,255,255,0.06);
+  --border-color: rgba(255,255,255,0.1);
+  --green: #27ae60;
+  --orange: #e67e22;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0; min-height: 100vh; font-family: 'Poppins', sans-serif;
+  background-color: var(--dark-bg);
+  background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%);
+  background-attachment: fixed; color: #eceff1;
+}
+.page-wrap { max-width: 1280px; margin: 0 auto; padding: 30px 16px; }
+
+/* ── HEADER ── */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.page-title { font-size: 22px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+.page-title svg { color: var(--primary); }
+.back-btn {
+  background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.back-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.35); }
+
+/* ── TWO-COLUMN LAYOUT ── */
+.extras-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 768px) { .extras-layout { grid-template-columns: 1fr; } }
+
+/* ── PANEL BASE ── */
+.panel {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border-color);
+  border-radius: 16px; overflow: hidden;
+}
+.panel-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(192,57,43,0.06);
+}
+.panel-title { font-size: 13px; font-weight: 700; color: #eceff1; display: flex; align-items: center; gap: 7px; }
+.panel-body { padding: 14px; }
+
+/* ── GROUPS LIST ── */
+.group-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: 0.18s;
+  border: 1px solid transparent; margin-bottom: 6px;
+}
+.group-item:hover { background: rgba(255,255,255,0.05); }
+.group-item.active { background: rgba(192,57,43,0.15); border-color: rgba(192,57,43,0.4); }
+.group-name { font-size: 13.5px; font-weight: 600; color: #eceff1; }
+.group-meta { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+.group-badge { background: rgba(192,57,43,0.2); color: #e74c3c; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+
+/* ── OPTIONS PANEL ── */
+.option-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border-color);
+  background: rgba(255,255,255,0.03); margin-bottom: 8px; transition: 0.18s;
+}
+.option-row:hover { background: rgba(255,255,255,0.06); }
+.option-name { flex: 1; font-size: 13.5px; font-weight: 500; color: #eceff1; }
+.option-price { font-size: 12px; font-weight: 700; color: var(--orange); white-space: nowrap; min-width: 80px; text-align: right; }
+.option-price.free { color: rgba(255,255,255,0.3); }
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 20px; transition: 0.2s; cursor: pointer; }
+.toggle-track::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+.toggle-switch input:checked + .toggle-track { background: var(--green); }
+.toggle-switch input:checked + .toggle-track::before { transform: translateX(16px); }
+.icon-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 6px; transition: 0.15s; display: flex; align-items: center; }
+.icon-btn:hover { background: rgba(255,255,255,0.08); }
+.icon-btn.del:hover { background: rgba(231,76,60,0.15); }
+
+/* ── LINKED PRODUCTS ── */
+.linked-product-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 4px 10px;
+  font-size: 12px; color: #eceff1; margin: 3px; cursor: pointer; transition: 0.15s;
+}
+.linked-product-chip:hover { background: rgba(231,76,60,0.15); border-color: rgba(231,76,60,0.4); }
+.linked-product-chip .chip-x { color: rgba(255,255,255,0.4); font-size: 11px; margin-left: 2px; }
+
+/* ── RULES SECTION ── */
+.rules-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.rules-row:last-child { border-bottom: none; }
+.rules-label { font-size: 13px; color: rgba(255,255,255,0.75); }
+.rules-label b { color: #eceff1; }
+.number-input { width: 56px; padding: 6px 8px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 7px; color: #fff; font-size: 13px; text-align: center; font-family: 'Poppins', sans-serif; }
+.number-input:focus { outline: none; border-color: var(--primary); }
+
+/* ── FORMS & INPUTS ── */
+input[type="text"], input[type="number"], select {
+  width: 100%; padding: 10px 12px; border-radius: 8px; font-family: 'Poppins', sans-serif;
+  border: 1px solid var(--border-color); background: var(--input-bg); color: #fff; font-size: 13.5px;
+  transition: 0.2s; box-sizing: border-box;
+}
+input:focus, select:focus { outline: none; border-color: var(--primary); background: rgba(255,255,255,0.1); }
+select option { background: #1a241c; }
+.add-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 12.5px;
+  font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.add-btn.primary { background: var(--primary); color: #fff; }
+.add-btn.primary:hover { background: #a93226; }
+.add-btn.secondary { background: rgba(255,255,255,0.08); color: #eceff1; border: 1px solid rgba(255,255,255,0.15); }
+.add-btn.secondary:hover { background: rgba(255,255,255,0.13); }
+.add-btn.green { background: var(--green); color: #fff; }
+.add-btn.green:hover { background: #219a52; }
+.inline-form { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+.inline-form input { margin: 0; }
+.price-prefix { font-size: 12px; color: rgba(255,255,255,0.45); white-space: nowrap; }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.35); }
+.empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+.empty-state p { font-size: 13px; margin: 0; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-box {
+  background: #1a2420; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+  padding: 26px; width: 440px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  animation: slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+.modal-close { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); font-size: 20px; line-height: 1; padding: 0; transition: 0.15s; }
+.modal-close:hover { color: #fff; }
+.modal-form-row { margin-bottom: 14px; }
+.modal-label { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel { padding: 9px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: #eceff1; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 13px; transition: 0.2s; }
+.btn-cancel:hover { background: rgba(255,255,255,0.07); }
+.btn-save { padding: 9px 20px; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 13px; transition: 0.2s; }
+.btn-save:hover { background: #a93226; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1c2820; border: 1px solid var(--green); color: #eceff1;
+  padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 500;
+  z-index: 9999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.err { border-color: var(--primary); }
+
+.section-divider { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.3); font-weight: 700; padding: 12px 0 8px; }
+.tag-mandatory { display: inline-flex; align-items: center; gap: 4px; background: rgba(231,76,60,0.18); color: #e74c3c; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.tag-optional { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="page-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Extras Manager
+    </div>
+    <a href="/dashboard/admin" class="back-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Admin
+    </a>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="extras-layout">
+
+    <!-- LEFT: GROUPS LIST -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Option Groups
+          </span>
+          <button class="add-btn primary" onclick="openGroupModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Group
+          </button>
+        </div>
+        <div class="panel-body" id="groupsList">
+          <div class="empty-state"><div class="icon">📦</div><p>No groups yet</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: OPTIONS + RULES + LINKED PRODUCTS -->
+    <div id="rightPanel">
+      <div class="panel">
+        <div class="empty-state" style="padding: 60px 20px;">
+          <div class="icon">👈</div>
+          <p style="font-size:14px; color:rgba(255,255,255,0.4);">Select a group to manage its options</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /extras-layout -->
+</div><!-- /page-wrap -->
+
+<!-- MODAL: Add/Edit Group -->
+<div id="groupModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="groupModalTitle">Add Option Group</span>
+      <button class="modal-close" onclick="closeGroupModal()">×</button>
+    </div>
+    <div class="modal-form-row">
+      <div class="modal-label">Group Name *</div>
+      <input type="text" id="gName" placeholder="ex: Boisson Chaude, Sirop, Taille…">
+    </div>
+    <div class="rules-row" style="padding: 12px 0;">
+      <div>
+        <div class="rules-label"><b>Is selection mandatory?</b></div>
+        <div class="rules-label" style="font-size:11px; margin-top:2px;">Customer must choose an option</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="gMandatory">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="rules-row" style="padding: 12px 0;">
+      <div>
+        <div class="rules-label"><b>Maximum options a customer can select</b></div>
+        <div class="rules-label" style="font-size:11px; margin-top:2px;">0 = unlimited</div>
+      </div>
+      <input type="number" class="number-input" id="gMaxSel" value="1" min="0">
+    </div>
+    <div class="rules-row" style="padding: 12px 0;">
+      <div>
+        <div class="rules-label"><b>Allow selecting same option more than once?</b></div>
+        <div class="rules-label" style="font-size:11px; margin-top:2px;">ex: 2x sirop vanille</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="gAllowMultiple">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeGroupModal()">Cancel</button>
+      <button class="btn-save" onclick="saveGroup()">Save Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Option -->
+<div id="optionModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="optModalTitle">Add Option</span>
+      <button class="modal-close" onclick="closeOptionModal()">×</button>
+    </div>
+    <div class="modal-form-row">
+      <div class="modal-label">Option Name *</div>
+      <input type="text" id="oName" placeholder="ex: Espresso, Thé, Sirop Vanille…">
+    </div>
+    <div class="modal-form-row">
+      <div class="modal-label">Price modifier (MAD) — 0 = free</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="price-prefix">+ MAD</span>
+        <input type="number" id="oPrice" value="0" min="0" step="0.5" style="max-width:120px;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeOptionModal()">Cancel</button>
+      <button class="btn-save" onclick="saveOption()">Save Option</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Link products -->
+<div id="linkModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>Link Products</span>
+      <button class="modal-close" onclick="document.getElementById('linkModal').style.display='none'">×</button>
+    </div>
+    <p style="font-size:13px; color:rgba(255,255,255,0.5); margin:0 0 14px;">Choose which products show this option group:</p>
+    <div id="linkProductsList" style="max-height:300px; overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn-save" style="width:100%;" onclick="document.getElementById('linkModal').style.display='none'">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : 'https://papaya-juice-backend-production.up.railway.app';
+const getToken = () => localStorage.getItem('papaya_token');
+const apiH = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
+async function apiCall(method, path, body) {
+  const res = await fetch(BACKEND_URL + path, { method, headers: apiH(), body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
+
+// ── STATE ──
+let groups = [];           // all groups with options
+let allProducts = [];      // all products
+let activeGroupId = null;  // selected group
+let editingGroupId = null;
+let editingOptionId = null;
+
+// ── INIT ──
+(async () => {
+  await checkAuth();
+  await loadAll();
+})();
+
+async function checkAuth() {
+  const token = getToken();
+  if (!token) { window.location.replace('/dashboard'); return; }
+}
+
+async function loadAll() {
+  // Load groups with options
+  const { data: gData } = await _supabase
+    .from('extras_groups')
+    .select('*, extras_options(*)')
+    .order('id', { ascending: true });
+  groups = gData || [];
+
+  // Load all products
+  const { data: pData } = await _supabase
+    .from('products')
+    .select('id, title, category')
+    .order('sort_order', { ascending: true });
+  allProducts = pData || [];
+
+  renderGroupsList();
+  if (activeGroupId) {
+    const g = groups.find(g => g.id === activeGroupId);
+    if (g) renderRightPanel(g);
+  } else {
+    document.getElementById('rightPanel').innerHTML = `
+      <div class="panel">
+        <div class="empty-state" style="padding:60px 20px;">
+          <div class="icon">👈</div>
+          <p style="font-size:14px;color:rgba(255,255,255,0.4);">Select a group to manage its options</p>
+        </div>
+      </div>`;
+  }
+}
+
+// ── GROUPS LIST ──
+function renderGroupsList() {
+  const el = document.getElementById('groupsList');
+  if (!groups.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📦</div><p>No groups yet.<br>Click "Add Group" to create one.</p></div>`;
+    return;
+  }
+  el.innerHTML = groups.map(g => {
+    const optCount = (g.extras_options || []).length;
+    const isActive = g.id === activeGroupId ? ' active' : '';
+    const tag = g.is_mandatory
+      ? `<span class="tag-mandatory">Required</span>`
+      : `<span class="tag-optional">Optional</span>`;
+    return `<div class="group-item${isActive}" onclick="selectGroup(${g.id})">
+      <div>
+        <div class="group-name">${escHtml(g.name)} ${tag}</div>
+        <div class="group-meta">${optCount} option${optCount !== 1 ? 's' : ''} · max ${g.max_selections || 1} choice${g.max_selections !== 1 ? 's' : ''}</div>
+      </div>
+      <span class="group-badge">${optCount}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectGroup(id) {
+  activeGroupId = id;
+  renderGroupsList();
+  const g = groups.find(g => g.id === id);
+  if (g) renderRightPanel(g);
+}
+
+// ── RIGHT PANEL ──
+async function renderRightPanel(group) {
+  // Load linked products for this group
+  const { data: links } = await _supabase
+    .from('product_extras')
+    .select('product_id')
+    .eq('group_id', group.id);
+  const linkedIds = new Set((links || []).map(l => l.product_id));
+  const linkedProducts = allProducts.filter(p => linkedIds.has(p.id));
+
+  const options = group.extras_options || [];
+  options.sort((a, b) => a.sort_order - b.sort_order);
+
+  const optionsHtml = options.length ? options.map(opt => {
+    const priceLabel = parseFloat(opt.price_add) > 0
+      ? `+MAD ${parseFloat(opt.price_add).toFixed(2)}`
+      : '+MAD 0.00';
+    const priceClass = parseFloat(opt.price_add) > 0 ? '' : ' free';
+    return `<div class="option-row" id="opt-row-${opt.id}">
+      <label class="toggle-switch">
+        <input type="checkbox" ${opt.is_available !== false ? 'checked' : ''} onchange="toggleOptionAvail(${opt.id}, this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+      <span class="option-name">${escHtml(opt.name)}</span>
+      <span class="option-price${priceClass}">${priceLabel}</span>
+      <button class="icon-btn" onclick="openOptionModal(${group.id}, ${opt.id})" title="Edit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+      <button class="icon-btn del" onclick="deleteOption(${opt.id})" title="Delete">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>`;
+  }).join('') : `<div class="empty-state"><div class="icon">🔘</div><p>No options yet. Add one below.</p></div>`;
+
+  const linkedHtml = linkedProducts.length
+    ? linkedProducts.map(p => `
+        <span class="linked-product-chip" onclick="unlinkProduct(${group.id}, ${p.id})" title="Click to unlink">
+          ${escHtml(p.title)}
+          <span class="chip-x">×</span>
+        </span>`).join('')
+    : `<span style="font-size:12px;color:rgba(255,255,255,0.3);">No products linked yet</span>`;
+
+  document.getElementById('rightPanel').innerHTML = `
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+          ${escHtml(group.name)}
+        </span>
+        <div style="display:flex;gap:8px;">
+          <button class="add-btn secondary" onclick="openGroupModal(${group.id})">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Edit Rules
+          </button>
+          <button class="add-btn primary" style="background:#c0392b;" onclick="confirmDeleteGroup(${group.id})">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- RULES SUMMARY -->
+        <div class="section-divider">⚙️ Rules</div>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:10px; padding:8px 14px; margin-bottom:16px;">
+          <div class="rules-row">
+            <span class="rules-label">Selection <b>mandatory</b>?</span>
+            <label class="toggle-switch">
+              <input type="checkbox" ${group.is_mandatory ? 'checked' : ''} onchange="quickUpdateGroup(${group.id}, 'is_mandatory', this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="rules-row">
+            <span class="rules-label"><b>Maximum</b> number of options a customer can select</span>
+            <input type="number" class="number-input" value="${group.max_selections || 1}" min="0"
+              onchange="quickUpdateGroup(${group.id}, 'max_selections', parseInt(this.value)||0)">
+          </div>
+          <div class="rules-row">
+            <span class="rules-label">Can select same option <b>more than once</b>?</span>
+            <label class="toggle-switch">
+              <input type="checkbox" ${group.allow_multiple ? 'checked' : ''} onchange="quickUpdateGroup(${group.id}, 'allow_multiple', this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- OPTIONS -->
+        <div class="section-divider">🔘 Options (${options.length})</div>
+        <div id="optionsList">${optionsHtml}</div>
+        <div class="inline-form">
+          <input type="text" id="quickOptName" placeholder="Option name (ex: Espresso)">
+          <input type="number" id="quickOptPrice" value="0" min="0" step="0.5" style="max-width:90px;" placeholder="+MAD">
+          <button class="add-btn green" onclick="quickAddOption(${group.id})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+
+        <!-- LINKED PRODUCTS -->
+        <div class="section-divider" style="margin-top:20px;">🔗 Linked Products</div>
+        <div id="linkedProductsWrap" style="margin-bottom:10px;">${linkedHtml}</div>
+        <button class="add-btn secondary" onclick="openLinkModal(${group.id})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Link / Unlink Products
+        </button>
+
+      </div>
+    </div>`;
+}
+
+// ── GROUP MODAL ──
+function openGroupModal(id = null) {
+  editingGroupId = id;
+  const g = id ? groups.find(g => g.id === id) : null;
+  document.getElementById('groupModalTitle').textContent = id ? 'Edit Option Group' : 'Add Option Group';
+  document.getElementById('gName').value = g ? g.name : '';
+  document.getElementById('gMandatory').checked = g ? !!g.is_mandatory : false;
+  document.getElementById('gMaxSel').value = g ? (g.max_selections || 1) : 1;
+  document.getElementById('gAllowMultiple').checked = g ? !!g.allow_multiple : false;
+  document.getElementById('groupModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('gName').focus(), 50);
+}
+function closeGroupModal() { document.getElementById('groupModal').style.display = 'none'; editingGroupId = null; }
+
+async function saveGroup() {
+  const name = document.getElementById('gName').value.trim();
+  if (!name) { toast('Please enter a group name', true); return; }
+  const payload = {
+    name,
+    is_mandatory: document.getElementById('gMandatory').checked,
+    max_selections: parseInt(document.getElementById('gMaxSel').value) || 1,
+    allow_multiple: document.getElementById('gAllowMultiple').checked,
+  };
+  try {
+    if (editingGroupId) {
+      await apiCall('PUT', `/api/extras/groups/${editingGroupId}`, payload);
+      toast('Group updated ✓');
+    } else {
+      const newG = await apiCall('POST', '/api/extras/groups', payload);
+      activeGroupId = newG.id;
+      toast('Group created ✓');
+    }
+    closeGroupModal();
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function confirmDeleteGroup(id) {
+  if (!confirm('Delete this group and all its options? This will also unlink it from all products.')) return;
+  try {
+    await apiCall('DELETE', `/api/extras/groups/${id}`);
+    activeGroupId = null;
+    toast('Group deleted');
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function quickUpdateGroup(id, field, value) {
+  try {
+    await apiCall('PUT', `/api/extras/groups/${id}`, { [field]: value });
+    // Update local state without full reload
+    const g = groups.find(g => g.id === id);
+    if (g) g[field] = value;
+    toast('Saved ✓');
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── OPTION MODAL ──
+function openOptionModal(groupId, optId = null) {
+  editingOptionId = optId;
+  const opt = optId ? (groups.find(g => g.id === groupId)?.extras_options || []).find(o => o.id === optId) : null;
+  document.getElementById('optModalTitle').textContent = optId ? 'Edit Option' : 'Add Option';
+  document.getElementById('oName').value = opt ? opt.name : '';
+  document.getElementById('oPrice').value = opt ? opt.price_add : 0;
+  document.getElementById('optionModal').dataset.groupId = groupId;
+  document.getElementById('optionModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('oName').focus(), 50);
+}
+function closeOptionModal() { document.getElementById('optionModal').style.display = 'none'; editingOptionId = null; }
+
+async function saveOption() {
+  const name = document.getElementById('oName').value.trim();
+  const price_add = parseFloat(document.getElementById('oPrice').value) || 0;
+  const groupId = parseInt(document.getElementById('optionModal').dataset.groupId);
+  if (!name) { toast('Please enter an option name', true); return; }
+  try {
+    if (editingOptionId) {
+      await apiCall('PUT', `/api/extras/options/${editingOptionId}`, { name, price_add });
+      toast('Option updated ✓');
+    } else {
+      await apiCall('POST', '/api/extras/options', { group_id: groupId, name, price_add });
+      toast('Option added ✓');
+    }
+    closeOptionModal();
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function quickAddOption(groupId) {
+  const name = document.getElementById('quickOptName').value.trim();
+  const price_add = parseFloat(document.getElementById('quickOptPrice').value) || 0;
+  if (!name) { toast('Enter option name', true); return; }
+  try {
+    await apiCall('POST', '/api/extras/options', { group_id: groupId, name, price_add });
+    document.getElementById('quickOptName').value = '';
+    document.getElementById('quickOptPrice').value = '0';
+    document.getElementById('quickOptName').focus();
+    toast('Option added ✓');
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function toggleOptionAvail(optId, isAvail) {
+  try {
+    await apiCall('PUT', `/api/extras/options/${optId}`, { is_available: isAvail });
+  } catch(e) { toast(e.message, true); }
+}
+
+async function deleteOption(optId) {
+  if (!confirm('Delete this option?')) return;
+  try {
+    await apiCall('DELETE', `/api/extras/options/${optId}`);
+    toast('Option deleted');
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── LINK MODAL ──
+async function openLinkModal(groupId) {
+  const { data: links } = await _supabase
+    .from('product_extras').select('product_id').eq('group_id', groupId);
+  const linkedIds = new Set((links || []).map(l => l.product_id));
+
+  const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  let html = '';
+  for (const cat of categories) {
+    const prods = allProducts.filter(p => p.category === cat);
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.3);font-weight:700;padding:10px 0 6px;">${escHtml(cat)}</div>`;
+    html += prods.map(p => {
+      const linked = linkedIds.has(p.id);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;border:1px solid ${linked ? 'rgba(39,174,96,0.4)' : 'rgba(255,255,255,0.07)'};background:${linked ? 'rgba(39,174,96,0.08)' : 'rgba(255,255,255,0.02)'};margin-bottom:6px;transition:0.2s;" id="link-row-${p.id}">
+        <span style="font-size:13px;font-weight:500;color:#eceff1;">${escHtml(p.title)}</span>
+        <button onclick="toggleLink(${groupId}, ${p.id}, ${linked})" id="link-btn-${p.id}" style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;background:${linked ? 'rgba(231,76,60,0.2)' : 'rgba(39,174,96,0.2)'};color:${linked ? '#e74c3c' : '#27ae60'};transition:0.2s;">
+          ${linked ? 'Unlink' : 'Link'}
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('linkProductsList').innerHTML = html || '<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px;">No products found</div>';
+  document.getElementById('linkModal').style.display = 'flex';
+}
+
+async function toggleLink(groupId, productId, isLinked) {
+  try {
+    if (isLinked) {
+      await apiCall('DELETE', `/api/extras/product/${productId}/unlink/${groupId}`);
+      toast('Product unlinked');
+    } else {
+      await apiCall('POST', `/api/extras/product/${productId}/link`, { group_id: groupId });
+      toast('Product linked ✓');
+    }
+    // Refresh link modal
+    await openLinkModal(groupId);
+    // Refresh right panel
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function unlinkProduct(groupId, productId) {
+  if (!confirm('Remove this product from the group?')) return;
+  try {
+    await apiCall('DELETE', `/api/extras/product/${productId}/unlink/${groupId}`);
+    toast('Unlinked');
+    await loadAll();
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── UTILS ──
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _toastTimer;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = (isErr ? '❌ ' : '✅ ') + msg;
+  el.className = 'toast' + (isErr ? ' err' : '') + ' show';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = 'toast' + (isErr ? ' err' : ''); }, 2800);
+}
+
+// Close modals on overlay click
+document.getElementById('groupModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeGroupModal(); });
+document.getElementById('optionModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeOptionModal(); });
+document.getElementById('linkModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
+</script>
+</body>
+</html>

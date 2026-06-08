@@ -614,7 +614,7 @@ async function loadProducts(){
         <table class="custom-table">
             <thead>
                 <tr>
-                    <th>ID</th><th>IMAGE</th><th>CATEGORY</th><th>NAME</th><th>DESCRIPTION</th><th>PRICE</th><th>AVAIL.</th>
+                    <th>ID</th><th>IMAGE</th><th>CATEGORY</th><th>NAME</th><th>DESCRIPTION</th><th>PRICE</th><th>AVAIL.</th><th>EXTRAS</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -660,6 +660,12 @@ async function loadProducts(){
                         <input type="checkbox" ${isDisponible ? 'checked' : ''} onchange="toggleDisponibilite(${product.id}, this.checked)">
                         <span class="slider"></span>
                     </label>
+                </td>
+                <td>
+                    <button class="extras-btn" id="extras-btn-${product.id}" onclick="openExtrasModal(${product.id}, '${(product.title||'').replace(/'/g,"\\'")}')" title="Manage extras for this product">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                        Extras
+                    </button>
                 </td>
             </tr>`; 
     }); 
@@ -760,6 +766,205 @@ hiddenImageInput.addEventListener('change', async function() {
 
 loadCategoriesSelect();
 loadProducts();
+
+/* ══════════════════════════════════════════
+   EXTRAS MODAL — injected styles & logic
+   ══════════════════════════════════════════ */
+</script>
+
+<style>
+.extras-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; font-size: 11.5px; font-weight: 600;
+  border: 1px solid rgba(192,57,43,0.35); border-radius: 6px;
+  background: rgba(192,57,43,0.1); color: #e74c3c;
+  cursor: pointer; transition: 0.18s; font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+}
+.extras-btn:hover { background: rgba(192,57,43,0.22); border-color: rgba(192,57,43,0.6); }
+.extras-btn.has-extras { background: rgba(39,174,96,0.1); border-color: rgba(39,174,96,0.4); color: #27ae60; }
+.extras-btn.has-extras:hover { background: rgba(39,174,96,0.2); }
+
+/* Extras Modal */
+#extrasModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 3000;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+#extrasModal.open { display: flex; }
+.extras-modal-box {
+  background: #1a2420; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px; width: 500px; max-width: 96vw; max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.65);
+  animation: extrasSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes extrasSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.extras-modal-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.extras-modal-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+.extras-modal-close { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); font-size: 22px; line-height: 1; padding: 0; transition: 0.15s; }
+.extras-modal-close:hover { color: #fff; }
+.extras-modal-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+.extras-modal-footer { padding: 14px 22px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+
+.eg-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.02); margin-bottom: 8px; transition: 0.18s;
+}
+.eg-row:hover { background: rgba(255,255,255,0.05); }
+.eg-row.linked { border-color: rgba(39,174,96,0.4); background: rgba(39,174,96,0.07); }
+.eg-info { flex: 1; min-width: 0; }
+.eg-name { font-size: 13.5px; font-weight: 600; color: #eceff1; }
+.eg-sub { font-size: 11px; color: rgba(255,255,255,0.38); margin-top: 2px; }
+.eg-options-preview { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.eg-link-btn {
+  padding: 5px 14px; border-radius: 6px; border: none; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: 'Poppins', sans-serif; transition: 0.2s; white-space: nowrap;
+}
+.eg-link-btn.link { background: rgba(39,174,96,0.18); color: #27ae60; }
+.eg-link-btn.link:hover { background: rgba(39,174,96,0.32); }
+.eg-link-btn.unlink { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.eg-link-btn.unlink:hover { background: rgba(231,76,60,0.3); }
+
+.tag-req { display:inline-block; background:rgba(231,76,60,0.18); color:#e74c3c; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; margin-left:5px; }
+.tag-opt { display:inline-block; background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px; margin-left:5px; }
+</style>
+
+<!-- EXTRAS MODAL -->
+<div id="extrasModal" onclick="if(event.target===this)closeExtrasModal()">
+  <div class="extras-modal-box">
+    <div class="extras-modal-header">
+      <div class="extras-modal-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        <span id="extrasModalProductName">Extras</span>
+      </div>
+      <button class="extras-modal-close" onclick="closeExtrasModal()">×</button>
+    </div>
+    <div class="extras-modal-body">
+      <p style="font-size:12px;color:rgba(255,255,255,0.4);margin:0 0 14px;">Link option groups to this product. They will appear in the menu & kiosk when customers order.</p>
+      <div id="extrasGroupsList"><div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);">Loading…</div></div>
+    </div>
+    <div class="extras-modal-footer" style="display:flex;gap:10px;align-items:center;">
+      <a href="/dashboard/extras" style="font-size:12px;color:rgba(255,255,255,0.4);text-decoration:underline;cursor:pointer;" target="_blank">Manage all groups →</a>
+      <button onclick="closeExtrasModal()" style="margin-left:auto;padding:9px 22px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;font-size:13px;">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── EXTRAS MODAL LOGIC ──
+let _extrasProductId = null;
+let _allExtrasGroups = [];
+let _linkedGroupIds = new Set();
+
+async function openExtrasModal(productId, productName) {
+  _extrasProductId = productId;
+  document.getElementById('extrasModalProductName').textContent = productName;
+  document.getElementById('extrasModal').classList.add('open');
+  document.getElementById('extrasGroupsList').innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);">Loading…</div>';
+
+  try {
+    // Load all groups with their options
+    const { data: groups } = await _supabase
+      .from('extras_groups')
+      .select('*, extras_options(*)')
+      .order('id', { ascending: true });
+    _allExtrasGroups = groups || [];
+
+    // Load linked groups for this product
+    const { data: links } = await _supabase
+      .from('product_extras')
+      .select('group_id')
+      .eq('product_id', productId);
+    _linkedGroupIds = new Set((links || []).map(l => l.group_id));
+
+    renderExtrasGroupsList();
+    // Update button color
+    const btn = document.getElementById('extras-btn-' + productId);
+    if (btn) btn.className = 'extras-btn' + (_linkedGroupIds.size > 0 ? ' has-extras' : '');
+  } catch(e) {
+    document.getElementById('extrasGroupsList').innerHTML = `<div style="color:#e74c3c;padding:20px;">${e.message}</div>`;
+  }
+}
+
+function renderExtrasGroupsList() {
+  const el = document.getElementById('extrasGroupsList');
+  if (!_allExtrasGroups.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);">
+      No extras groups yet.<br>
+      <a href="/dashboard/extras" target="_blank" style="color:#c0392b;font-size:13px;">Create your first group →</a>
+    </div>`;
+    return;
+  }
+  el.innerHTML = _allExtrasGroups.map(g => {
+    const linked = _linkedGroupIds.has(g.id);
+    const opts = (g.extras_options || []);
+    const optNames = opts.slice(0, 4).map(o => o.name).join(', ') + (opts.length > 4 ? '…' : '');
+    const tag = g.is_mandatory ? `<span class="tag-req">Required</span>` : `<span class="tag-opt">Optional</span>`;
+    return `<div class="eg-row${linked ? ' linked' : ''}" id="eg-row-${g.id}">
+      <div class="eg-info">
+        <div class="eg-name">${escHtmlAdmin(g.name)} ${tag}</div>
+        <div class="eg-sub">max ${g.max_selections || 1} choice · ${opts.length} option${opts.length!==1?'s':''}</div>
+        ${opts.length ? `<div class="eg-options-preview">↳ ${optNames}</div>` : ''}
+      </div>
+      <button id="eg-btn-${g.id}" class="eg-link-btn ${linked ? 'unlink' : 'link'}" onclick="toggleExtrasLink(${g.id}, ${linked})">
+        ${linked ? '✓ Linked' : '+ Link'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleExtrasLink(groupId, isLinked) {
+  const btn = document.getElementById('eg-btn-' + groupId);
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    if (isLinked) {
+      await apiCall('DELETE', `/api/extras/product/${_extrasProductId}/unlink/${groupId}`);
+      _linkedGroupIds.delete(groupId);
+    } else {
+      await apiCall('POST', `/api/extras/product/${_extrasProductId}/link`, { group_id: groupId });
+      _linkedGroupIds.add(groupId);
+    }
+    renderExtrasGroupsList();
+    // Update button badge
+    const mainBtn = document.getElementById('extras-btn-' + _extrasProductId);
+    if (mainBtn) mainBtn.className = 'extras-btn' + (_linkedGroupIds.size > 0 ? ' has-extras' : '');
+  } catch(e) {
+    alert('Error: ' + e.message);
+    renderExtrasGroupsList();
+  }
+}
+
+function closeExtrasModal() {
+  document.getElementById('extrasModal').classList.remove('open');
+  _extrasProductId = null;
+}
+
+function escHtmlAdmin(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Load extras badge counts after products load ──
+async function loadExtrasBadges() {
+  try {
+    const { data: links } = await _supabase.from('product_extras').select('product_id');
+    const withExtras = new Set((links||[]).map(l => l.product_id));
+    withExtras.forEach(pid => {
+      const btn = document.getElementById('extras-btn-' + pid);
+      if (btn) btn.className = 'extras-btn has-extras';
+    });
+  } catch(e) { /* silent */ }
+}
+// Hook into loadProducts to also refresh badges
+const _origLoadProducts = loadProducts;
+async function loadProducts() {
+  await _origLoadProducts.call(this);
+  setTimeout(loadExtrasBadges, 300);
+}
 </script>
 </body>
 </html>
