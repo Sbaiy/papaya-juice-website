@@ -24,7 +24,7 @@ body {
 
 /* ── TABLE BANNER ── */
 .table-banner {
-    position: fixed; bottom: 96px; left: 50%;
+    position: fixed; top: 16px; left: 50%;
     transform: translateX(-50%);
     z-index: 700;
     background: rgba(255,98,0,0.18);
@@ -511,7 +511,7 @@ h1.menu-title {
     .add-btn { width: 36px !important; height: 36px !important; font-size: 22px !important; }
     .cart-panel { width: 100%; border-radius: 24px 24px 0 0; }
     .cart-fab { font-size: 14px; padding: 12px 22px; }
-    .table-banner { bottom: 88px; font-size: 12px; padding: 7px 16px; }
+    .table-banner { top: 12px; font-size: 12px; padding: 7px 16px; }
 }
 
 /* ── RÉCLAMATION MODAL ── */
@@ -1439,20 +1439,21 @@ async function loadModalExtras(productId) {
         const groups = links.map(l => l.extras_groups).filter(Boolean);
         if (groups.length === 0) return;
         extrasSection.style.display = 'block';
-        extrasSection.innerHTML = groups.map(g => {
+        extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;margin-bottom:4px;">' + groups.map(g => {
             const opts = g.extras_options || [];
             modalExtras.push({ group: g, selectedOptionId: g.is_mandatory ? (opts[0]?.id || null) : null });
             const idx = modalExtras.length - 1;
-            return `<div style="margin-bottom:12px;text-align:left;">
-                <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
-                    ${g.name} ${g.is_mandatory ? '<span style="color:#ff6200;font-size:10px;">*Requis</span>' : '<span style="color:rgba(255,255,255,0.4);font-size:10px;">Optionnel</span>'}
+            return `<div style="margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.8px;">${g.name}</span>
+                  ${g.is_mandatory ? '<span style="font-size:10px;background:rgba(255,98,0,0.18);color:#ff6200;border:1px solid rgba(255,98,0,0.35);padding:2px 8px;border-radius:20px;font-weight:600;">Requis</span>' : '<span style="font-size:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);padding:2px 8px;border-radius:20px;">Optionnel</span>'}
                 </div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn selected" data-optid="null" style="padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,98,0,0.5);background:rgba(255,98,0,0.15);color:#ff6200;font-size:12px;cursor:pointer;font-family:inherit;">Aucun</button>` : ''}
-                    ${opts.map(o => `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${g.is_mandatory && opts[0]?.id === o.id ? ' selected' : ''}" data-optid="${o.id}" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${g.is_mandatory && opts[0]?.id === o.id ? 'rgba(255,98,0,0.8)' : 'rgba(255,255,255,0.15)'};background:${g.is_mandatory && opts[0]?.id === o.id ? 'rgba(255,98,0,0.2)' : 'rgba(255,255,255,0.05)'};color:${g.is_mandatory && opts[0]?.id === o.id ? '#ff6200' : 'rgba(255,255,255,0.7)'};font-size:12px;cursor:pointer;font-family:inherit;">${o.name}${o.price_add > 0 ? ` +${o.price_add}` : ''}</button>`).join('')}
+                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn selected" style="padding:7px 14px;border-radius:30px;border:1.5px solid rgba(255,98,0,0.6);background:rgba(255,98,0,0.15);color:#ff6200;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Aucun</button>` : ''}
+                    ${opts.map((o,oi) => `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${g.is_mandatory && oi===0 ? ' selected' : ''}" style="padding:7px 14px;border-radius:30px;border:1.5px solid ${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.7)' : 'rgba(255,255,255,0.12)'};background:${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.18)' : 'rgba(255,255,255,0.04)'};color:${g.is_mandatory && oi===0 ? '#ff6200' : 'rgba(255,255,255,0.75)'};font-size:12px;font-weight:${g.is_mandatory && oi===0 ? '600' : '400'};cursor:pointer;font-family:inherit;">${o.name}${o.price_add > 0 ? `<span style="font-size:10px;opacity:0.7;margin-left:4px;">+${o.price_add}DH</span>` : ''}</button>`).join('')}
                 </div>
             </div>`;
-        }).join('');
+        }).join('') + '</div>';
         updateModalAddBtn();
     } catch(e) { console.error('extras error', e); }
 }
