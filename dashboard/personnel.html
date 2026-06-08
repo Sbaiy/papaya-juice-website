@@ -662,12 +662,21 @@ let currentWeekOffset = 0; // 0 = semaine en cours, -1 = semaine dernière...
 
 function getWeekBounds(offset) {
   const now = new Date();
-  // Utiliser UTC pour éviter les problèmes de timezone (Maroc = UTC+1)
-  const day = now.getUTCDay(); // 0=dim, 1=lun...
+  // Utiliser la date locale (heure Maroc) pour calculer les bornes de semaine
+  const day = now.getDay(); // 0=dim, 1=lun... (local time)
   const diffToMonday = (day === 0 ? -6 : 1 - day);
-  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToMonday + offset * 7, 0, 0, 0, 0));
-  const sunday = new Date(monday.getTime() + 6 * 24 * 60 * 60 * 1000 - 1);
-  return { monday, sunday };
+
+  // Début du lundi à 00:00:00 heure locale → on met 00:00:00 UTC-1 pour couvrir UTC+1
+  const localMonday = new Date(now);
+  localMonday.setHours(0, 0, 0, 0);
+  localMonday.setDate(localMonday.getDate() + diffToMonday + offset * 7);
+
+  // Fin du dimanche à 23:59:59 heure locale
+  const localSunday = new Date(localMonday);
+  localSunday.setDate(localSunday.getDate() + 6);
+  localSunday.setHours(23, 59, 59, 999);
+
+  return { monday: localMonday, sunday: localSunday };
 }
 
 function fmtWeekLabel(monday, sunday) {
