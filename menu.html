@@ -1516,15 +1516,15 @@ function checkMandatoryAndUpdateBtn() {
         !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
     const shouldLock = hasMandatory && !allSatisfied;
-    updateModalAddBtn();
     const btn = document.getElementById('modalAddBtn');
     if (shouldLock) {
-        btn.classList.add('btn-locked');
         btn.disabled = true;
+        btn.classList.add('btn-locked');
     } else {
-        btn.classList.remove('btn-locked');
         btn.disabled = false;
+        btn.classList.remove('btn-locked');
     }
+    updateModalAddBtn();
 }
 
 function getExtrasTotal() {
@@ -1569,10 +1569,7 @@ function updateModalAddBtn() {
     const base = parseFloat(modalCurrentProduct?.price || 0);
     const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
     const total = ((base + extrasAdd) * modalQty).toFixed(0);
-    const btn = document.getElementById('modalAddBtn');
-    const wasDisabled = btn.disabled;
-    btn.innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
-    btn.disabled = wasDisabled;
+    document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
 function closeModal() {
