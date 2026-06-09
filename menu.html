@@ -1487,12 +1487,12 @@ async function loadModalExtras(productId) {
 function lockBtn() {
     const b = document.getElementById('modalAddBtn');
     b.setAttribute('data-locked', 'true');
-    b.style.cssText += ';opacity:0.35!important;pointer-events:none!important;cursor:not-allowed!important;background:#888!important;box-shadow:none!important;transform:none!important;';
+    b.style.cssText = 'opacity:0.35!important;pointer-events:none!important;cursor:not-allowed!important;background:#888!important;box-shadow:none!important;transform:none!important;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
 }
 function unlockBtn() {
     const b = document.getElementById('modalAddBtn');
     b.removeAttribute('data-locked');
-    b.style.cssText += ';opacity:1!important;pointer-events:auto!important;cursor:pointer!important;background:var(--primary)!important;box-shadow:0 8px 24px rgba(255,98,0,0.4)!important;';
+    b.style.cssText = 'opacity:1!important;pointer-events:auto!important;cursor:pointer!important;background:var(--primary)!important;box-shadow:0 8px 24px rgba(255,98,0,0.4)!important;transform:none;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
 }
 
 function selectExtra(groupIdx, optionId, btn) {
