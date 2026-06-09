@@ -1529,6 +1529,10 @@ function openExtrasSelModal(product, groups, qty) {
 function closeExtrasSelModal() {
     document.getElementById('extrasSelModal').classList.remove('open');
     _eselProduct = null;
+    // Restore header nav
+    if (header) header.classList.remove('hide-nav');
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.classList.remove('nav-hidden');
 }
 
 function renderMenuExtrasBody() {
@@ -1608,7 +1612,6 @@ function confirmMenuExtrasAndAdd() {
     closeExtrasSelModal();
     delete cart[origId];
     for (let i = 0; i < qty; i++) cartAddOne(productWithExtras);
-    closeModal();
 }
 
 function escMenuHtml(s) {
@@ -1663,21 +1666,23 @@ document.getElementById('modalPlus').addEventListener('click', () => {
 
 document.getElementById('modalAddBtn').addEventListener('click', async () => {
     if (!modalCurrentProduct) return;
-    // Show loading state
     const btn = document.getElementById('modalAddBtn');
     btn.textContent = '⏳ Chargement…';
     btn.disabled = true;
-    const groups = await loadModalExtras(modalCurrentProduct.id);
+    const productSnapshot = { ...modalCurrentProduct };
+    const qtySnapshot = modalQty;
+    const groups = await loadModalExtras(productSnapshot.id);
     btn.disabled = false;
     updateModalAddBtn();
     if (groups && groups.length > 0) {
-        // Open kiosk-style extras modal
-        openExtrasSelModal(modalCurrentProduct, groups, modalQty);
+        // Close the product modal first, then open extras modal
+        closeModal();
+        setTimeout(() => openExtrasSelModal(productSnapshot, groups, qtySnapshot), 50);
     } else {
         // No extras: add directly
-        const productWithExtras = { ...modalCurrentProduct, selectedExtras: [] };
-        delete cart[modalCurrentProduct.id];
-        for (let i = 0; i < modalQty; i++) cartAddOne(productWithExtras);
+        const productWithExtras = { ...productSnapshot, selectedExtras: [] };
+        delete cart[productSnapshot.id];
+        for (let i = 0; i < qtySnapshot; i++) cartAddOne(productWithExtras);
         closeModal();
     }
 });
