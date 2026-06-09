@@ -1472,7 +1472,7 @@ async function loadModalExtras(productId) {
                 <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
                     ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s;">Aucun</button>` : ''}
                     ${opts.map((o,oi) => {
-                      return `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;font-weight:400;cursor:pointer;font-family:inherit;transition:all 0.15s;">${o.name}${o.price_add > 0 ? ` <span style="font-size:10px;opacity:0.65;">+${parseFloat(o.price_add).toFixed(0)}DH</span>` : ''}</button>`;
+                      return `<button onclick="selectExtra(${idx}, '${o.id}', this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;font-weight:400;cursor:pointer;font-family:inherit;transition:all 0.15s;">${o.name}${o.price_add > 0 ? ` <span style="font-size:10px;opacity:0.65;">+${parseFloat(o.price_add).toFixed(0)}DH</span>` : ''}</button>`;
                     }).join('')}
                 </div>
             </div>`;
