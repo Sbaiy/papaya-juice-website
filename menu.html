@@ -1444,39 +1444,56 @@ async function loadModalExtras(productId) {
         const groups = links.map(l => l.extras_groups).filter(Boolean);
         if (groups.length === 0) return;
         extrasSection.style.display = 'block';
-        extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;margin-bottom:4px;">' + groups.map(g => {
+        extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-bottom:8px;">' + groups.map(g => {
             const opts = g.extras_options || [];
-            modalExtras.push({ group: g, selectedOptionId: g.is_mandatory ? (opts[0]?.id || null) : null });
+            // Pre-select first option if mandatory
+            const defaultId = g.is_mandatory ? (opts[0]?.id || null) : null;
+            modalExtras.push({ group: g, selectedOptionId: defaultId });
             const idx = modalExtras.length - 1;
-            return `<div style="margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.8px;">${g.name}</span>
-                  ${g.is_mandatory ? '<span style="font-size:10px;background:rgba(255,98,0,0.18);color:#ff6200;border:1px solid rgba(255,98,0,0.35);padding:2px 8px;border-radius:20px;font-weight:600;">Requis</span>' : '<span style="font-size:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);padding:2px 8px;border-radius:20px;">Optionnel</span>'}
+            return `<div style="margin-bottom:18px;text-align:center;">
+                <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;">
+                  <span style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px;">${g.name}</span>
+                  ${g.is_mandatory
+                    ? '<span style="font-size:10px;background:rgba(255,98,0,0.2);color:#ff6200;border:1px solid rgba(255,98,0,0.4);padding:2px 10px;border-radius:20px;font-weight:700;">Requis</span>'
+                    : '<span style="font-size:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.1);padding:2px 10px;border-radius:20px;">Optionnel</span>'}
                 </div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px;">
-                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn selected" style="padding:7px 14px;border-radius:30px;border:1.5px solid rgba(255,98,0,0.6);background:rgba(255,98,0,0.15);color:#ff6200;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Aucun</button>` : ''}
-                    ${opts.map((o,oi) => `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${g.is_mandatory && oi===0 ? ' selected' : ''}" style="padding:7px 14px;border-radius:30px;border:1.5px solid ${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.7)' : 'rgba(255,255,255,0.12)'};background:${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.18)' : 'rgba(255,255,255,0.04)'};color:${g.is_mandatory && oi===0 ? '#ff6200' : 'rgba(255,255,255,0.75)'};font-size:12px;font-weight:${g.is_mandatory && oi===0 ? '600' : '400'};cursor:pointer;font-family:inherit;">${o.name}${o.price_add > 0 ? `<span style="font-size:10px;opacity:0.7;margin-left:4px;">+${o.price_add}DH</span>` : ''}</button>`).join('')}
+                <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s;">Aucun</button>` : ''}
+                    ${opts.map((o,oi) => {
+                      const isSelected = g.is_mandatory && oi === 0;
+                      return `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${isSelected ? ' xsel' : ''}" style="padding:8px 16px;border-radius:30px;border:1.5px solid ${isSelected ? '#ff6200' : 'rgba(255,255,255,0.15)'};background:${isSelected ? 'rgba(255,98,0,0.2)' : 'rgba(255,255,255,0.04)'};color:${isSelected ? '#ff6200' : 'rgba(255,255,255,0.6)'};font-size:12px;font-weight:${isSelected ? '700' : '400'};cursor:pointer;font-family:inherit;transition:all 0.15s;">${o.name}${o.price_add > 0 ? ` <span style="font-size:10px;opacity:0.65;">+${parseFloat(o.price_add).toFixed(0)}DH</span>` : ''}</button>`;
+                    }).join('')}
                 </div>
             </div>`;
         }).join('') + '</div>';
-        updateModalAddBtn();
+        checkMandatoryAndUpdateBtn();
     } catch(e) { console.error('extras error', e); }
 }
 
 function selectExtra(groupIdx, optionId, btn) {
-    const group = modalExtras[groupIdx].group;
-    // deselect all in group
     const container = btn.parentElement;
     container.querySelectorAll('.extra-opt-btn').forEach(b => {
         b.style.border = '1.5px solid rgba(255,255,255,0.15)';
-        b.style.background = 'rgba(255,255,255,0.05)';
-        b.style.color = 'rgba(255,255,255,0.7)';
+        b.style.background = 'rgba(255,255,255,0.04)';
+        b.style.color = 'rgba(255,255,255,0.6)';
+        b.style.fontWeight = '400';
     });
-    // select clicked
-    btn.style.border = '1.5px solid rgba(255,98,0,0.8)';
+    btn.style.border = '1.5px solid #ff6200';
     btn.style.background = 'rgba(255,98,0,0.2)';
     btn.style.color = '#ff6200';
+    btn.style.fontWeight = '700';
     modalExtras[groupIdx].selectedOptionId = optionId;
+    checkMandatoryAndUpdateBtn();
+}
+
+function checkMandatoryAndUpdateBtn() {
+    const addBtn = document.getElementById('modalAddBtn');
+    const allSatisfied = modalExtras.every(({ group, selectedOptionId }) =>
+        !group.is_mandatory || selectedOptionId !== null
+    );
+    addBtn.disabled = !allSatisfied;
+    addBtn.style.opacity = allSatisfied ? '1' : '0.4';
+    addBtn.style.cursor = allSatisfied ? 'pointer' : 'not-allowed';
     updateModalAddBtn();
 }
 
