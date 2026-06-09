@@ -347,6 +347,7 @@ h1.menu-title {
 .modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
 .modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; }
+.modal-add-btn.btn-locked { opacity: 0.35; cursor: not-allowed; box-shadow: none; pointer-events: none; background: #555; }
 
 /* ── EMPTY ── */
 .empty-state { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #7a9980; font-size: 16px; }
@@ -1487,10 +1488,13 @@ function selectExtra(groupIdx, optionId, btn) {
 
 function checkMandatoryAndUpdateBtn() {
     const addBtn = document.getElementById('modalAddBtn');
+    const hasMandatory = modalExtras.some(({ group }) => group.is_mandatory);
     const allSatisfied = modalExtras.every(({ group, selectedOptionId }) =>
-        !group.is_mandatory || selectedOptionId !== null
+        !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
-    addBtn.disabled = !allSatisfied;
+    const shouldLock = hasMandatory && !allSatisfied;
+    addBtn.disabled = shouldLock;
+    addBtn.classList.toggle('btn-locked', shouldLock);
     updateModalAddBtn();
 }
 
@@ -1515,6 +1519,8 @@ function openModal(product) {
     document.getElementById('modalExtrasSection').style.display = 'none';
     document.getElementById('modalExtrasSection').innerHTML = '';
     modalExtras = [];
+    document.getElementById('modalAddBtn').disabled = false;
+    document.getElementById('modalAddBtn').classList.remove('btn-locked');
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
