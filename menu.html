@@ -1443,7 +1443,13 @@ async function loadModalExtras(productId) {
             .from('product_extras')
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
-        if (!links || links.length === 0) return;
+        if (!links || links.length === 0) {
+            // No extras → unlock button
+            const btn = document.getElementById('modalAddBtn');
+            btn.disabled = false;
+            btn.classList.remove('btn-locked');
+            return;
+        }
         // Deduplicate groups by id (in case of duplicate rows in product_extras)
         const seen = new Set();
         const groups = links.map(l => l.extras_groups).filter(g => {
@@ -1451,7 +1457,12 @@ async function loadModalExtras(productId) {
             seen.add(g.id);
             return true;
         });
-        if (groups.length === 0) return;
+        if (groups.length === 0) {
+            const btn = document.getElementById('modalAddBtn');
+            btn.disabled = false;
+            btn.classList.remove('btn-locked');
+            return;
+        }
         extrasSection.style.display = 'block';
         extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-bottom:8px;">' + groups.map(g => {
             const opts = g.extras_options || [];
@@ -1474,7 +1485,13 @@ async function loadModalExtras(productId) {
             </div>`;
         }).join('') + '</div>';
         checkMandatoryAndUpdateBtn();
-    } catch(e) { console.error('extras error', e); }
+    } catch(e) {
+        console.error('extras error', e);
+        // On error, unlock button so user can still add without extras
+        const btn = document.getElementById('modalAddBtn');
+        btn.disabled = false;
+        btn.classList.remove('btn-locked');
+    }
 }
 
 function selectExtra(groupIdx, optionId, btn) {
@@ -1499,11 +1516,15 @@ function checkMandatoryAndUpdateBtn() {
         !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
     const shouldLock = hasMandatory && !allSatisfied;
-    const btn = document.getElementById('modalAddBtn');
-    btn.disabled = shouldLock;
-    if (shouldLock) btn.classList.add('btn-locked');
-    else btn.classList.remove('btn-locked');
     updateModalAddBtn();
+    const btn = document.getElementById('modalAddBtn');
+    if (shouldLock) {
+        btn.classList.add('btn-locked');
+        btn.disabled = true;
+    } else {
+        btn.classList.remove('btn-locked');
+        btn.disabled = false;
+    }
 }
 
 function getExtrasTotal() {
@@ -1527,9 +1548,8 @@ function openModal(product) {
     document.getElementById('modalExtrasSection').style.display = 'none';
     document.getElementById('modalExtrasSection').innerHTML = '';
     modalExtras = [];
-    const addBtnRef = document.getElementById('modalAddBtn');
-    addBtnRef.disabled = false;
-    addBtnRef.classList.remove('btn-locked');
+    document.getElementById('modalAddBtn').classList.remove('btn-locked');
+    document.getElementById('modalAddBtn').disabled = false;
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
@@ -1538,7 +1558,10 @@ function openModal(product) {
     const backBtn = document.getElementById('backBtn');
     if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
-    // load extras async
+    // load extras async — disable button while loading
+    const addBtn = document.getElementById('modalAddBtn');
+    addBtn.disabled = true;
+    addBtn.classList.add('btn-locked');
     loadModalExtras(product.id);
 }
 
