@@ -1444,10 +1444,13 @@ async function loadModalExtras(productId) {
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
         if (!links || links.length === 0) {
-            // No extras → unlock button
             const btn = document.getElementById('modalAddBtn');
             btn.disabled = false;
             btn.classList.remove('btn-locked');
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.style.cursor = 'pointer';
+            btn.style.background = 'var(--primary)';
             return;
         }
         // Deduplicate groups by id (in case of duplicate rows in product_extras)
@@ -1461,6 +1464,10 @@ async function loadModalExtras(productId) {
             const btn = document.getElementById('modalAddBtn');
             btn.disabled = false;
             btn.classList.remove('btn-locked');
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.style.cursor = 'pointer';
+            btn.style.background = 'var(--primary)';
             return;
         }
         extrasSection.style.display = 'block';
@@ -1487,10 +1494,13 @@ async function loadModalExtras(productId) {
         checkMandatoryAndUpdateBtn();
     } catch(e) {
         console.error('extras error', e);
-        // On error, unlock button so user can still add without extras
         const btn = document.getElementById('modalAddBtn');
         btn.disabled = false;
         btn.classList.remove('btn-locked');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
+        btn.style.background = 'var(--primary)';
     }
 }
 
@@ -1506,23 +1516,60 @@ function selectExtra(groupIdx, optionId, btn) {
     btn.style.background = 'rgba(255,98,0,0.2)';
     btn.style.color = '#ff6200';
     btn.style.fontWeight = '700';
-    modalExtras[groupIdx].selectedOptionId = optionId !== null ? Number(optionId) || optionId : null;
-    checkMandatoryAndUpdateBtn();
+
+    // store as string to avoid any type coercion issues
+    modalExtras[groupIdx].selectedOptionId = (optionId !== null && optionId !== undefined) ? String(optionId) : null;
+
+    // re-evaluate directly here, no function call
+    let allGood = true;
+    for (let i = 0; i < modalExtras.length; i++) {
+        const e = modalExtras[i];
+        if (e.group.is_mandatory && !e.selectedOptionId) {
+            allGood = false;
+            break;
+        }
+    }
+    const addBtn = document.getElementById('modalAddBtn');
+    addBtn.disabled = !allGood;
+    if (allGood) {
+        addBtn.classList.remove('btn-locked');
+        addBtn.style.opacity = '1';
+        addBtn.style.pointerEvents = 'auto';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.background = 'var(--primary)';
+    } else {
+        addBtn.classList.add('btn-locked');
+        addBtn.style.opacity = '0.35';
+        addBtn.style.pointerEvents = 'none';
+        addBtn.style.cursor = 'not-allowed';
+        addBtn.style.background = '#888';
+    }
+    updateModalAddBtn();
 }
 
 function checkMandatoryAndUpdateBtn() {
-    const hasMandatory = modalExtras.some(({ group }) => group.is_mandatory);
-    const allSatisfied = modalExtras.every(({ group, selectedOptionId }) =>
-        !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
-    );
-    const shouldLock = hasMandatory && !allSatisfied;
-    const btn = document.getElementById('modalAddBtn');
-    if (shouldLock) {
-        btn.disabled = true;
-        btn.classList.add('btn-locked');
+    let allGood = true;
+    for (let i = 0; i < modalExtras.length; i++) {
+        const e = modalExtras[i];
+        if (e.group.is_mandatory && !e.selectedOptionId) {
+            allGood = false;
+            break;
+        }
+    }
+    const addBtn = document.getElementById('modalAddBtn');
+    addBtn.disabled = !allGood;
+    if (allGood) {
+        addBtn.classList.remove('btn-locked');
+        addBtn.style.opacity = '1';
+        addBtn.style.pointerEvents = 'auto';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.background = 'var(--primary)';
     } else {
-        btn.disabled = false;
-        btn.classList.remove('btn-locked');
+        addBtn.classList.add('btn-locked');
+        addBtn.style.opacity = '0.35';
+        addBtn.style.pointerEvents = 'none';
+        addBtn.style.cursor = 'not-allowed';
+        addBtn.style.background = '#888';
     }
     updateModalAddBtn();
 }
@@ -1562,6 +1609,9 @@ function openModal(product) {
     const addBtn = document.getElementById('modalAddBtn');
     addBtn.disabled = true;
     addBtn.classList.add('btn-locked');
+    addBtn.style.opacity = '0.35';
+    addBtn.style.pointerEvents = 'none';
+    addBtn.style.background = '#888';
     loadModalExtras(product.id);
 }
 
