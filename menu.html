@@ -347,7 +347,8 @@ h1.menu-title {
 .modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
 .modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; }
-.modal-add-btn.btn-locked { opacity: 0.35; cursor: not-allowed; box-shadow: none; pointer-events: none; background: #555; }
+.modal-add-btn.btn-locked { opacity: 0.35; cursor: default; box-shadow: none; background: #555; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── EMPTY ── */
 .empty-state { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #7a9980; font-size: 16px; }
@@ -1493,7 +1494,6 @@ function checkMandatoryAndUpdateBtn() {
         !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
     const shouldLock = hasMandatory && !allSatisfied;
-    addBtn.disabled = shouldLock;
     addBtn.classList.toggle('btn-locked', shouldLock);
     updateModalAddBtn();
 }
@@ -1519,7 +1519,6 @@ function openModal(product) {
     document.getElementById('modalExtrasSection').style.display = 'none';
     document.getElementById('modalExtrasSection').innerHTML = '';
     modalExtras = [];
-    document.getElementById('modalAddBtn').disabled = false;
     document.getElementById('modalAddBtn').classList.remove('btn-locked');
     updateModalAddBtn();
     overlay.classList.add('active');
@@ -1563,8 +1562,12 @@ document.getElementById('modalAddBtn').addEventListener('click', () => {
     if (!modalCurrentProduct) return;
     // check required extras
     for (const { group, selectedOptionId } of modalExtras) {
-        if (group.is_mandatory && !selectedOptionId) {
-            alert(`Veuillez choisir une option pour: ${group.name}`);
+        if (group.is_mandatory && (selectedOptionId === null || selectedOptionId === undefined)) {
+            // shake the extras section to indicate required
+            const sec = document.getElementById('modalExtrasSection');
+            sec.style.animation = 'none';
+            sec.offsetHeight;
+            sec.style.animation = 'shake 0.3s ease';
             return;
         }
     }
