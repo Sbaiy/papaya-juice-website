@@ -744,7 +744,9 @@ function buildCard(order) {
   const time = order.created_at ? new Date(order.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
   let items = [];
   try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
-  const itemsHTML = items.map(item => {
+  // إلا كاين new_items (زيادة من kiosk) — بان غير هوما
+  const displayItems = (order._new_items && order._new_items.length) ? order._new_items : items;
+  const itemsHTML = displayItems.map(item => {
     const extrasHtml = (item.extras && item.extras.length > 0)
       ? `<div style="margin-top:3px;padding-left:4px;border-left:2px solid rgba(255,255,255,0.15);">${item.extras.map(e => `<div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">+ ${e.optionName || e.name || ''}${e.priceAdd > 0 ? ` <span style="color:rgba(255,255,255,0.3);">(+${parseFloat(e.priceAdd).toFixed(2)} DH)</span>` : ''}</div>`).join('')}</div>`
       : '';
@@ -916,19 +918,18 @@ _liveChannel
     // Si new_items présents (ajout depuis kiosk), afficher SEULEMENT les nouveaux articles
     if (payload.new_items && Array.isArray(payload.new_items) && payload.new_items.length) {
       o._new_items = payload.new_items;
-      o.items = payload.new_items; // remplacer les items par les nouveaux seulement
-      // Recalculer le total des nouveaux articles uniquement
       o._new_total = payload.new_items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
-    } else {
-      // Pas de new_items = update de status normal → effacer les overrides
-      delete o._new_items;
-      delete o._new_total;
     }
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) {
       // Préserver source/table_number si le payload update ne les contient pas
       if (!o.source && allOrders[idx].source) o.source = allOrders[idx].source;
       if (!o.table_number && allOrders[idx].table_number) o.table_number = allOrders[idx].table_number;
+      // Préserver _new_items si déjà présent et pas de nouveau
+      if (!o._new_items && allOrders[idx]._new_items) {
+        o._new_items = allOrders[idx]._new_items;
+        o._new_total = allOrders[idx]._new_total;
+      }
       allOrders[idx] = o;
     } else if (_shouldShowOrder(o)) {
       allOrders = [o, ...allOrders];
