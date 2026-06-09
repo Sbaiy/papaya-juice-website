@@ -1494,8 +1494,14 @@ function checkMandatoryAndUpdateBtn() {
         !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
     const shouldLock = hasMandatory && !allSatisfied;
-    addBtn.classList.toggle('btn-locked', shouldLock);
+    // Update text first, then class (innerHTML resets inline state)
     updateModalAddBtn();
+    // Use requestAnimationFrame to apply class after render
+    requestAnimationFrame(() => {
+        const btn = document.getElementById('modalAddBtn');
+        if (shouldLock) btn.classList.add('btn-locked');
+        else btn.classList.remove('btn-locked');
+    });
 }
 
 function getExtrasTotal() {
