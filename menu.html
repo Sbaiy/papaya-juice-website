@@ -632,7 +632,6 @@ h1.menu-title {
     </button>
 </header>
 
-<!-- DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -660,21 +659,18 @@ h1.menu-title {
 
 <h1 class="menu-title" id="menuMainTitle">Our <span style="color:var(--primary)">Menu</span></h1>
 
-<!-- Table Banner — shown when table detected from URL -->
 <div class="table-banner" id="tableBanner">
     <span class="tbl-icon">🪑</span>
     <span id="tableBannerText">Table <strong id="tableBannerNum"></strong></span>
     <span class="tbl-change" onclick="changeTable()">Changer</span>
 </div>
 
-<!-- CATEGORIES VIEW -->
 <div id="categoriesView">
     <div class="cats-grid" id="catsGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading…</div>
     </div>
 </div>
 
-<!-- PRODUCTS VIEW -->
 <div id="productsView" style="display:none;">
     <button class="back-btn" id="backBtn" onclick="showCategoriesView()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -713,13 +709,11 @@ h1.menu-title {
     </div>
 </div>
 
-<!-- ORDER CONFIRM MODAL -->
 <div class="order-modal-overlay" id="orderModalOverlay">
     <div class="order-modal">
         <h2>✅ Confirmer la commande</h2>
         <p class="order-modal-sub">Vérifiez votre commande avant d'envoyer</p>
 
-        <!-- TABLE ROW — shown when table is detected -->
         <div class="order-modal-table-row" id="omTableRow" style="display:none">
             <span class="tbl-icon-lg">🪑</span>
             <div class="tbl-info">
@@ -747,7 +741,6 @@ h1.menu-title {
 </div>
 
 
-<!-- RÉCLAMATION MODAL -->
 <div class="recl-overlay" id="reclOverlay">
     <div class="recl-modal" id="reclModal">
         <div class="recl-handle"></div>
@@ -779,7 +772,6 @@ h1.menu-title {
     </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="successToast">
     <span class="toast-icon">🎉</span>
     <div class="toast-text">
@@ -1487,11 +1479,13 @@ async function loadModalExtras(productId) {
 function lockBtn() {
     const b = document.getElementById('modalAddBtn');
     b.setAttribute('data-locked', 'true');
+    b.disabled = true;
     b.style.cssText = 'opacity:0.35!important;pointer-events:none!important;cursor:not-allowed!important;background:#888!important;box-shadow:none!important;transform:none!important;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
 }
 function unlockBtn() {
     const b = document.getElementById('modalAddBtn');
     b.removeAttribute('data-locked');
+    b.disabled = false;
     b.style.cssText = 'opacity:1!important;pointer-events:auto!important;cursor:pointer!important;background:#ff6200!important;box-shadow:0 8px 24px rgba(255,98,0,0.4)!important;transform:none;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
 }
 
