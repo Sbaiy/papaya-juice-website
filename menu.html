@@ -344,8 +344,9 @@ h1.menu-title {
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
 }
-.modal-add-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
+.modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
+.modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; }
 
 /* ── EMPTY ── */
 .empty-state { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #7a9980; font-size: 16px; }
@@ -1480,7 +1481,7 @@ function selectExtra(groupIdx, optionId, btn) {
     btn.style.background = 'rgba(255,98,0,0.2)';
     btn.style.color = '#ff6200';
     btn.style.fontWeight = '700';
-    modalExtras[groupIdx].selectedOptionId = optionId;
+    modalExtras[groupIdx].selectedOptionId = optionId !== null ? Number(optionId) || optionId : null;
     checkMandatoryAndUpdateBtn();
 }
 
@@ -1490,8 +1491,6 @@ function checkMandatoryAndUpdateBtn() {
         !group.is_mandatory || selectedOptionId !== null
     );
     addBtn.disabled = !allSatisfied;
-    addBtn.style.opacity = allSatisfied ? '1' : '0.4';
-    addBtn.style.cursor = allSatisfied ? 'pointer' : 'not-allowed';
     updateModalAddBtn();
 }
 
