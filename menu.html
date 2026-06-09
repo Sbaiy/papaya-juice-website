@@ -600,9 +600,76 @@ h1.menu-title {
 }
 .recl-photo-counter { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 6px; }
 
+/* ── EXTRAS SELECTION MODAL (kiosk-style) ── */
+#extrasSelModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 700;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+}
+#extrasSelModal.open { display: flex; }
+.esel-box {
+  background: #1c2128; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px; width: 420px; max-width: 94vw; max-height: 88vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.65);
+  animation: eselSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes eselSlideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.esel-header { padding: 18px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+.esel-product-title { font-size: 17px; font-weight: 700; color: #fff; }
+.esel-product-price { font-size: 14px; color: var(--primary); font-weight: 700; margin-top: 3px; }
+.esel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.esel-body::-webkit-scrollbar { width: 3px; }
+.esel-body::-webkit-scrollbar-thumb { background: rgba(255,98,0,0.3); border-radius: 3px; }
+.esel-group { margin-bottom: 20px; }
+.esel-group-title { font-size: 13px; font-weight: 700; color: #eceff1; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.esel-req-badge { background: rgba(231,76,60,0.18); color: #e74c3c; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 2px 9px; }
+.esel-opt-badge { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 700; border-radius: 20px; padding: 2px 9px; }
+.esel-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02); margin-bottom: 7px; cursor: pointer; transition: 0.16s;
+}
+.esel-option:hover { background: rgba(255,255,255,0.06); }
+.esel-option.selected { border-color: var(--primary); background: rgba(255,98,0,0.1); }
+.esel-radio {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.15s;
+}
+.esel-option.selected .esel-radio { border-color: var(--primary); background: var(--primary); }
+.esel-radio::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; display: none; }
+.esel-option.selected .esel-radio::after { display: block; }
+.esel-opt-name { flex: 1; font-size: 13.5px; font-weight: 500; color: #eceff1; }
+.esel-opt-price { font-size: 12px; color: var(--primary); font-weight: 700; }
+.esel-opt-price.free { color: rgba(255,255,255,0.35); }
+.esel-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+.esel-total { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+.esel-total span { color: var(--primary); font-weight: 700; }
+.esel-add-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 10px;
+  background: var(--primary); color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: 'Poppins', sans-serif; transition: 0.2s;
+}
+.esel-add-btn:hover { filter: brightness(1.1); }
+.esel-add-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+
 </style>
 </head>
 <body>
+
+<!-- ── EXTRAS SELECTION MODAL ── -->
+<div id="extrasSelModal" onclick="if(event.target===this)closeExtrasSelModal()">
+  <div class="esel-box">
+    <div class="esel-header">
+      <div class="esel-product-title" id="eselProductName"></div>
+      <div class="esel-product-price" id="eselProductPrice"></div>
+    </div>
+    <div class="esel-body" id="eselBody"></div>
+    <div class="esel-footer">
+      <div class="esel-total">Total: <span id="eselTotal">0.00 DH</span></div>
+      <button class="esel-add-btn" id="eselAddBtn" onclick="confirmMenuExtrasAndAdd()">Ajouter au panier</button>
+    </div>
+  </div>
+</div>
 
 <div class="card-overlay" id="cardOverlay"></div>
 <div class="modal-card" id="modalCard">
@@ -611,7 +678,6 @@ h1.menu-title {
     <h3 id="modalTitle"></h3>
     <span class="modal-price" id="modalPrice"></span>
     <p class="modal-desc" id="modalDesc"></p>
-    <div id="modalExtrasSection" style="width:100%;display:none;margin-bottom:10px;"></div>
     <div class="modal-qty-row">
         <button class="modal-qty-btn m-minus" id="modalMinus">−</button>
         <span class="modal-qty-display" id="modalQty">1</span>
@@ -1428,67 +1494,128 @@ const modalClose = document.getElementById('modalClose');
 let modalCurrentProduct = null;
 let modalQty = 1;
 
-let modalExtras = []; // { group, selectedOptionId }
+// ── KIOSK-STYLE EXTRAS SELECTION MODAL ──
+let _eselProduct = null;
+let _eselGroups = [];
+let _eselSelections = {};
+let _eselQty = 1;
 
 async function loadModalExtras(productId) {
-    const extrasSection = document.getElementById('modalExtrasSection');
-    extrasSection.style.display = 'none';
-    extrasSection.innerHTML = '';
-    modalExtras = [];
+    // fetch extras from supabase
     try {
         const { data: links } = await _supabase
             .from('product_extras')
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
-        if (!links || links.length === 0) return;
+        if (!links || links.length === 0) return [];
         const groups = links.map(l => l.extras_groups).filter(Boolean);
-        if (groups.length === 0) return;
-        extrasSection.style.display = 'block';
-        extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:14px;margin-bottom:4px;">' + groups.map(g => {
-            const opts = g.extras_options || [];
-            modalExtras.push({ group: g, selectedOptionId: g.is_mandatory ? (opts[0]?.id || null) : null });
-            const idx = modalExtras.length - 1;
-            return `<div style="margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                  <span style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.8px;">${g.name}</span>
-                  ${g.is_mandatory ? '<span style="font-size:10px;background:rgba(255,98,0,0.18);color:#ff6200;border:1px solid rgba(255,98,0,0.35);padding:2px 8px;border-radius:20px;font-weight:600;">Requis</span>' : '<span style="font-size:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);padding:2px 8px;border-radius:20px;">Optionnel</span>'}
-                </div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px;">
-                    ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn selected" style="padding:7px 14px;border-radius:30px;border:1.5px solid rgba(255,98,0,0.6);background:rgba(255,98,0,0.15);color:#ff6200;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Aucun</button>` : ''}
-                    ${opts.map((o,oi) => `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn${g.is_mandatory && oi===0 ? ' selected' : ''}" style="padding:7px 14px;border-radius:30px;border:1.5px solid ${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.7)' : 'rgba(255,255,255,0.12)'};background:${g.is_mandatory && oi===0 ? 'rgba(255,98,0,0.18)' : 'rgba(255,255,255,0.04)'};color:${g.is_mandatory && oi===0 ? '#ff6200' : 'rgba(255,255,255,0.75)'};font-size:12px;font-weight:${g.is_mandatory && oi===0 ? '600' : '400'};cursor:pointer;font-family:inherit;">${o.name}${o.price_add > 0 ? `<span style="font-size:10px;opacity:0.7;margin-left:4px;">+${o.price_add}DH</span>` : ''}</button>`).join('')}
-                </div>
+        return groups;
+    } catch(e) { console.error('extras error', e); return []; }
+}
+
+function openExtrasSelModal(product, groups, qty) {
+    _eselProduct = product;
+    _eselQty = qty || 1;
+    _eselGroups = groups.filter(g => (g.extras_options || []).length > 0);
+    _eselSelections = {};
+    _eselGroups.forEach(g => { _eselSelections[g.id] = {}; });
+
+    document.getElementById('eselProductName').textContent = product.title;
+    document.getElementById('eselProductPrice').textContent = Number(product.price).toFixed(2) + ' DH';
+    renderMenuExtrasBody();
+    document.getElementById('extrasSelModal').classList.add('open');
+}
+
+function closeExtrasSelModal() {
+    document.getElementById('extrasSelModal').classList.remove('open');
+    _eselProduct = null;
+}
+
+function renderMenuExtrasBody() {
+    const body = document.getElementById('eselBody');
+    body.innerHTML = _eselGroups.map(g => {
+        const options = (g.extras_options || []).filter(o => o.is_available !== false);
+        const groupSel = _eselSelections[g.id] || {};
+        const optHtml = options.map(opt => {
+            const isSelected = (groupSel[opt.id] || 0) > 0;
+            const priceLabel = parseFloat(opt.price_add) > 0 ? `+${parseFloat(opt.price_add).toFixed(2)} DH` : 'Free';
+            const priceClass = parseFloat(opt.price_add) > 0 ? '' : ' free';
+            return `<div class="esel-option${isSelected?' selected':''}" onclick="toggleMenuExtra(${g.id},${opt.id})">
+                <div class="esel-radio"></div>
+                <span class="esel-opt-name">${escMenuHtml(opt.name)}</span>
+                <span class="esel-opt-price${priceClass}">${priceLabel}</span>
             </div>`;
-        }).join('') + '</div>';
-        updateModalAddBtn();
-    } catch(e) { console.error('extras error', e); }
+        }).join('');
+        return `<div class="esel-group">
+            <div class="esel-group-title">
+                ${escMenuHtml(g.name)}
+                ${g.is_mandatory ? `<span class="esel-req-badge">Required</span>` : `<span class="esel-opt-badge">Optional</span>`}
+            </div>
+            ${optHtml}
+        </div>`;
+    }).join('');
+    updateMenuExtrasTotal();
 }
 
-function selectExtra(groupIdx, optionId, btn) {
-    const group = modalExtras[groupIdx].group;
-    // deselect all in group
-    const container = btn.parentElement;
-    container.querySelectorAll('.extra-opt-btn').forEach(b => {
-        b.style.border = '1.5px solid rgba(255,255,255,0.15)';
-        b.style.background = 'rgba(255,255,255,0.05)';
-        b.style.color = 'rgba(255,255,255,0.7)';
-    });
-    // select clicked
-    btn.style.border = '1.5px solid rgba(255,98,0,0.8)';
-    btn.style.background = 'rgba(255,98,0,0.2)';
-    btn.style.color = '#ff6200';
-    modalExtras[groupIdx].selectedOptionId = optionId;
-    updateModalAddBtn();
+function toggleMenuExtra(groupId, optionId) {
+    const groupSel = _eselSelections[groupId] = _eselSelections[groupId] || {};
+    if (groupSel[optionId]) { delete groupSel[optionId]; }
+    else {
+        // radio style: clear others in group first
+        Object.keys(groupSel).forEach(k => delete groupSel[k]);
+        groupSel[optionId] = 1;
+    }
+    renderMenuExtrasBody();
 }
 
-function getExtrasTotal() {
-    let extra = 0;
-    modalExtras.forEach(({ group, selectedOptionId }) => {
-        if (!selectedOptionId) return;
-        const opt = (group.extras_options || []).find(o => o.id === selectedOptionId);
-        if (opt) extra += parseFloat(opt.price_add || 0);
+function updateMenuExtrasTotal() {
+    if (!_eselProduct) return;
+    let extrasTotal = 0;
+    _eselGroups.forEach(g => {
+        const groupSel = _eselSelections[g.id] || {};
+        (g.extras_options || []).forEach(opt => {
+            if (groupSel[opt.id]) extrasTotal += parseFloat(opt.price_add || 0);
+        });
     });
-    return extra;
+    const total = (parseFloat(_eselProduct.price) + extrasTotal) * _eselQty;
+    document.getElementById('eselTotal').textContent = total.toFixed(2) + ' DH';
+
+    const allSatisfied = _eselGroups.every(g => {
+        if (!g.is_mandatory) return true;
+        const groupSel = _eselSelections[g.id] || {};
+        return Object.keys(groupSel).length > 0;
+    });
+    const btn = document.getElementById('eselAddBtn');
+    btn.disabled = !allSatisfied;
+    btn.textContent = allSatisfied ? 'Ajouter au panier' : 'Please select required options';
 }
+
+function confirmMenuExtrasAndAdd() {
+    if (!_eselProduct) return;
+    const selectedExtras = [];
+    _eselGroups.forEach(g => {
+        const groupSel = _eselSelections[g.id] || {};
+        (g.extras_options || []).forEach(opt => {
+            if (groupSel[opt.id]) {
+                selectedExtras.push({ groupName: g.name, optionName: opt.name, priceAdd: parseFloat(opt.price_add || 0) });
+            }
+        });
+    });
+    const extrasTotal = selectedExtras.reduce((s, e) => s + e.priceAdd, 0);
+    const productWithExtras = { ..._eselProduct, price: parseFloat(_eselProduct.price) + extrasTotal, selectedExtras };
+    const qty = _eselQty;
+    const origId = _eselProduct.id;
+    closeExtrasSelModal();
+    delete cart[origId];
+    for (let i = 0; i < qty; i++) cartAddOne(productWithExtras);
+    closeModal();
+}
+
+function escMenuHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getExtrasTotal() { return 0; }
 
 function openModal(product) {
     modalCurrentProduct = product;
@@ -1498,9 +1625,6 @@ function openModal(product) {
     document.getElementById('modalPrice').textContent = product.price + ' DH';
     document.getElementById('modalDesc').textContent  = (product.description && product.description !== '-') ? product.description : '';
     document.getElementById('modalQty').textContent   = modalQty;
-    document.getElementById('modalExtrasSection').style.display = 'none';
-    document.getElementById('modalExtrasSection').innerHTML = '';
-    modalExtras = [];
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
@@ -1509,8 +1633,6 @@ function openModal(product) {
     const backBtn = document.getElementById('backBtn');
     if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
-    // load extras async
-    loadModalExtras(product.id);
 }
 
 function updateModalAddBtn() {
@@ -1539,27 +1661,25 @@ document.getElementById('modalPlus').addEventListener('click', () => {
     modalQty++; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn();
 });
 
-document.getElementById('modalAddBtn').addEventListener('click', () => {
+document.getElementById('modalAddBtn').addEventListener('click', async () => {
     if (!modalCurrentProduct) return;
-    // check required extras
-    for (const { group, selectedOptionId } of modalExtras) {
-        if (group.is_mandatory && !selectedOptionId) {
-            alert(`Veuillez choisir une option pour: ${group.name}`);
-            return;
-        }
+    // Show loading state
+    const btn = document.getElementById('modalAddBtn');
+    btn.textContent = '⏳ Chargement…';
+    btn.disabled = true;
+    const groups = await loadModalExtras(modalCurrentProduct.id);
+    btn.disabled = false;
+    updateModalAddBtn();
+    if (groups && groups.length > 0) {
+        // Open kiosk-style extras modal
+        openExtrasSelModal(modalCurrentProduct, groups, modalQty);
+    } else {
+        // No extras: add directly
+        const productWithExtras = { ...modalCurrentProduct, selectedExtras: [] };
+        delete cart[modalCurrentProduct.id];
+        for (let i = 0; i < modalQty; i++) cartAddOne(productWithExtras);
+        closeModal();
     }
-    // build selected extras info
-    const selectedExtras = modalExtras
-        .filter(({ selectedOptionId }) => selectedOptionId)
-        .map(({ group, selectedOptionId }) => {
-            const opt = (group.extras_options || []).find(o => o.id === selectedOptionId);
-            return { groupName: group.name, optionName: opt?.name, priceAdd: parseFloat(opt?.price_add || 0) };
-        });
-    const extrasTotal = selectedExtras.reduce((s, e) => s + e.priceAdd, 0);
-    const productWithExtras = { ...modalCurrentProduct, price: parseFloat(modalCurrentProduct.price) + extrasTotal, selectedExtras };
-    delete cart[modalCurrentProduct.id];
-    for (let i = 0; i < modalQty; i++) cartAddOne(productWithExtras);
-    closeModal();
 });
 
 function attachCardClicks() {
