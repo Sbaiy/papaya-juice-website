@@ -346,8 +346,8 @@ h1.menu-title {
 }
 .modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
-.modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; }
-.modal-add-btn.btn-locked { opacity: 0.35; cursor: default; box-shadow: none; background: #555; }
+.modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; pointer-events: none; }
+.modal-add-btn.btn-locked { opacity: 0.35; cursor: not-allowed; box-shadow: none; background: #888; pointer-events: none; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── EMPTY ── */
@@ -1592,6 +1592,8 @@ document.getElementById('modalPlus').addEventListener('click', () => {
 });
 
 document.getElementById('modalAddBtn').addEventListener('click', () => {
+    const addBtn = document.getElementById('modalAddBtn');
+    if (addBtn.disabled || addBtn.classList.contains('btn-locked')) return;
     if (!modalCurrentProduct) return;
     // check required extras
     for (const { group, selectedOptionId } of modalExtras) {
