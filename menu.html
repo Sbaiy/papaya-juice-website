@@ -344,10 +344,8 @@ h1.menu-title {
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
 }
-.modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
+.modal-add-btn:not([data-locked="true"]):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
-.modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; pointer-events: none; }
-.modal-add-btn.btn-locked { opacity: 0.35; cursor: not-allowed; box-shadow: none; background: #888; pointer-events: none; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── EMPTY ── */
@@ -1444,13 +1442,7 @@ async function loadModalExtras(productId) {
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
         if (!links || links.length === 0) {
-            const btn = document.getElementById('modalAddBtn');
-            btn.disabled = false;
-            btn.classList.remove('btn-locked');
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-            btn.style.cursor = 'pointer';
-            btn.style.background = 'var(--primary)';
+            unlockBtn();
             return;
         }
         // Deduplicate groups by id (in case of duplicate rows in product_extras)
@@ -1461,13 +1453,7 @@ async function loadModalExtras(productId) {
             return true;
         });
         if (groups.length === 0) {
-            const btn = document.getElementById('modalAddBtn');
-            btn.disabled = false;
-            btn.classList.remove('btn-locked');
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-            btn.style.cursor = 'pointer';
-            btn.style.background = 'var(--primary)';
+            unlockBtn();
             return;
         }
         extrasSection.style.display = 'block';
@@ -1494,14 +1480,19 @@ async function loadModalExtras(productId) {
         checkMandatoryAndUpdateBtn();
     } catch(e) {
         console.error('extras error', e);
-        const btn = document.getElementById('modalAddBtn');
-        btn.disabled = false;
-        btn.classList.remove('btn-locked');
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-        btn.style.cursor = 'pointer';
-        btn.style.background = 'var(--primary)';
+        unlockBtn();
     }
+}
+
+function lockBtn() {
+    const b = document.getElementById('modalAddBtn');
+    b.setAttribute('data-locked', 'true');
+    b.style.cssText += ';opacity:0.35!important;pointer-events:none!important;cursor:not-allowed!important;background:#888!important;box-shadow:none!important;transform:none!important;';
+}
+function unlockBtn() {
+    const b = document.getElementById('modalAddBtn');
+    b.removeAttribute('data-locked');
+    b.style.cssText += ';opacity:1!important;pointer-events:auto!important;cursor:pointer!important;background:var(--primary)!important;box-shadow:0 8px 24px rgba(255,98,0,0.4)!important;';
 }
 
 function selectExtra(groupIdx, optionId, btn) {
@@ -1517,60 +1508,16 @@ function selectExtra(groupIdx, optionId, btn) {
     btn.style.color = '#ff6200';
     btn.style.fontWeight = '700';
 
-    // store as string to avoid any type coercion issues
     modalExtras[groupIdx].selectedOptionId = (optionId !== null && optionId !== undefined) ? String(optionId) : null;
 
-    // re-evaluate directly here, no function call
-    let allGood = true;
-    for (let i = 0; i < modalExtras.length; i++) {
-        const e = modalExtras[i];
-        if (e.group.is_mandatory && !e.selectedOptionId) {
-            allGood = false;
-            break;
-        }
-    }
-    const addBtn = document.getElementById('modalAddBtn');
-    addBtn.disabled = !allGood;
-    if (allGood) {
-        addBtn.classList.remove('btn-locked');
-        addBtn.style.opacity = '1';
-        addBtn.style.pointerEvents = 'auto';
-        addBtn.style.cursor = 'pointer';
-        addBtn.style.background = 'var(--primary)';
-    } else {
-        addBtn.classList.add('btn-locked');
-        addBtn.style.opacity = '0.35';
-        addBtn.style.pointerEvents = 'none';
-        addBtn.style.cursor = 'not-allowed';
-        addBtn.style.background = '#888';
-    }
+    const allGood = modalExtras.every(e => !e.group.is_mandatory || e.selectedOptionId);
+    allGood ? unlockBtn() : lockBtn();
     updateModalAddBtn();
 }
 
 function checkMandatoryAndUpdateBtn() {
-    let allGood = true;
-    for (let i = 0; i < modalExtras.length; i++) {
-        const e = modalExtras[i];
-        if (e.group.is_mandatory && !e.selectedOptionId) {
-            allGood = false;
-            break;
-        }
-    }
-    const addBtn = document.getElementById('modalAddBtn');
-    addBtn.disabled = !allGood;
-    if (allGood) {
-        addBtn.classList.remove('btn-locked');
-        addBtn.style.opacity = '1';
-        addBtn.style.pointerEvents = 'auto';
-        addBtn.style.cursor = 'pointer';
-        addBtn.style.background = 'var(--primary)';
-    } else {
-        addBtn.classList.add('btn-locked');
-        addBtn.style.opacity = '0.35';
-        addBtn.style.pointerEvents = 'none';
-        addBtn.style.cursor = 'not-allowed';
-        addBtn.style.background = '#888';
-    }
+    const allGood = modalExtras.every(e => !e.group.is_mandatory || e.selectedOptionId);
+    allGood ? unlockBtn() : lockBtn();
     updateModalAddBtn();
 }
 
@@ -1606,12 +1553,7 @@ function openModal(product) {
     if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
     // load extras async — disable button while loading
-    const addBtn = document.getElementById('modalAddBtn');
-    addBtn.disabled = true;
-    addBtn.classList.add('btn-locked');
-    addBtn.style.opacity = '0.35';
-    addBtn.style.pointerEvents = 'none';
-    addBtn.style.background = '#888';
+    lockBtn();
     loadModalExtras(product.id);
 }
 
@@ -1643,7 +1585,7 @@ document.getElementById('modalPlus').addEventListener('click', () => {
 
 document.getElementById('modalAddBtn').addEventListener('click', () => {
     const addBtn = document.getElementById('modalAddBtn');
-    if (addBtn.disabled || addBtn.classList.contains('btn-locked')) return;
+    if (addBtn.getAttribute('data-locked') === 'true') return;
     if (!modalCurrentProduct) return;
     // check required extras
     for (const { group, selectedOptionId } of modalExtras) {
