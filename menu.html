@@ -1494,21 +1494,16 @@ function selectExtra(groupIdx, optionId, btn) {
 }
 
 function checkMandatoryAndUpdateBtn() {
-    const addBtn = document.getElementById('modalAddBtn');
     const hasMandatory = modalExtras.some(({ group }) => group.is_mandatory);
     const allSatisfied = modalExtras.every(({ group, selectedOptionId }) =>
         !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
     );
     const shouldLock = hasMandatory && !allSatisfied;
-    console.log('checkMandatory:', {hasMandatory, allSatisfied, shouldLock, extras: modalExtras.map(e => ({name: e.group.name, mandatory: e.group.is_mandatory, sel: e.selectedOptionId}))});
+    const btn = document.getElementById('modalAddBtn');
+    btn.disabled = shouldLock;
+    if (shouldLock) btn.classList.add('btn-locked');
+    else btn.classList.remove('btn-locked');
     updateModalAddBtn();
-    requestAnimationFrame(() => {
-        const btn = document.getElementById('modalAddBtn');
-        console.log('btn classes before:', btn.className);
-        if (shouldLock) btn.classList.add('btn-locked');
-        else btn.classList.remove('btn-locked');
-        console.log('btn classes after:', btn.className);
-    });
 }
 
 function getExtrasTotal() {
@@ -1532,7 +1527,9 @@ function openModal(product) {
     document.getElementById('modalExtrasSection').style.display = 'none';
     document.getElementById('modalExtrasSection').innerHTML = '';
     modalExtras = [];
-    document.getElementById('modalAddBtn').classList.remove('btn-locked');
+    const addBtnRef = document.getElementById('modalAddBtn');
+    addBtnRef.disabled = false;
+    addBtnRef.classList.remove('btn-locked');
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
