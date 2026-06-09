@@ -1459,7 +1459,7 @@ async function loadModalExtras(productId) {
         extrasSection.style.display = 'block';
         extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-bottom:8px;">' + groups.map(g => {
             const opts = g.extras_options || [];
-            if (opts.length === 0) return ''; // skip groups with no options
+            // No pre-selection — client must choose
             modalExtras.push({ group: g, selectedOptionId: null });
             const idx = modalExtras.length - 1;
             return `<div style="margin-bottom:18px;text-align:center;">
