@@ -1569,7 +1569,10 @@ function updateModalAddBtn() {
     const base = parseFloat(modalCurrentProduct?.price || 0);
     const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
     const total = ((base + extrasAdd) * modalQty).toFixed(0);
-    document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
+    const btn = document.getElementById('modalAddBtn');
+    const wasDisabled = btn.disabled;
+    btn.innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
+    btn.disabled = wasDisabled;
 }
 
 function closeModal() {
@@ -1585,10 +1588,10 @@ overlay.addEventListener('click', closeModal);
 modalClose.addEventListener('click', closeModal);
 
 document.getElementById('modalMinus').addEventListener('click', () => {
-    if (modalQty > 1) { modalQty--; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); }
+    if (modalQty > 1) { modalQty--; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); checkMandatoryAndUpdateBtn(); }
 });
 document.getElementById('modalPlus').addEventListener('click', () => {
-    modalQty++; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn();
+    modalQty++; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); checkMandatoryAndUpdateBtn();
 });
 
 document.getElementById('modalAddBtn').addEventListener('click', () => {
