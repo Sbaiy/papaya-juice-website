@@ -618,7 +618,7 @@ h1.menu-title {
         <span class="modal-qty-display" id="modalQty">1</span>
         <button class="modal-qty-btn m-plus" id="modalPlus">+</button>
     </div>
-    <button class="modal-add-btn" id="modalAddBtn">🛒 Ajouter au panier</button>
+    <button class="modal-add-btn" id="modalAddBtn"><span id="modalAddBtnText">🛒 Ajouter au panier</span></button>
 </div>
 
 <header class="main-header" id="mainHeader">
@@ -1561,7 +1561,7 @@ function updateModalAddBtn() {
     const base = parseFloat(modalCurrentProduct?.price || 0);
     const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
     const total = ((base + extrasAdd) * modalQty).toFixed(0);
-    document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
+    document.getElementById('modalAddBtnText').textContent = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
 function closeModal() {
