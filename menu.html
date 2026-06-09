@@ -344,8 +344,10 @@ h1.menu-title {
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
 }
-.modal-add-btn:not([data-locked="true"]):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
+.modal-add-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,98,0,0.6); }
 .modal-add-btn:active { transform: scale(0.97); }
+.modal-add-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; background: #888; }
+.modal-add-btn.btn-locked { opacity: 0.35; cursor: default; box-shadow: none; background: #555; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── EMPTY ── */
@@ -618,7 +620,7 @@ h1.menu-title {
         <span class="modal-qty-display" id="modalQty">1</span>
         <button class="modal-qty-btn m-plus" id="modalPlus">+</button>
     </div>
-    <button class="modal-add-btn" id="modalAddBtn"><span id="modalAddBtnText">🛒 Ajouter au panier</span></button>
+    <button class="modal-add-btn" id="modalAddBtn">🛒 Ajouter au panier</button>
 </div>
 
 <header class="main-header" id="mainHeader">
@@ -632,6 +634,7 @@ h1.menu-title {
     </button>
 </header>
 
+<!-- DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -659,18 +662,21 @@ h1.menu-title {
 
 <h1 class="menu-title" id="menuMainTitle">Our <span style="color:var(--primary)">Menu</span></h1>
 
+<!-- Table Banner — shown when table detected from URL -->
 <div class="table-banner" id="tableBanner">
     <span class="tbl-icon">🪑</span>
     <span id="tableBannerText">Table <strong id="tableBannerNum"></strong></span>
     <span class="tbl-change" onclick="changeTable()">Changer</span>
 </div>
 
+<!-- CATEGORIES VIEW -->
 <div id="categoriesView">
     <div class="cats-grid" id="catsGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading…</div>
     </div>
 </div>
 
+<!-- PRODUCTS VIEW -->
 <div id="productsView" style="display:none;">
     <button class="back-btn" id="backBtn" onclick="showCategoriesView()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -709,11 +715,13 @@ h1.menu-title {
     </div>
 </div>
 
+<!-- ORDER CONFIRM MODAL -->
 <div class="order-modal-overlay" id="orderModalOverlay">
     <div class="order-modal">
         <h2>✅ Confirmer la commande</h2>
         <p class="order-modal-sub">Vérifiez votre commande avant d'envoyer</p>
 
+        <!-- TABLE ROW — shown when table is detected -->
         <div class="order-modal-table-row" id="omTableRow" style="display:none">
             <span class="tbl-icon-lg">🪑</span>
             <div class="tbl-info">
@@ -741,6 +749,7 @@ h1.menu-title {
 </div>
 
 
+<!-- RÉCLAMATION MODAL -->
 <div class="recl-overlay" id="reclOverlay">
     <div class="recl-modal" id="reclModal">
         <div class="recl-handle"></div>
@@ -772,6 +781,7 @@ h1.menu-title {
     </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="successToast">
     <span class="toast-icon">🎉</span>
     <div class="toast-text">
@@ -1427,16 +1437,13 @@ async function loadModalExtras(productId) {
     const extrasSection = document.getElementById('modalExtrasSection');
     extrasSection.style.display = 'none';
     extrasSection.innerHTML = '';
-    // modalExtras already reset in openModal, don't reset here
+    modalExtras = [];
     try {
         const { data: links } = await _supabase
             .from('product_extras')
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
-        if (!links || links.length === 0) {
-            unlockBtn();
-            return;
-        }
+        if (!links || links.length === 0) return;
         // Deduplicate groups by id (in case of duplicate rows in product_extras)
         const seen = new Set();
         const groups = links.map(l => l.extras_groups).filter(g => {
@@ -1444,10 +1451,7 @@ async function loadModalExtras(productId) {
             seen.add(g.id);
             return true;
         });
-        if (groups.length === 0) {
-            unlockBtn();
-            return;
-        }
+        if (groups.length === 0) return;
         extrasSection.style.display = 'block';
         extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-bottom:8px;">' + groups.map(g => {
             const opts = g.extras_options || [];
@@ -1464,29 +1468,13 @@ async function loadModalExtras(productId) {
                 <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
                     ${!g.is_mandatory ? `<button onclick="selectExtra(${idx}, null, this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s;">Aucun</button>` : ''}
                     ${opts.map((o,oi) => {
-                      return `<button onclick="selectExtra(${idx}, '${o.id}', this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;font-weight:400;cursor:pointer;font-family:inherit;transition:all 0.15s;">${o.name}${o.price_add > 0 ? ` <span style="font-size:10px;opacity:0.65;">+${parseFloat(o.price_add).toFixed(0)}DH</span>` : ''}</button>`;
+                      return `<button onclick="selectExtra(${idx}, ${o.id}, this)" class="extra-opt-btn" style="padding:8px 16px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6);font-size:12px;font-weight:400;cursor:pointer;font-family:inherit;transition:all 0.15s;">${o.name}${o.price_add > 0 ? ` <span style="font-size:10px;opacity:0.65;">+${parseFloat(o.price_add).toFixed(0)}DH</span>` : ''}</button>`;
                     }).join('')}
                 </div>
             </div>`;
         }).join('') + '</div>';
         checkMandatoryAndUpdateBtn();
-    } catch(e) {
-        console.error('extras error', e);
-        unlockBtn();
-    }
-}
-
-function lockBtn() {
-    const b = document.getElementById('modalAddBtn');
-    b.setAttribute('data-locked', 'true');
-    b.disabled = true;
-    b.style.cssText = 'opacity:0.35!important;pointer-events:none!important;cursor:not-allowed!important;background:#888!important;box-shadow:none!important;transform:none!important;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
-}
-function unlockBtn() {
-    const b = document.getElementById('modalAddBtn');
-    b.removeAttribute('data-locked');
-    b.disabled = false;
-    b.style.cssText = 'opacity:1!important;pointer-events:auto!important;cursor:pointer!important;background:#ff6200!important;box-shadow:0 8px 24px rgba(255,98,0,0.4)!important;transform:none;width:100%;padding:14px;border-radius:14px;border:none;color:#fff;font-family:Poppins,sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;';
+    } catch(e) { console.error('extras error', e); }
 }
 
 function selectExtra(groupIdx, optionId, btn) {
@@ -1501,18 +1489,26 @@ function selectExtra(groupIdx, optionId, btn) {
     btn.style.background = 'rgba(255,98,0,0.2)';
     btn.style.color = '#ff6200';
     btn.style.fontWeight = '700';
-
-    modalExtras[groupIdx].selectedOptionId = (optionId !== null && optionId !== undefined) ? String(optionId) : null;
-
-    const allGood = modalExtras.every(e => !e.group.is_mandatory || e.selectedOptionId);
-    allGood ? unlockBtn() : lockBtn();
-    updateModalAddBtn();
+    modalExtras[groupIdx].selectedOptionId = optionId !== null ? Number(optionId) || optionId : null;
+    checkMandatoryAndUpdateBtn();
 }
 
 function checkMandatoryAndUpdateBtn() {
-    const allGood = modalExtras.every(e => !e.group.is_mandatory || e.selectedOptionId);
-    allGood ? unlockBtn() : lockBtn();
+    const addBtn = document.getElementById('modalAddBtn');
+    const hasMandatory = modalExtras.some(({ group }) => group.is_mandatory);
+    const allSatisfied = modalExtras.every(({ group, selectedOptionId }) =>
+        !group.is_mandatory || (selectedOptionId !== null && selectedOptionId !== undefined)
+    );
+    const shouldLock = hasMandatory && !allSatisfied;
+    console.log('checkMandatory:', {hasMandatory, allSatisfied, shouldLock, extras: modalExtras.map(e => ({name: e.group.name, mandatory: e.group.is_mandatory, sel: e.selectedOptionId}))});
     updateModalAddBtn();
+    requestAnimationFrame(() => {
+        const btn = document.getElementById('modalAddBtn');
+        console.log('btn classes before:', btn.className);
+        if (shouldLock) btn.classList.add('btn-locked');
+        else btn.classList.remove('btn-locked');
+        console.log('btn classes after:', btn.className);
+    });
 }
 
 function getExtrasTotal() {
@@ -1537,7 +1533,6 @@ function openModal(product) {
     document.getElementById('modalExtrasSection').innerHTML = '';
     modalExtras = [];
     document.getElementById('modalAddBtn').classList.remove('btn-locked');
-    document.getElementById('modalAddBtn').disabled = false;
     updateModalAddBtn();
     overlay.classList.add('active');
     modal.style.display = 'flex';
@@ -1546,8 +1541,7 @@ function openModal(product) {
     const backBtn = document.getElementById('backBtn');
     if (backBtn) backBtn.classList.add('nav-hidden');
     closeDropdown();
-    // load extras async — disable button while loading
-    lockBtn();
+    // load extras async
     loadModalExtras(product.id);
 }
 
@@ -1555,7 +1549,7 @@ function updateModalAddBtn() {
     const base = parseFloat(modalCurrentProduct?.price || 0);
     const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
     const total = ((base + extrasAdd) * modalQty).toFixed(0);
-    document.getElementById('modalAddBtnText').textContent = `🛒 Ajouter (${modalQty}) — ${total} DH`;
+    document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
 function closeModal() {
@@ -1571,15 +1565,13 @@ overlay.addEventListener('click', closeModal);
 modalClose.addEventListener('click', closeModal);
 
 document.getElementById('modalMinus').addEventListener('click', () => {
-    if (modalQty > 1) { modalQty--; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); checkMandatoryAndUpdateBtn(); }
+    if (modalQty > 1) { modalQty--; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); }
 });
 document.getElementById('modalPlus').addEventListener('click', () => {
-    modalQty++; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn(); checkMandatoryAndUpdateBtn();
+    modalQty++; document.getElementById('modalQty').textContent = modalQty; updateModalAddBtn();
 });
 
 document.getElementById('modalAddBtn').addEventListener('click', () => {
-    const addBtn = document.getElementById('modalAddBtn');
-    if (addBtn.getAttribute('data-locked') === 'true') return;
     if (!modalCurrentProduct) return;
     // check required extras
     for (const { group, selectedOptionId } of modalExtras) {
