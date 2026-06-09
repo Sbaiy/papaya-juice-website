@@ -1163,10 +1163,11 @@ async function submitOrder() {
         const btnOrder = document.getElementById('btnOrder');
         btnOrder.disabled = true; btnOrder.textContent = 'Envoi…';
         try {
-            const newItems = cart.map(({product,qty,customPrice}) => ({
+            const newItems = cart.map(({product,qty,customPrice,extras}) => ({
                 id: product.id, title: product.title,
                 price: parseFloat(customPrice ?? product.price), qty,
-                category: product.category || ''
+                category: product.category || '',
+                extras: extras || []
             }));
             const token = localStorage.getItem('papaya_token');
 
@@ -1220,7 +1221,7 @@ async function submitOrder() {
     try {
         const orderPayload = {
             table_number: tableVal,
-            items: cart.map(({product,qty,customPrice}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||''})),
+            items: cart.map(({product,qty,customPrice,extras}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||'',extras:extras||[]})),
             total: cart.reduce((s,i) => s+parseFloat(i.customPrice??i.product.price)*i.qty, 0),
             status: 'pending',
             source: 'kiosk'
