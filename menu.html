@@ -1444,7 +1444,13 @@ async function loadModalExtras(productId) {
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
         if (!links || links.length === 0) return;
-        const groups = links.map(l => l.extras_groups).filter(Boolean);
+        // Deduplicate groups by id (in case of duplicate rows in product_extras)
+        const seen = new Set();
+        const groups = links.map(l => l.extras_groups).filter(g => {
+            if (!g || seen.has(g.id)) return false;
+            seen.add(g.id);
+            return true;
+        });
         if (groups.length === 0) return;
         extrasSection.style.display = 'block';
         extrasSection.innerHTML = '<div style="width:100%;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;margin-bottom:8px;">' + groups.map(g => {
