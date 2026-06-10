@@ -743,10 +743,10 @@ function buildCard(order) {
   const cssStatus = isAnnule ? 'annule' : (order.status || 'paiement').replace('annulé','annule');
   const src = (order.source || '').toLowerCase().trim();
   const isFromKiosk = ['kiosk', 'kiosque', 'self', 'borne'].includes(src);
-  // Menu orders: source explicite OU détecté par rawStatus 'paiement' (kiosk insère en 'pending', menu en 'paiement')
+  // Menu orders: source explicite OU pas de source avec rawStatus paiement/pending (menu stocke 'pending' en DB)
   const isFromMenu = !isFromKiosk && (
     ['menu', 'online', 'web', 'client'].includes(src) ||
-    (!src && order._rawStatus === 'paiement')
+    (!src && (order._rawStatus === 'paiement' || order._rawStatus === 'pending'))
   );
   card.className = `order-card status-${cssStatus}${isFromMenu ? ' from-menu' : ''}`;
   card.dataset.id = order.id;
