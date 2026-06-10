@@ -1902,9 +1902,26 @@ function closeDrawer() {
     document.body.style.overflow = '';
 }
 
-window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "hidden") return;
-    _supabase.removeChannel(_broadcastChannel);
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        // خرج من الصفحة → قطع الـ connection
+        _broadcastReady = false;
+        _supabase.removeChannel(_broadcastChannel);
+    } else {
+        // رجع للصفحة → يعاود يفتح الـ channel
+        _broadcastChannel
+            .on("broadcast", { event: "menu_updated" }, () => {
+                localStorage.removeItem(CACHE_KEY);
+                loadMenuAndCategories();
+            })
+            .on("broadcast", { event: "update_categories" }, () => {
+                localStorage.removeItem(CACHE_KEY);
+                loadMenuAndCategories();
+            })
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") _broadcastReady = true;
+            });
+    }
 });
 
 window.onload = () => {
