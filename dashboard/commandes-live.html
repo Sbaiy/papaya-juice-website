@@ -813,7 +813,7 @@ function buildCard(order) {
     let newStatus;
     if (order.status === 'pret') newStatus = 'termine';
     else if (order.status === 'paiement') newStatus = 'en_preparation';
-    else newStatus = 'termine'; // en_preparation → termine (1 clic direct)
+    else newStatus = 'pret'; // en_preparation → pret
     stopOrderAlert(ordId);
     await quickStatus(order.id, newStatus);
   });
