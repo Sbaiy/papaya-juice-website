@@ -307,6 +307,13 @@ body::before {
 .btn-main-row .action-btn.btn-cancel { flex: 1; justify-content: center; }
 .btn-annule-x { width: 36px; height: 36px; padding: 0; border-radius: 8px; border: none; background: #fee2e2; color: #dc2626; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
 .btn-annule-x:hover { background: #fca5a5; }
+/* Toast notifications */
+#toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #fff; opacity: 0; transform: translateY(12px); transition: all 0.25s ease; pointer-events: none; max-width: 280px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.toast-success { background: #059669; }
+.toast.toast-error { background: #dc2626; }
+.action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 .action-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer;
@@ -365,6 +372,7 @@ body::before {
 <script src="api.js"></script>
 </head>
 <body>
+<div id="toast-container"></div>
 <script>
 if (sessionStorage.getItem('papaya_auth') !== '1') {
     window.location.replace('/dashboard');
@@ -822,6 +830,8 @@ function buildActions(order) {
       btns += `<div class="btn-main-row"><button class="action-btn btn-cancel" data-action="commencer">🏁 Terminer</button></div>`;
     } else if (s === 'en_preparation') {
       btns += `<div class="btn-main-row"><button class="action-btn btn-pay" data-action="commencer">✅ Prêt</button></div>`;
+    } else if (s === 'paiement') {
+      btns += `<div class="btn-main-row"><button class="action-btn btn-prep" data-action="commencer">▶ Commencer</button></div>`;
     }
   }
 
@@ -831,14 +841,30 @@ function statusName(s) {
   const map = { paiement:'💰 Paiement', payee:'✅ Payée', en_preparation:'⚡ En Préparation', pret:'✔️ Prêt', termine:'✓ Terminé', annule:'🚫 Annulé' };
   return map[s] || s || '–';
 }
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
 async function quickStatus(orderId, newStatus) {
+  // Désactiver le bouton immédiatement pour éviter les double-clics
+  const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
+  const btn = card?.querySelector('[data-action="commencer"]');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
   try {
     const token = localStorage.getItem('papaya_token');
     const BACKEND_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3000/api'
       : 'https://papaya-juice-backend-production.up.railway.app/api';
-    // Récupérer source de l ordre local pour le préserver dans le broadcast
-    // Convertir statuts locaux vers valeurs acceptées par le backend
     const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'delivered', 'annule':'cancelled', 'paiement':'pending' };
     const apiStatus = STATUS_TO_API[newStatus] || newStatus;
     const localOrder = allOrders.find(o => o.id === orderId);
@@ -848,16 +874,29 @@ async function quickStatus(orderId, newStatus) {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ status: apiStatus, ...(source ? { source } : {}) })
     });
-    if (!res.ok) { const e = await res.json(); console.error('quickStatus error:', e.error); return; }
+    if (!res.ok) {
+      const e = await res.json();
+      console.error('quickStatus error:', e.error);
+      showToast('❌ Erreur : ' + (e.error || 'Impossible de changer le statut'), 'error');
+      // Réactiver le bouton si erreur
+      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      return;
+    }
     const updated = await res.json();
-    // Broadcast avec source préservée
-    _broadcastUpdate('update_order', { ...updated, source: source || updated.source });
+    // ✅ Ne pas re-broadcaster ici — le backend broadcast déjà via Supabase
     // Update local state directement sans recharger toute la liste
     const o = _normalizeOrder({ ...updated, source: source || updated.source });
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) allOrders[idx] = { ...allOrders[idx], ...o };
     updateStats(); updateCounts(); renderOrders();
-  } catch (e) { console.error(e); }
+    // Toast de confirmation
+    const statusLabels = { pret:'✔️ Marqué Prêt', termine:'✓ Terminé', en_preparation:'⚡ En Préparation', annule:'🚫 Annulé', payee:'✅ Payée' };
+    showToast(statusLabels[newStatus] || '✓ Statut mis à jour', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('❌ Erreur réseau', 'error');
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  }
 }
 function openStatusModal(orderId, currentStatus) {
   editingOrderId = orderId; selectedNewStatus = currentStatus;
