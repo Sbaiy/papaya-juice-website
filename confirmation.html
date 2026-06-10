@@ -643,6 +643,11 @@ function startRefresh() {
   // Démarrer le suivi background (SW poll même si page fermée)
   if (Notification.permission === 'granted') startSWTracking();
 })();
+
+window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "hidden") return;
+    _supabase.removeChannel(_broadcastChannel);
+});
 </script>
 </body>
 </html>
