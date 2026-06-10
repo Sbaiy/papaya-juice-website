@@ -848,10 +848,7 @@ function showToast(msg, type = 'success') {
   t.textContent = msg;
   container.appendChild(t);
   requestAnimationFrame(() => { requestAnimationFrame(() => t.classList.add('show')); });
-  setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.remove(), 300);
-  }, 3000);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
 }
 
 async function quickStatus(orderId, newStatus) {
@@ -860,6 +857,18 @@ async function quickStatus(orderId, newStatus) {
   const btn = card?.querySelector('[data-action="commencer"]');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
 
+  // ✅ OPTIMISTIC UPDATE — mettre à jour l'UI immédiatement sans attendre l'API
+  const prevOrder = allOrders.find(o => o.id === orderId);
+  const prevStatus = prevOrder ? prevOrder.status : null;
+  const prevRawStatus = prevOrder ? prevOrder._rawStatus : null;
+
+  if (prevOrder) {
+    const STATUS_TO_RAW = { 'pret':'ready', 'termine':'delivered', 'en_preparation':'preparing', 'annule':'cancelled', 'paiement':'pending', 'payee':'paid' };
+    prevOrder.status = newStatus;
+    prevOrder._rawStatus = STATUS_TO_RAW[newStatus] || newStatus;
+  }
+  updateStats(); updateCounts(); renderOrders();
+
   try {
     const token = localStorage.getItem('papaya_token');
     const BACKEND_URL = window.location.hostname === 'localhost'
@@ -867,8 +876,7 @@ async function quickStatus(orderId, newStatus) {
       : 'https://papaya-juice-backend-production.up.railway.app/api';
     const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'delivered', 'annule':'cancelled', 'paiement':'pending' };
     const apiStatus = STATUS_TO_API[newStatus] || newStatus;
-    const localOrder = allOrders.find(o => o.id === orderId);
-    const source = localOrder ? (localOrder.source || null) : null;
+    const source = prevOrder ? (prevOrder.source || null) : null;
     const res = await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -878,24 +886,24 @@ async function quickStatus(orderId, newStatus) {
       const e = await res.json();
       console.error('quickStatus error:', e.error);
       showToast('❌ Erreur : ' + (e.error || 'Impossible de changer le statut'), 'error');
-      // Réactiver le bouton si erreur
-      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      // ↩️ Revert optimistic update si erreur
+      if (prevOrder) { prevOrder.status = prevStatus; prevOrder._rawStatus = prevRawStatus; }
+      updateStats(); updateCounts(); renderOrders();
       return;
     }
     const updated = await res.json();
-    // ✅ Ne pas re-broadcaster ici — le backend broadcast déjà via Supabase
-    // Update local state directement sans recharger toute la liste
+    // Sync avec la réponse réelle du backend
     const o = _normalizeOrder({ ...updated, source: source || updated.source });
     const idx = allOrders.findIndex(x => x.id === o.id);
     if (idx !== -1) allOrders[idx] = { ...allOrders[idx], ...o };
-    updateStats(); updateCounts(); renderOrders();
-    // Toast de confirmation
-    const statusLabels = { pret:'✔️ Marqué Prêt', termine:'✓ Terminé', en_preparation:'⚡ En Préparation', annule:'🚫 Annulé', payee:'✅ Payée' };
+    const statusLabels = { pret:'✔️ Prêt', termine:'✓ Terminé', en_preparation:'⚡ En Préparation', annule:'🚫 Annulé', payee:'✅ Payée' };
     showToast(statusLabels[newStatus] || '✓ Statut mis à jour', 'success');
   } catch (e) {
     console.error(e);
     showToast('❌ Erreur réseau', 'error');
-    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    // ↩️ Revert si crash réseau
+    if (prevOrder) { prevOrder.status = prevStatus; prevOrder._rawStatus = prevRawStatus; }
+    updateStats(); updateCounts(); renderOrders();
   }
 }
 function openStatusModal(orderId, currentStatus) {
