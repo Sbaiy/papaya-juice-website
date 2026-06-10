@@ -394,7 +394,6 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
     <button class="refresh-btn" onclick="loadOrders()">
       🔄 Actualiser
     </button>
-    <button class="reset-btn" onclick="resetOrders()">🔁 Reset</button>
     <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </div>
 </header>
@@ -495,7 +494,6 @@ let selectedNewStatus = null;
 let alertingOrders = new Map();
 
 function resetOrders() {
-  if (!confirm('Réinitialiser la vue ? Les commandes resteront dans le dashboard.')) return;
   localStorage.setItem('live_reset_ts', new Date().toISOString());
   loadOrders();
 }
@@ -953,6 +951,10 @@ function _shouldShowOrder(o) {
 _liveChannel
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
     const o = _normalizeOrder({ ...payload });
+    // ✅ Jouer le son pour TOUTE nouvelle commande (kiosk + menu) avant le filtre d'affichage
+    if (!allOrders.find(x => x.id === o.id)) {
+      if (soundEnabled) playBeep();
+    }
     if (!_shouldShowOrder(o)) return;
     // Éviter les doublons
     if (allOrders.find(x => x.id === o.id)) return;
