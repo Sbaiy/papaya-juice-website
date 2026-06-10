@@ -951,10 +951,8 @@ function _shouldShowOrder(o) {
 _liveChannel
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
     const o = _normalizeOrder({ ...payload });
-    // ✅ startOrderAlert (pas juste playBeep) — pour avoir la répétition toutes les 5s
-    if (!allOrders.find(x => x.id === o.id)) {
-      startOrderAlert(String(o.id));
-    }
+    // ✅ Toujours déclencher le son sur new_order — startOrderAlert a son propre guard contre les doublons
+    startOrderAlert(String(o.id));
     if (!_shouldShowOrder(o)) return;
     // Éviter les doublons
     if (allOrders.find(x => x.id === o.id)) return;
