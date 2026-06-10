@@ -675,12 +675,20 @@ async function cancelOrder() {
   if (Notification.permission === 'granted') startSWTracking();
 })();
 
-// visibilitychange — قطع فوراً حين يغيب المستخدم
-document.addEventListener("visibilitychange", () => {
+// visibilitychange — قطع حين يغيب، وعند الرجوع نجيب آخر status فوراً
+document.addEventListener("visibilitychange", async () => {
     if (document.visibilityState === "hidden") {
         _disconnectChannel();
+    } else {
+        // رجع للصفحة — نجيب آخر status من Supabase مباشرة
+        if (currentStatus !== 'termine' && currentStatus !== 'annulé') {
+            await fetchStatus();
+            // إذا مازال pending نعاود نفتح channel يسمع updates
+            if (currentStatus !== 'termine' && currentStatus !== 'annulé') {
+                await _ensureChannel();
+            }
+        }
     }
-    // مكنفتحوش تاني — الـ SW كيتولى tracking فالخلفية
 });
 </script>
 </body>
