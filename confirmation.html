@@ -547,6 +547,8 @@ function applyStatus(status, prev, updatedAt) {
       countdownEl.textContent = `Votre commande a été servie. Bon appétit! 🎉 (Cette page se ferme dans ${secsLeft}s)`;
       if (secsLeft <= 0) {
         clearInterval(countdownTimer);
+        // قطع الـ Supabase connection قبل الإغلاق
+        try { _supabase.removeChannel(_broadcastChannel); } catch(e) {}
         window.close();
         // Fallback si window.close() bloqué par le navigateur
         document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:Poppins,sans-serif;font-size:18px;text-align:center;">🎉 Merci et bon appétit!<br><small style="opacity:.5;font-size:13px;margin-top:8px;display:block">Vous pouvez fermer cette page</small></div>';
