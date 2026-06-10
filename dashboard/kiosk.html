@@ -858,8 +858,10 @@ function changeQty(productId, delta) {
 function changePrice(productId, delta) {
     const idx = cart.findIndex(i => i.product.id === productId);
     if (idx < 0) return;
-    const current = parseFloat(cart[idx].customPrice ?? cart[idx].product.price) || 0;
-    cart[idx].customPrice = Math.max(0, parseFloat((current + delta).toFixed(2)));
+    const originalPrice = parseFloat(cart[idx].product.price) || 0;
+    const current = parseFloat(cart[idx].customPrice ?? originalPrice);
+    const newPrice = parseFloat((current + delta).toFixed(2));
+    cart[idx].customPrice = Math.max(originalPrice, newPrice);
     renderCart();
 }
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
@@ -885,7 +887,7 @@ function renderCart() {
         const extrasHtml = (cartItem?.extras || []).length > 0
           ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.4;">${(cartItem.extras||[]).map(e=>`+ ${e.optionName}`).join(', ')}</div>`
           : '';
-        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)">−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
+        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)" ${parseFloat(cartItem?.customPrice ?? p.price) <= parseFloat(p.price) ? "disabled style='opacity:0.3;cursor:not-allowed'" : ""}>−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
     const sub = cart.reduce((s,i) => {
         const extrasPrice = (i.extras||[]).reduce((ea, e) => ea + (e.priceAdd || 0), 0);
