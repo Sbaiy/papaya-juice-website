@@ -8,9 +8,9 @@
    ✓ Notifications push
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_STATIC  = 'papaya-static-v4';
-const CACHE_IMAGES  = 'papaya-images-v4';
-const CACHE_FONTS   = 'papaya-fonts-v4';
+const CACHE_STATIC  = 'papaya-static-v5';
+const CACHE_IMAGES  = 'papaya-images-v5';
+const CACHE_FONTS   = 'papaya-fonts-v5';
 
 const STATIC_ASSETS = [
   '/logo.png',
@@ -58,7 +58,8 @@ self.addEventListener('fetch', e => {
   }
 
   // ── 3. Images produits Supabase / CDN → Cache-first ──
-  const isImage = /\.(png|jpg|jpeg|webp|svg|gif|avif)(\?.*)?$/i.test(url.pathname);
+  const isImage = /\.(png|jpg|jpeg|webp|svg|gif|avif)(\?.*)?$/i.test(url.pathname)
+    || url.hostname.includes('cloudinary.com');
   if (isImage || (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) || url.hostname.includes('storage.googleapis.com')) {
     e.respondWith(
       caches.open(CACHE_IMAGES).then(async cache => {
