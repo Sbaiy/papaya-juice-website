@@ -954,9 +954,9 @@ function _shouldShowOrder(o) {
 _liveChannel
   .on('broadcast', { event: 'new_order' }, ({ payload }) => {
     const o = _normalizeOrder({ ...payload });
-    // ✅ Jouer le son pour TOUTE nouvelle commande (kiosk + menu) avant le filtre d'affichage
+    // ✅ startOrderAlert (pas juste playBeep) — pour avoir la répétition toutes les 5s
     if (!allOrders.find(x => x.id === o.id)) {
-      if (soundEnabled) playBeep();
+      startOrderAlert(String(o.id));
     }
     if (!_shouldShowOrder(o)) return;
     // Éviter les doublons
