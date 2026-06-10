@@ -390,7 +390,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
     Commandes Live
   </div>
   <div class="topbar-right">
-    <button class="sound-banner-btn" id="soundBtn" onclick="activateSound()" style="padding:7px 16px;border-radius:20px;font-size:13px;">🔊 Activer le son</button>
+    <button class="sound-banner-btn" id="soundBtn" onclick="toggleSound()" style="padding:7px 16px;border-radius:20px;font-size:13px;">🔊 Activer le son</button>
     <button class="refresh-btn" onclick="loadOrders()">
       🔄 Actualiser
     </button>
@@ -481,14 +481,21 @@ let allOrders = [];
 let activeFilter = 'all';
 let soundEnabled = false;
 
-// Auto-activer au premier geste (click/touch/key) sans besoin de cliquer le bouton
-function _autoActivateSound() {
-  if (!soundEnabled) {
-    soundEnabled = true;
-    document.getElementById('soundBanner').classList.add('hidden');
+// ── Toggle son ON/OFF ──
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundBtn');
+  if (soundEnabled) {
+    btn.textContent = '🔇 Désactiver le son';
+    playBeep();
+  } else {
+    btn.textContent = '🔊 Activer le son';
+    stopAllAlerts();
   }
+  document.getElementById('soundBanner').classList.add('hidden');
 }
-['click','touchstart','keydown'].forEach(e => document.addEventListener(e, _autoActivateSound, { once: true }));
+function activateSound() { if (!soundEnabled) toggleSound(); } // compat banner
+
 let editingOrderId = null;
 let selectedNewStatus = null;
 let alertingOrders = new Map();
@@ -513,12 +520,23 @@ async function logout() {
   window.location.href = '/dashboard';
 }
 
-function activateSound() {
-  soundEnabled = true;
-  document.getElementById('soundBanner').classList.add('hidden');
-  const btn = document.getElementById('soundBtn');
-  if (btn) btn.style.display = 'none';
-  playBeep();
+function stopAllAlerts() {
+  alertingOrders.forEach((_, id) => stopOrderAlert(id));
+}
+function startOrderAlert(orderId) {
+  if (alertingOrders.has(orderId)) return;
+  if (soundEnabled) playBeep();
+  const interval = setInterval(() => {
+    if (soundEnabled) playBeep();
+    const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
+    if (card) { card.classList.remove('new-flash'); void card.offsetWidth; card.classList.add('new-flash'); }
+  }, 5000);
+  const timeout = setTimeout(() => stopOrderAlert(orderId), 60000);
+  alertingOrders.set(orderId, { interval, timeout });
+  setTimeout(() => {
+    const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
+    if (card) { card.classList.remove('new-flash'); void card.offsetWidth; card.classList.add('new-flash'); }
+  }, 200);
 }
 function playBeep() {
   try {
@@ -537,21 +555,6 @@ function playBeep() {
       osc.stop(ctx.currentTime + delay + 0.13);
     });
   } catch {}
-}
-function startOrderAlert(orderId) {
-  if (alertingOrders.has(orderId)) return;
-  if (soundEnabled) playBeep();
-  const interval = setInterval(() => {
-    if (soundEnabled) playBeep();
-    const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
-    if (card) { card.classList.remove('new-flash'); void card.offsetWidth; card.classList.add('new-flash'); }
-  }, 2000);
-  const timeout = setTimeout(() => stopOrderAlert(orderId), 60000);
-  alertingOrders.set(orderId, { interval, timeout });
-  setTimeout(() => {
-    const card = document.querySelector(`.order-card[data-id="${orderId}"]`);
-    if (card) { card.classList.remove('new-flash'); void card.offsetWidth; card.classList.add('new-flash'); }
-  }, 200);
 }
 function stopOrderAlert(orderId) {
   const a = alertingOrders.get(orderId);
@@ -812,7 +815,7 @@ function buildCard(order) {
     if (order.status === 'pret') newStatus = 'termine';
     else if (order.status === 'paiement') newStatus = 'en_preparation';
     else newStatus = 'pret'; // en_preparation → pret
-    stopOrderAlert(ordId);
+    stopAllAlerts(); // arrêter TOUS les sons sur n'importe quel clic Prêt/Terminer
     await quickStatus(order.id, newStatus);
   });
 
