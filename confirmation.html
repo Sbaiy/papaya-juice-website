@@ -644,9 +644,18 @@ function startRefresh() {
   if (Notification.permission === 'granted') startSWTracking();
 })();
 
-window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "hidden") return;
-    _supabase.removeChannel(_broadcastChannel);
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        // خرج من الصفحة → قطع الـ connection
+        _broadcastReady = false;
+        _supabase.removeChannel(_broadcastChannel);
+    } else {
+        // رجع للصفحة → يعاود يفتح الـ channel
+        _broadcastChannel
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") _broadcastReady = true;
+            });
+    }
 });
 </script>
 </body>
