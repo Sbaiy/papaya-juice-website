@@ -900,37 +900,58 @@ const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Broadcast channel
-const _broadcastChannel = _supabase.channel('papaya-broadcast');
-let _broadcastReady = false;
-const _broadcastReadyPromise = new Promise(resolve => {
-  _broadcastChannel
-    .on('broadcast', { event: 'menu_updated' }, () => {
-      localStorage.removeItem(CACHE_KEY);
-      loadMenuAndCategories();
-    })
-    .on('broadcast', { event: 'update_categories' }, () => {
-      // إعادة تحميل الكاتيغوريات (صور، أسماء) وإعادة بناء category bar
-      localStorage.removeItem(CACHE_KEY);
-      loadMenuAndCategories();
-    })
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') { _broadcastReady = true; resolve(); }
-    });
-});
+// ── CHANNEL MANAGER — 0 connection دايماً إلا وقت الحاجة ──
+let _broadcastChannel   = null;
+let _broadcastReady     = false;
+let _idleTimer          = null;
+const IDLE_TIMEOUT_MS   = 3 * 60 * 1000; // 3 دقائق بلا تفاعل → قطع
+
+function _resetIdleTimer() {
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(_disconnectChannel, IDLE_TIMEOUT_MS);
+}
+
+function _disconnectChannel() {
+  clearTimeout(_idleTimer);
+  if (_broadcastChannel) {
+    try { _supabase.removeChannel(_broadcastChannel); } catch(e) {}
+    _broadcastChannel = null;
+  }
+  _broadcastReady = false;
+}
+
+function _connectChannel() {
+  if (_broadcastChannel && _broadcastReady) { _resetIdleTimer(); return Promise.resolve(); }
+  _disconnectChannel();
+  return new Promise(resolve => {
+    _broadcastChannel = _supabase.channel('papaya-broadcast');
+    _broadcastChannel
+      .on('broadcast', { event: 'menu_updated' }, () => {
+        localStorage.removeItem(CACHE_KEY);
+        loadMenuAndCategories();
+        _resetIdleTimer();
+      })
+      .on('broadcast', { event: 'update_categories' }, () => {
+        localStorage.removeItem(CACHE_KEY);
+        loadMenuAndCategories();
+        _resetIdleTimer();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') { _broadcastReady = true; _resetIdleTimer(); resolve(); }
+      });
+  });
+}
 
 // ── Realtime — via broadcast uniquement (économise 1 connexion par client) ──
-// Les mises à jour arrivent via menu_updated / update_categories depuis admin.html et categories.html
-let _cachedRawProducts = []; // كل المنتجات بدون فلتر disponible
+let _cachedRawProducts = [];
 async function _broadcastOrder(event, orderData) {
-  if (!_broadcastReady) await _broadcastReadyPromise;
-  // محاولة أولى
-  try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); return; }
+  await _connectChannel();
+  try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); _disconnectChannel(); return; }
   catch(e) { console.warn('Broadcast attempt 1 failed, retrying...', e); }
-  // إعادة محاولة بعد 1.5 ثانية
   await new Promise(r => setTimeout(r, 1500));
   try { await _broadcastChannel.send({ type: 'broadcast', event, payload: orderData }); }
   catch(e) { console.warn('Broadcast attempt 2 failed:', e); }
+  _disconnectChannel();
 }
 
 /* ════════════════════════
@@ -1902,31 +1923,18 @@ function closeDrawer() {
     document.body.style.overflow = '';
 }
 
+// visibilitychange — قطع فوراً حين يغيب المستخدم، ومكنفتحوش تاني
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-        // خرج من الصفحة → قطع الـ connection
-        _broadcastReady = false;
-        _supabase.removeChannel(_broadcastChannel);
-    } else {
-        // رجع للصفحة → يعاود يفتح الـ channel
-        _broadcastChannel
-            .on("broadcast", { event: "menu_updated" }, () => {
-                localStorage.removeItem(CACHE_KEY);
-                loadMenuAndCategories();
-            })
-            .on("broadcast", { event: "update_categories" }, () => {
-                localStorage.removeItem(CACHE_KEY);
-                loadMenuAndCategories();
-            })
-            .subscribe((status) => {
-                if (status === "SUBSCRIBED") _broadcastReady = true;
-            });
+        _disconnectChannel();
     }
+    // مكنفتحوش — الـ channel كيفتح غير وقت client يبعث أوردر
 });
 
 window.onload = () => {
     detectTableFromURL();
     loadMenuAndCategories();
+    // مكنفتحوش channel فـ onload — يفتح غير وقت يبعث أوردر
 };
 </script>
 </body>
