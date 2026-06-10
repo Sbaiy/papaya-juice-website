@@ -319,13 +319,56 @@ const BACKEND_URL = window.location.hostname === 'localhost' || window.location.
   : 'https://papaya-juice-backend-production.up.railway.app';
 const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const _broadcastChannel = _supabase.channel("papaya-broadcast");
-let _broadcastReady = false;
-_broadcastChannel.subscribe((status) => { if (status === "SUBSCRIBED") _broadcastReady = true; });
+// ── CHANNEL MANAGER — 0 connection إلا وقت الحاجة ──
+let _broadcastChannel = null;
+let _broadcastReady   = false;
+const MAX_TIMEOUT_MS  = 15 * 60 * 1000; // 15 دقيقة max ثم قطع نهائي
+let _maxTimer         = null;
+
+function _disconnectChannel() {
+  clearTimeout(_maxTimer);
+  if (_broadcastChannel) {
+    try { _supabase.removeChannel(_broadcastChannel); } catch(e) {}
+    _broadcastChannel = null;
+  }
+  _broadcastReady = false;
+}
+
+function _ensureChannel() {
+  if (_broadcastChannel && _broadcastReady) return Promise.resolve();
+  _disconnectChannel();
+  return new Promise(resolve => {
+    _broadcastChannel = _supabase.channel("papaya-broadcast");
+    _broadcastChannel
+      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+        if (!orderId || String(payload.id) !== String(orderId)) return;
+        const _s = payload.status;
+        const ns = (_s==='annule'||_s==='annulé'||_s==='cancelled') ? 'annulé'
+          : (_s==='en_preparation'||_s==='preparing') ? 'preparation'
+          : (_s==='pret'||_s==='ready') ? 'pret'
+          : (_s==='termine'||_s==='done'||_s==='delivered') ? 'termine'
+          : (_s==='paiement'||_s==='pending') ? 'paiement' : _s;
+        if (ns !== currentStatus) { applyStatus(ns, currentStatus, payload.updated_at); currentStatus = ns; }
+        // status نهائي → قطع connection فوراً
+        if (ns === 'termine' || ns === 'annulé') _disconnectChannel();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          _broadcastReady = true;
+          // max timeout — 15 دقيقة ثم قطع نهائي
+          _maxTimer = setTimeout(_disconnectChannel, MAX_TIMEOUT_MS);
+          resolve();
+        }
+      });
+  });
+}
+
 async function _broadcastUpdate(event, orderData) {
-  if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
+  await _ensureChannel();
   try { await _broadcastChannel.send({ type: "broadcast", event, payload: orderData }); }
   catch(e) { console.warn("Broadcast failed:", e); }
+  // بعد بعث الأوردر قطع فوراً — مكنحتاجوش channel بعد cancel
+  _disconnectChannel();
 }
 
 /* ═══════════════════════════
@@ -619,45 +662,25 @@ async function cancelOrder() {
 }
 
 /* ═══════════════════════════
-   BROADCAST LISTENER
-═══════════════════════════ */
-function startRefresh() {
-  _broadcastChannel.on('broadcast', { event: 'update_order' }, ({ payload }) => {
-    if (!orderId || String(payload.id) !== String(orderId)) return;
-    const _s = payload.status;
-    const ns = (_s==='annule'||_s==='annulé'||_s==='cancelled') ? 'annulé'
-      : (_s==='en_preparation'||_s==='preparing') ? 'preparation'
-      : (_s==='pret'||_s==='ready') ? 'pret'
-      : (_s==='termine'||_s==='done'||_s==='delivered') ? 'termine'
-      : (_s==='paiement'||_s==='pending') ? 'paiement' : _s;
-    if (ns !== currentStatus) { applyStatus(ns, currentStatus, payload.updated_at); currentStatus = ns; }
-  });
-}
-
-/* ═══════════════════════════
    INIT
 ═══════════════════════════ */
 (async () => {
   await registerSW();
   initNotifBanner();
   await fetchStatus();
-  startRefresh();
-  // Démarrer le suivi background (SW poll même si page fermée)
+  // نفتح channel غير إذا status مازال pending/preparation/pret
+  if (currentStatus !== 'termine' && currentStatus !== 'annulé') {
+    await _ensureChannel();
+  }
   if (Notification.permission === 'granted') startSWTracking();
 })();
 
+// visibilitychange — قطع فوراً حين يغيب المستخدم
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-        // خرج من الصفحة → قطع الـ connection
-        _broadcastReady = false;
-        _supabase.removeChannel(_broadcastChannel);
-    } else {
-        // رجع للصفحة → يعاود يفتح الـ channel
-        _broadcastChannel
-            .subscribe((status) => {
-                if (status === "SUBSCRIBED") _broadcastReady = true;
-            });
+        _disconnectChannel();
     }
+    // مكنفتحوش تاني — الـ SW كيتولى tracking فالخلفية
 });
 </script>
 </body>
