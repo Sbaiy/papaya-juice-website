@@ -1874,11 +1874,7 @@ async function submitReclamation() {
         if (error) throw error;
         // Broadcast pour que reclamations.html reçoive en temps réel
         try {
-            await _supabase.channel('papaya-broadcast').send({
-                type: 'broadcast',
-                event: 'new_reclamation',
-                payload: insertedData
-            });
+            await _broadcastOrder('new_reclamation', insertedData);
         } catch(e) { console.warn('Broadcast reclamation failed:', e); }
         closeReclamation();
         const toast = document.getElementById('successToast');
@@ -1905,6 +1901,11 @@ function closeDrawer() {
     document.getElementById('drawerOverlay').classList.remove('open');
     document.body.style.overflow = '';
 }
+
+window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "hidden") return;
+    _supabase.removeChannel(_broadcastChannel);
+});
 
 window.onload = () => {
     detectTableFromURL();
