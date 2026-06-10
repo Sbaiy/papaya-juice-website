@@ -990,12 +990,39 @@ _liveChannel
   })
   .subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
 
-// ── Fallback: si onglet redevient visible après inactivité → resync ──
+// ── Reconnexion WiFi : resync + resubscribe au channel ──
 let _lastVisible = Date.now();
-document.addEventListener('visibilitychange', () => {
+let _wasOffline = false;
+
+async function _resubscribeChannel() {
+  try { await _liveChannel.unsubscribe(); } catch(e) {}
+  _liveReady = false;
+  _liveChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') _liveReady = true;
+  });
+}
+
+// ملي كيرجع الاتصال — resync الطلبات + resubscribe
+window.addEventListener('online', async () => {
+  if (!_wasOffline) return;
+  _wasOffline = false;
+  await loadOrders();
+  await _resubscribeChannel();
+});
+
+window.addEventListener('offline', () => {
+  _wasOffline = true;
+  _liveReady = false;
+});
+
+// ── Fallback: si onglet redevient visible après inactivité → resync ──
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
     const away = Date.now() - _lastVisible;
-    if (away > 30000) loadOrders(); // resync si absent +30s
+    if (away > 30000) {
+      await loadOrders();
+      if (!_liveReady) await _resubscribeChannel();
+    }
   } else {
     _lastVisible = Date.now();
   }

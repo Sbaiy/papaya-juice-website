@@ -421,7 +421,6 @@
                     <option value="">— Sélectionner —</option>
                     <option value="emporter">À emporter</option>
                     <option value="comptoir">Comptoir</option>
-                    <script>for(let i=1;i<=20;i++)document.write(`<option value="T${i}">Table ${i}</option>`)</script>
                 </select>
             </div>
             <div class="cart-summary" id="cartSummary" style="display:none">
@@ -1227,7 +1226,8 @@ async function submitOrder() {
             items: cart.map(({product,qty,customPrice,extras}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||'',extras:extras||[]})),
             total: cart.reduce((s,i) => s+parseFloat(i.customPrice??i.product.price)*i.qty, 0),
             status: 'pending',
-            source: 'kiosk'
+            source: 'kiosk',
+            serveur: document.getElementById('userName').textContent.trim() || 'Kiosk'
         };
         // ── Snapshot + counter local + vider panier IMMÉDIATEMENT ──
         const cartSnapshot = [...cart];
@@ -2091,12 +2091,38 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 3200);
 }
 
+// ── Reconnexion WiFi ──
+let _kioskWasOffline = false;
+
+async function _resubscribeBroadcast() {
+  try { await _broadcastChannel.unsubscribe(); } catch(e) {}
+  _broadcastReady = false;
+  _broadcastChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') _broadcastReady = true;
+  });
+}
+
+window.addEventListener('offline', () => {
+  _kioskWasOffline = true;
+  _broadcastReady = false;
+});
+
+window.addEventListener('online', async () => {
+  if (!_kioskWasOffline) return;
+  _kioskWasOffline = false;
+  await _nopPollOrders();
+  await _resubscribeBroadcast();
+});
+
 // ── Fallback: resync si onglet revient après inactivité ──
 let _kioskLastVisible = Date.now();
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
     const away = Date.now() - _kioskLastVisible;
-    if (away > 60000) _nopPollOrders(); // resync NOP si absent +1min
+    if (away > 60000) {
+      await _nopPollOrders();
+      if (!_broadcastReady) await _resubscribeBroadcast();
+    }
     if (away > 60000 && document.getElementById('historiqueModal').style.display !== 'none') loadHistoriqueOrders();
   } else {
     _kioskLastVisible = Date.now();
@@ -2120,6 +2146,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadProducts();
     _nopStartPolling();
+    // تحميل عدد الطاولات من Supabase
+    (async () => {
+        try {
+            const { data } = await _supabase.from('settings').select('value').eq('key', 'table_count').single();
+            const n = data ? parseInt(data.value) : 20;
+            const sel = document.getElementById('tableSelect');
+            // إزالة الطاولات القديمة إلا كانت موجودة
+            Array.from(sel.options).forEach(o => { if(o.value.startsWith('T')) sel.remove(o.index); });
+            for (let i = 1; i <= n; i++) {
+                const opt = document.createElement('option');
+                opt.value = 'T' + i;
+                opt.textContent = 'Table ' + i;
+                sel.appendChild(opt);
+            }
+        } catch(e) { console.warn('table_count load failed:', e); }
+    })();
     // Remonter le popup si commandes en attente après refresh
     if (_nopPendingOrders.length > 0) { setTimeout(_nopShowPopup, 800); }
 

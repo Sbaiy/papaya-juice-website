@@ -9,6 +9,7 @@
 <title>Table QR Codes - Papaya Juice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -371,7 +372,7 @@ async function makeTableToken(tableNum) {
 
 async function generate() {
   const n = Math.min(100, Math.max(1, parseInt(document.getElementById('tableCount').value) || 50));
-  localStorage.setItem('qr_tableCount', n);
+  await saveTableCount(n);
 if (document.getElementById('qrGrid').children.length > 0) {
     if (!confirm(`Voulez-vous régénérer les ${n} QR codes ?`)) return;
   }
@@ -461,9 +462,22 @@ function downloadAll() {
   next();
 }
 
-window.addEventListener('load', () => {
-  const saved = localStorage.getItem('qr_tableCount');
-  document.getElementById('tableCount').value = saved ? saved : 50;
+const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
+const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function saveTableCount(n) {
+  await _db.from('settings').upsert({ key: 'table_count', value: String(n) });
+}
+
+async function loadTableCount() {
+  const { data } = await _db.from('settings').select('value').eq('key', 'table_count').single();
+  return data ? parseInt(data.value) : 20;
+}
+
+window.addEventListener('load', async () => {
+  const n = await loadTableCount();
+  document.getElementById('tableCount').value = n;
   generate();
 });
 </script>
