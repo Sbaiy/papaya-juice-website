@@ -726,6 +726,7 @@ async function loadProducts() {
         let _loaded = 0, _total = allProducts.filter(p => p.image).length;
         allProducts.forEach(p => {
             if (!p.image || _imgCache[p.image]) return;
+            p.image = p.image.replace('/upload/', '/upload/q_auto,f_auto/');
             const img = new Image();
             img.onload = img.onerror = () => {
                 _loaded++;
@@ -754,7 +755,7 @@ const CATEGORY_ICONS = {'Boissons Chaudes':'☕','Café':'☕','Jus Nature':'�
 function getCatIcon(cat) { return CATEGORY_ICONS[cat] || '🍴'; }
 function getCatImg(cat) {
     const data = (window.categoriesData || {})[cat];
-    if (data && data.image) return `<img src="${data.image}" style="width:22px;height:22px;border-radius:5px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<span>${getCatIcon(cat)}</span>'">`;
+    if (data && data.image) return `<img src="${data.image.replace("/upload/", "/upload/q_auto,f_auto/")}" style="width:22px;height:22px;border-radius:5px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<span>${getCatIcon(cat)}</span>'">`;
     return `<span class="nav-emoji">${getCatIcon(cat)}</span>`;
 }
 
@@ -778,7 +779,7 @@ function buildCategoryNav() {
         const data = (window.categoriesData || {})[cat];
         const hasImg = data && data.image;
         item.innerHTML = hasImg
-            ? `<img class="cat-card-img" src="${data.image}" alt="${cat}" onerror="this.style.display='none'">
+            ? `<img class="cat-card-img" src="${data.image.replace("/upload/", "/upload/q_auto,f_auto/")}" alt="${cat}" onerror="this.style.display='none'">
                <div class="cat-card-overlay"></div>
                <div class="cat-card-label">${cat}</div>`
             : `<div class="cat-card-emoji">${getCatIcon(cat)}</div>
@@ -814,7 +815,7 @@ function renderProducts() {
         return;
     }
     grid.innerHTML = filteredProducts.map(p => {
-        const imgHtml = p.image ? `<img src="${p.image}" alt="${p.title}" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
+        const imgHtml = p.image ? `<img src="${p.image.replace("/upload/", "/upload/q_auto,f_auto/")}" alt="${p.title}" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
         const placeholderStyle = p.image ? 'display:none' : '';
         const unavailable = p.disponible === false;
         return `<div class="product-card${unavailable?' unavailable':''}" onclick="${unavailable?'':` addToCart(${p.id})`}">
@@ -876,7 +877,7 @@ function renderCart() {
     const btnClearHeader = document.getElementById('btnClearHeader'); if (!cart.length) { empty.style.display='flex'; items.style.display='none'; summary.style.display='none'; btnOrder.disabled=true; btnClearHeader.style.display='none'; return; } btnClearHeader.style.display='inline-block';
     empty.style.display='none'; items.style.display='block'; summary.style.display='block'; btnOrder.disabled=false;
     items.innerHTML = cart.map(({product:p, qty}) => {
-        const imgEl = p.image ? `<img class="cart-item-img" src="${p.image}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
+        const imgEl = p.image ? `<img class="cart-item-img" src="${p.image.replace("/upload/", "/upload/q_auto,f_auto/")}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
         const cartItem = cart.find(i => i.product.id === p.id);
         const extrasPrice = (cartItem?.extras || []).reduce((s, e) => s + (e.priceAdd || 0), 0);
         const basePrice = parseFloat(cartItem?.customPrice ?? p.price) || 0;
