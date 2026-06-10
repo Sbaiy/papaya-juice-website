@@ -1161,7 +1161,7 @@ function updateCartUI() {
             row.className = 'cart-item';
             const lineTotal = (parseFloat(product.price) * qty).toFixed(0);
             row.innerHTML = `
-                <img src="${product.image}" alt="${product.title}">
+                <img src="${product.image ? product.image.replace('/upload/', '/upload/q_auto,f_auto/') : ''}" alt="${product.title}">
                 <div class="cart-item-info">
                     <h4>${product.title}</h4>
                     <div class="item-price">${lineTotal} DH</div>
@@ -1483,7 +1483,7 @@ function displayProducts(list) {
         card.style.animationDelay = (index * 80) + 'ms';
         card.innerHTML = `
             <div class="product-img-wrap">
-                <img src="${product.image || ''}" alt="${product.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22130%22 height=%22130%22%3E%3Crect fill=%22%23ffffff10%22 width=%22130%22 height=%22130%22 rx=%2216%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E🍹%3C/text%3E%3C/svg%3E'">
+                <img src="${product.image ? product.image.replace('/upload/', '/upload/q_auto,f_auto/') : ''}" alt="${product.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22130%22 height=%22130%22%3E%3Crect fill=%22%23ffffff10%22 width=%22130%22 height=%22130%22 rx=%2216%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2240%22%3E🍹%3C/text%3E%3C/svg%3E'">
             </div>
             <div class="product-info">
                 <h3>${product.title}</h3>
@@ -1661,7 +1661,7 @@ function getExtrasTotal() { return 0; }
 function openModal(product) {
     modalCurrentProduct = product;
     modalQty = cart[product.id] ? cart[product.id].qty : 1;
-    document.getElementById('modalImg').src           = product.image;
+    document.getElementById('modalImg').src = product.image ? product.image.replace('/upload/', '/upload/q_auto,f_auto/') : '';
     document.getElementById('modalTitle').textContent = product.title;
     document.getElementById('modalPrice').textContent = product.price + ' DH';
     document.getElementById('modalDesc').textContent  = (product.description && product.description !== '-') ? product.description : '';
