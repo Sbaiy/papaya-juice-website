@@ -608,9 +608,7 @@ const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Broadcast channel — يبعت ويسمع إشارات بدون ما يقرا من DB
 const _broadcastChannel = _supabase.channel("papaya-broadcast");
 let _broadcastReady = false;
-_broadcastChannel.subscribe((status) => {
-  if (status === 'SUBSCRIBED') _broadcastReady = true;
-});
+// subscribe() يتسمى بعد .on() في _nopStartPolling
 async function _broadcastOrder(event, orderData) {
   // استنى subscribe إلا مازال ما وقعش
   if (!_broadcastReady) await new Promise(r => setTimeout(r, 1000));
@@ -2083,6 +2081,9 @@ function _nopStartPolling() {
           if (cancelledStatuses.has(o.status)) {
               dismissSingleOrderFromPopup(o.id);
           }
+      })
+      .subscribe((status) => {
+          if (status === 'SUBSCRIBED') _broadcastReady = true;
       });
 }
 
@@ -2148,9 +2149,28 @@ async function _oqFlush() {
 async function _resubscribeBroadcast() {
   try { await _broadcastChannel.unsubscribe(); } catch(e) {}
   _broadcastReady = false;
-  _broadcastChannel.subscribe((status) => {
-    if (status === 'SUBSCRIBED') _broadcastReady = true;
-  });
+  // خاص نعيد .on() قبل .subscribe() — Supabase requirement
+  _broadcastChannel
+    .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+        const o = payload;
+        if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        if (o.created_at && new Date(o.created_at) < todayStart) return;
+        if (_nopSeenIds.has(String(o.id))) return;
+        _nopSeenIds.add(String(o.id));
+        _nopSaveSeen();
+        _nopPendingOrders = [..._nopPendingOrders, o];
+        _nopSavePending();
+        _nopShowPopup();
+    })
+    .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+        const o = payload;
+        const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
+        if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
+    })
+    .subscribe((status) => {
+        if (status === 'SUBSCRIBED') _broadcastReady = true;
+    });
 }
 
 window.addEventListener('offline', () => {
