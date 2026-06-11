@@ -844,12 +844,15 @@
             setTimeout(() => { if (heroBtn) heroBtn.classList.add('revealed'); }, 900);
         });
 
-        // ===== SCROLL REVEAL OBSERVER =====
+        // ===== SCROLL REVEAL OBSERVER (bidirectional: show on enter, hide on leave) =====
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
+                    // Element entering viewport → show it
                     entry.target.classList.add('visible');
-                    // Keep observing for re-entry effect on scroll up
+                } else {
+                    // Element leaving viewport → hide it so it re-animates on scroll back up
+                    entry.target.classList.remove('visible');
                 }
             });
         }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
@@ -858,10 +861,14 @@
             revealObserver.observe(el);
         });
 
-        // ===== LEGACY HIDDEN ELEMENTS =====
+        // ===== LEGACY HIDDEN ELEMENTS (bidirectional too) =====
         const hiddenObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) entry.target.classList.add('show');
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                } else {
+                    entry.target.classList.remove('show');
+                }
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.hidden').forEach(el => hiddenObserver.observe(el));
