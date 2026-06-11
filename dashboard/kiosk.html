@@ -1271,9 +1271,9 @@ async function submitOrder() {
                 }
             } catch(e) {
                 // ملي كيفشل الإرسال — حفظ فـ offline queue
-                console.warn('[OfflineQueue] فشل الإرسال، حفظ الطلب:', e);
                 _oqPush(orderPayload);
-                showToast('⚠️ Wifi coupé — commande sauvegardée');
+                _isOffline = true;
+                _showOfflineBanner();
             }
         })();
     } catch(err) {
@@ -2061,30 +2061,32 @@ function _nopStartPolling() {
     if (_nopInterval) return; // déjà démarré
     _nopInterval = true; // flag pour éviter double init
 
-    // نسمع broadcast بدل postgres_changes باش ما يأكلش egress
+    // نسمع broadcast — .on() خاصو يجي قبل .subscribe()
     _broadcastChannel
-      .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-          const o = payload;
-          if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-          if (o.created_at && new Date(o.created_at) < todayStart) return;
-          if (_nopSeenIds.has(String(o.id))) return;
-          _nopSeenIds.add(String(o.id));
-          _nopSaveSeen();
-          _nopPendingOrders = [..._nopPendingOrders, o];
-          _nopSavePending();
-          _nopShowPopup();
-      })
-      .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-          const o = payload;
-          const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
-          if (cancelledStatuses.has(o.status)) {
-              dismissSingleOrderFromPopup(o.id);
-          }
-      })
+      .on('broadcast', { event: 'new_order' }, _nopOnNewOrder)
+      .on('broadcast', { event: 'update_order' }, _nopOnUpdateOrder)
       .subscribe((status) => {
           if (status === 'SUBSCRIBED') _broadcastReady = true;
       });
+}
+
+function _nopOnNewOrder({ payload }) {
+    const o = payload;
+    if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    if (o.created_at && new Date(o.created_at) < todayStart) return;
+    if (_nopSeenIds.has(String(o.id))) return;
+    _nopSeenIds.add(String(o.id));
+    _nopSaveSeen();
+    _nopPendingOrders = [..._nopPendingOrders, o];
+    _nopSavePending();
+    _nopShowPopup();
+}
+
+function _nopOnUpdateOrder({ payload }) {
+    const o = payload;
+    const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
+    if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
 }
 
 // ── TOAST ──
@@ -2095,33 +2097,60 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 3200);
 }
 
-// ── Reconnexion WiFi ──
-let _kioskWasOffline = false;
+// ══════════════════════════════════════════════════════
+// OFFLINE QUEUE + WIFI RECONNECT
+// ══════════════════════════════════════════════════════
+const OQ_KEY = 'papaya_offline_queue';
+let _isOffline = false;
 
-// ── OFFLINE QUEUE — طلبات فاشلة بسبب انقطاع الـ wifi ──
-const OFFLINE_QUEUE_KEY = 'papaya_offline_queue';
+// ── Banner offline/online ──
+function _showOfflineBanner() {
+    let b = document.getElementById('offlineBanner');
+    if (!b) {
+        b = document.createElement('div');
+        b.id = 'offlineBanner';
+        b.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:9999;background:#ef4444;color:#fff;padding:10px 22px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:flex;align-items:center;gap:8px;';
+        document.body.appendChild(b);
+    }
+    b.innerHTML = '📵 Hors ligne — commandes sauvegardées localement';
+    b.style.background = '#ef4444';
+    b.style.display = 'flex';
+}
 
+function _showOnlineBanner(count) {
+    let b = document.getElementById('offlineBanner');
+    if (!b) return;
+    b.innerHTML = '✅ Connexion rétablie — ' + count + ' commande(s) synchronisée(s)';
+    b.style.background = '#16a34a';
+    b.style.display = 'flex';
+    setTimeout(() => { b.style.display = 'none'; }, 4000);
+}
+
+function _hideOfflineBanner() {
+    const b = document.getElementById('offlineBanner');
+    if (b) b.style.display = 'none';
+}
+
+// ── Queue helpers ──
 function _oqLoad() {
-    try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch(e) { return []; }
+    try { return JSON.parse(localStorage.getItem(OQ_KEY) || '[]'); } catch(e) { return []; }
 }
-function _oqSave(q) {
-    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q));
-}
+function _oqSave(q) { localStorage.setItem(OQ_KEY, JSON.stringify(q)); }
 function _oqPush(payload) {
     const q = _oqLoad();
     q.push({ payload, ts: Date.now() });
     _oqSave(q);
-    console.warn('[OfflineQueue] طلب محفوظ — queue:', q.length);
 }
+
+// ── Flush queue ملي كيرجع wifi ──
 async function _oqFlush() {
     const q = _oqLoad();
-    if (!q.length) return;
-    console.log('[OfflineQueue] flush', q.length, 'طلبات');
+    if (!q.length) return 0;
     const remaining = [];
     for (const item of q) {
         try {
-            const createdOrder = await API.orders.create(item.payload);
-            const orderId = createdOrder?.id;
+            const created = await API.orders.create(item.payload);
+            const orderId = created?.id;
             if (orderId) {
                 const token = localStorage.getItem('papaya_token');
                 try {
@@ -2130,75 +2159,63 @@ async function _oqFlush() {
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify({ status: 'preparing' })
                     });
-                    const updated = r.ok ? await r.json() : createdOrder;
-                    _broadcastOrder('new_order', { ...updated, status: 'en_preparation' });
+                    const updated = r.ok ? await r.json() : created;
+                    await _broadcastOrder('new_order', { ...updated, status: 'en_preparation' });
                 } catch(e) {
-                    _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
+                    await _broadcastOrder('new_order', { ...created, status: 'en_preparation' });
                 }
             }
         } catch(e) {
-            remaining.push(item); // لم يرسل بعد
+            remaining.push(item);
         }
     }
     _oqSave(remaining);
-    if (remaining.length === 0) {
-        showToast('✅ ' + (q.length - remaining.length) + ' commande(s) offline synchronisée(s) !');
-    }
+    return q.length - remaining.length; // عدد اللي تبعتوا بنجاح
 }
 
+// ── Resubscribe channel ──
 async function _resubscribeBroadcast() {
-  try { await _broadcastChannel.unsubscribe(); } catch(e) {}
-  _broadcastReady = false;
-  // خاص نعيد .on() قبل .subscribe() — Supabase requirement
-  _broadcastChannel
-    .on('broadcast', { event: 'new_order' }, ({ payload }) => {
-        const o = payload;
-        if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
-        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        if (o.created_at && new Date(o.created_at) < todayStart) return;
-        if (_nopSeenIds.has(String(o.id))) return;
-        _nopSeenIds.add(String(o.id));
-        _nopSaveSeen();
-        _nopPendingOrders = [..._nopPendingOrders, o];
-        _nopSavePending();
-        _nopShowPopup();
-    })
-    .on('broadcast', { event: 'update_order' }, ({ payload }) => {
-        const o = payload;
-        const cancelledStatuses = new Set(['cancelled', 'annulé', 'annule']);
-        if (cancelledStatuses.has(o.status)) dismissSingleOrderFromPopup(o.id);
-    })
-    .subscribe((status) => {
-        if (status === 'SUBSCRIBED') _broadcastReady = true;
-    });
+    try { await _broadcastChannel.unsubscribe(); } catch(e) {}
+    _broadcastReady = false;
+    _nopInterval = false;
+    _nopStartPolling();
 }
 
+// ── Offline event ──
 window.addEventListener('offline', () => {
-  _kioskWasOffline = true;
-  _broadcastReady = false;
+    _isOffline = true;
+    _broadcastReady = false;
+    _showOfflineBanner();
 });
 
+// ── Online event ──
 window.addEventListener('online', async () => {
-  if (!_kioskWasOffline) return;
-  _kioskWasOffline = false;
-  await _oqFlush();          // إرسال الطلبات المحفوظة offline
-  await _nopPollOrders();
-  await _resubscribeBroadcast();
+    if (!_isOffline) return;
+    _isOffline = false;
+    // 1. إرسال الطلبات المحفوظة
+    const sent = await _oqFlush();
+    // 2. resync popup — طلبات menu جاتو وهو offline
+    await _nopPollOrders();
+    // 3. resubscribe channel
+    await _resubscribeBroadcast();
+    // 4. banner
+    _showOnlineBanner(sent);
 });
 
-// ── Fallback: resync si onglet revient après inactivité ──
+// ── Fallback visibility ──
 let _kioskLastVisible = Date.now();
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible') {
-    const away = Date.now() - _kioskLastVisible;
-    if (away > 60000) {
-      await _nopPollOrders();
-      if (!_broadcastReady) await _resubscribeBroadcast();
+    if (document.visibilityState === 'visible') {
+        const away = Date.now() - _kioskLastVisible;
+        if (away > 30000) {
+            if (_oqLoad().length) await _oqFlush();
+            await _nopPollOrders();
+            if (!_broadcastReady) await _resubscribeBroadcast();
+        }
+        if (away > 30000 && document.getElementById('historiqueModal').style.display !== 'none') loadHistoriqueOrders();
+    } else {
+        _kioskLastVisible = Date.now();
     }
-    if (away > 60000 && document.getElementById('historiqueModal').style.display !== 'none') loadHistoriqueOrders();
-  } else {
-    _kioskLastVisible = Date.now();
-  }
 });
 
 // ── INIT ──
