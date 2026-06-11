@@ -2174,11 +2174,21 @@ async function _oqFlush() {
 }
 
 // ── Resubscribe channel ──
+// ── Rebuild broadcast channel avec ses listeners (sans polling) ──
 async function _resubscribeBroadcast() {
-    try { await _broadcastChannel.unsubscribe(); } catch(e) {}
     _broadcastReady = false;
-    _nopInterval = false;
-    _nopStartPolling();
+    try { await _supabase.removeChannel(_broadcastChannel); } catch(e) {}
+    // Recréer le channel et réattacher les listeners
+    const ch = _supabase.channel('papaya-broadcast');
+    ch.on('broadcast', { event: 'new_order' }, _nopOnNewOrder)
+      .on('broadcast', { event: 'update_order' }, _nopOnUpdateOrder)
+      .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+              _broadcastReady = true;
+              // Copier les méthodes du nouveau channel sur la référence globale
+              Object.assign(_broadcastChannel, ch);
+          }
+      });
 }
 
 // ── Offline event ──
@@ -2190,16 +2200,13 @@ window.addEventListener('offline', () => {
 
 // ── Online event ──
 window.addEventListener('online', async () => {
-    if (!_isOffline) return;
     _isOffline = false;
 
-    // 1. إرسال الطلبات المحفوظة
+    // 1. Envoyer les commandes sauvegardées offline
     const sent = await _oqFlush();
 
-    // 2. resync popup — clear les IDs vus pour que les commandes
-    //    arrivées pendant l'offline réapparaissent dans le popup
-    //    (on garde seulement les IDs des commandes déjà confirmées/annulées,
-    //     pas celles encore en status paiement/paid)
+    // 2. Récupérer les commandes manquées pendant l'offline
+    //    et retirer leurs IDs de seenIds pour qu'elles apparaissent dans le popup
     try {
         const token = localStorage.getItem('papaya_token');
         const res = await fetch(BACKEND_URL + '/api/orders', {
@@ -2208,25 +2215,20 @@ window.addEventListener('online', async () => {
         if (res.ok) {
             const ordersRes = await res.json();
             const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
-            // Enlever des seenIds les commandes qui sont encore en statut déclencheur
-            // (elles doivent repasser dans le popup si elles ont été manquées)
-            const stillTrigger = new Set(
-                orders
-                    .filter(o => NOP_TRIGGER_STATUSES.has(o.status))
-                    .map(o => String(o.id))
-            );
-            stillTrigger.forEach(id => _nopSeenIds.delete(id));
+            orders
+                .filter(o => NOP_TRIGGER_STATUSES.has(o.status))
+                .forEach(o => _nopSeenIds.delete(String(o.id)));
             _nopSaveSeen();
         }
-    } catch(e) { /* silencieux — on continuera avec poll */ }
+    } catch(e) { /* silencieux */ }
 
-    // 3. Poll maintenant avec les seenIds nettoyés → popup pour les commandes manquées
+    // 3. Afficher le popup pour les commandes manquées (un seul fetch, pas de polling)
     await _nopPollOrders();
 
-    // 4. resubscribe channel
+    // 4. Reconstruire le channel broadcast proprement
     await _resubscribeBroadcast();
 
-    // 5. banner
+    // 5. Banner de confirmation
     _showOnlineBanner(sent);
 });
 
