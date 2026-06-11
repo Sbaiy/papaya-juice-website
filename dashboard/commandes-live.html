@@ -467,6 +467,9 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BACKEND_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : 'https://papaya-juice-backend-production.up.railway.app/api';
 
 // Broadcast channel
 let _liveChannel = db.channel("papaya-broadcast");
@@ -571,15 +574,13 @@ function checkAlerts(newOrders) {
 }
 async function loadOrders() {
   try {
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const { data, error } = await db.from('orders')
-      .select('id, items, total, status, source, created_at, table_number, updated_at, serveur, note, order_number')
-      .gte('created_at', todayStart.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (error) throw error;
-    const newOrders = data || [];
-    // Normaliser les statuts venant du kiosk vers le format commandes-live
+    const token = localStorage.getItem('papaya_token');
+    const res = await fetch(BACKEND_URL + '/orders', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    if (!res.ok) throw new Error('Erreur serveur ' + res.status);
+    const raw = await res.json();
+    const newOrders = Array.isArray(raw) ? raw : (raw.data || []);
     const STATUS_NORM = {
       'cancelled':  'annule',
       'annulé':     'annule',
@@ -595,21 +596,20 @@ async function loadOrders() {
     newOrders.forEach(o => {
       o._rawStatus = o.status;
       if (STATUS_NORM[o.status]) o.status = STATUS_NORM[o.status];
-      // Normaliser tout status contenant "annul" (ex: "annulé par client")
       else if (o.status && o.status.toLowerCase().includes('annul')) o.status = 'annule';
     });
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     const resetTs = localStorage.getItem('live_reset_ts');
-    const filtered_new = (resetTs
-      ? newOrders.filter(o => new Date(o.created_at) > new Date(resetTs))
-      : newOrders
-    // Masquer uniquement kiosk pending (pas encore confirmé) — menu pending = commande réelle
-    ).filter(o => !(o._rawStatus === 'pending' && o.source === 'kiosk') && o._rawStatus !== 'paid');
+    const filtered_new = newOrders
+      .filter(o => o.created_at ? new Date(o.created_at) >= todayStart : true)
+      .filter(o => !resetTs || new Date(o.created_at) > new Date(resetTs))
+      .filter(o => !(o._rawStatus === 'pending' && o.source === 'kiosk') && o._rawStatus !== 'paid');
     checkAlerts(filtered_new);
     allOrders = filtered_new;
     updateStats(); updateCounts();
   } catch (e) {
     console.error('Erreur chargement:', e);
-    document.getElementById('ordersGrid').innerHTML = `<div class="no-orders"><span class="no-icon">⚠️</span>Impossible de charger les commandes.<br><small style="color:#9ca3af;margin-top:8px;display:block;">Vérifiez le nom de votre table Supabase.</small></div>`;
+    document.getElementById('ordersGrid').innerHTML = `<div class="no-orders"><span class="no-icon">⚠️</span>Impossible de charger les commandes.<br><small style="color:#9ca3af;margin-top:8px;display:block;">${e.message}</small></div>`;
     return;
   }
   try { renderOrders(); } catch(e) { console.error('Erreur renderOrders:', e); }
@@ -868,9 +868,6 @@ async function quickStatus(orderId, newStatus) {
 
   try {
     const token = localStorage.getItem('papaya_token');
-    const BACKEND_URL = window.location.hostname === 'localhost'
-      ? 'http://localhost:3000/api'
-      : 'https://papaya-juice-backend-production.up.railway.app/api';
     const STATUS_TO_API = { 'en_preparation':'preparing', 'pret':'ready', 'termine':'delivered', 'annule':'cancelled', 'paiement':'pending' };
     const apiStatus = STATUS_TO_API[newStatus] || newStatus;
     const source = prevOrder ? (prevOrder.source || null) : null;
