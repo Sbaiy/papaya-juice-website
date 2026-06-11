@@ -469,9 +469,8 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Broadcast channel
-const _liveChannel = db.channel("papaya-broadcast");
+let _liveChannel = db.channel("papaya-broadcast");
 let _liveReady = false;
-// subscribe() يتسمى بعد .on() — see below
 async function _broadcastUpdate(event, orderData) {
   if (!_liveReady) await new Promise(r => setTimeout(r, 150));
   try { await _liveChannel.send({ type: "broadcast", event, payload: orderData }); }
@@ -990,32 +989,67 @@ _liveChannel
   })
   .subscribe((status) => { if (status === "SUBSCRIBED") _liveReady = true; });
 
-// ── Reconnexion WiFi : resync + resubscribe au channel ──
+// ── Reconnexion WiFi : rebuild channel complet ──
 let _lastVisible = Date.now();
-let _wasOffline = false;
 
 async function _resubscribeChannel() {
-  try { await _liveChannel.unsubscribe(); } catch(e) {}
   _liveReady = false;
-  _liveChannel.subscribe((status) => {
-    if (status === 'SUBSCRIBED') _liveReady = true;
-  });
+  try { await db.removeChannel(_liveChannel); } catch(e) {}
+
+  _liveChannel = db.channel('papaya-broadcast');
+  _liveChannel
+    .on('broadcast', { event: 'new_order' }, ({ payload }) => {
+      const o = _normalizeOrder({ ...payload });
+      startOrderAlert(String(o.id));
+      if (!_shouldShowOrder(o)) return;
+      if (allOrders.find(x => x.id === o.id)) return;
+      checkAlerts([o]);
+      allOrders = [o, ...allOrders];
+      updateStats(); updateCounts(); renderOrders();
+    })
+    .on('broadcast', { event: 'update_order' }, ({ payload }) => {
+      const o = _normalizeOrder({ ...payload });
+      if (payload.new_items && Array.isArray(payload.new_items) && payload.new_items.length) {
+        o._new_items = payload.new_items;
+        o._new_total = payload.new_items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+      }
+      const idx = allOrders.findIndex(x => x.id === o.id);
+      if (idx !== -1) {
+        if (!o.source && allOrders[idx].source) o.source = allOrders[idx].source;
+        if (!o.table_number && allOrders[idx].table_number) o.table_number = allOrders[idx].table_number;
+        if (!o._new_items && allOrders[idx]._new_items) {
+          o._new_items = allOrders[idx]._new_items;
+          o._new_total = allOrders[idx]._new_total;
+        }
+        allOrders[idx] = o;
+      } else if (_shouldShowOrder(o)) {
+        allOrders = [o, ...allOrders];
+      }
+      checkAlerts(allOrders);
+      updateStats(); updateCounts(); renderOrders();
+    })
+    .on('broadcast', { event: 'delete_order' }, ({ payload }) => {
+      allOrders = allOrders.filter(o => o.id !== payload.id);
+      updateStats(); updateCounts(); renderOrders();
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') _liveReady = true;
+    });
 }
 
-// ملي كيرجع الاتصال — resync الطلبات + resubscribe
+// ملي كيرجع الاتصال — resync + rebuild channel (بلا polling)
 window.addEventListener('online', async () => {
-  if (!_wasOffline) return;
-  _wasOffline = false;
   await loadOrders();
   await _resubscribeChannel();
+  showToast('✅ Connexion rétablie', 'success');
 });
 
 window.addEventListener('offline', () => {
-  _wasOffline = true;
   _liveReady = false;
+  showToast('📵 Hors ligne', 'error');
 });
 
-// ── Fallback: si onglet redevient visible après inactivité → resync ──
+// ── Fallback: onglet redevient visible après inactivité ──
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible') {
     const away = Date.now() - _lastVisible;
