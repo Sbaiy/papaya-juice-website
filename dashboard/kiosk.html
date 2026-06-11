@@ -2192,13 +2192,41 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', async () => {
     if (!_isOffline) return;
     _isOffline = false;
+
     // 1. إرسال الطلبات المحفوظة
     const sent = await _oqFlush();
-    // 2. resync popup — طلبات menu جاتو وهو offline
+
+    // 2. resync popup — clear les IDs vus pour que les commandes
+    //    arrivées pendant l'offline réapparaissent dans le popup
+    //    (on garde seulement les IDs des commandes déjà confirmées/annulées,
+    //     pas celles encore en status paiement/paid)
+    try {
+        const token = localStorage.getItem('papaya_token');
+        const res = await fetch(BACKEND_URL + '/api/orders', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (res.ok) {
+            const ordersRes = await res.json();
+            const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
+            // Enlever des seenIds les commandes qui sont encore en statut déclencheur
+            // (elles doivent repasser dans le popup si elles ont été manquées)
+            const stillTrigger = new Set(
+                orders
+                    .filter(o => NOP_TRIGGER_STATUSES.has(o.status))
+                    .map(o => String(o.id))
+            );
+            stillTrigger.forEach(id => _nopSeenIds.delete(id));
+            _nopSaveSeen();
+        }
+    } catch(e) { /* silencieux — on continuera avec poll */ }
+
+    // 3. Poll maintenant avec les seenIds nettoyés → popup pour les commandes manquées
     await _nopPollOrders();
-    // 3. resubscribe channel
+
+    // 4. resubscribe channel
     await _resubscribeBroadcast();
-    // 4. banner
+
+    // 5. banner
     _showOnlineBanner(sent);
 });
 
@@ -2209,6 +2237,22 @@ document.addEventListener('visibilitychange', async () => {
         const away = Date.now() - _kioskLastVisible;
         if (away > 30000) {
             if (_oqLoad().length) await _oqFlush();
+            // Nettoyer les seenIds pour les commandes encore en statut déclencheur
+            try {
+                const token = localStorage.getItem('papaya_token');
+                const res = await fetch(BACKEND_URL + '/api/orders', {
+                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                });
+                if (res.ok) {
+                    const ordersRes = await res.json();
+                    const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
+                    const stillTrigger = new Set(
+                        orders.filter(o => NOP_TRIGGER_STATUSES.has(o.status)).map(o => String(o.id))
+                    );
+                    stillTrigger.forEach(id => _nopSeenIds.delete(id));
+                    _nopSaveSeen();
+                }
+            } catch(e) {}
             await _nopPollOrders();
             if (!_broadcastReady) await _resubscribeBroadcast();
         }
