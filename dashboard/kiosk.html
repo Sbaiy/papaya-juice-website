@@ -1768,7 +1768,8 @@ let _nopPendingOrders = JSON.parse(localStorage.getItem('nop_pending_orders') ||
 let _nopInterval = null;
 
 // Statuts qui viennent du menu (menu.html insère en status 'paiement')
-const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid']);
+// 'paiement'/'paid' = menu.html direct supabase | 'pending' = backend API
+const NOP_TRIGGER_STATUSES = new Set(['paiement', 'paid', 'pending']);
 
 function _nopSavePending() {
     localStorage.setItem('nop_pending_orders', JSON.stringify(_nopPendingOrders));
@@ -1798,7 +1799,9 @@ async function _nopPollOrders() {
             const statusMatch = NOP_TRIGGER_STATUSES.has(o.status);
             const notSeen    = !_nopSeenIds.has(String(o.id));
             const today      = o.created_at ? new Date(o.created_at) >= todayStart : true;
-            return statusMatch && notSeen && today;
+            // Exclure les commandes du kiosk lui-même (source='kiosk') — elles sont déjà traitées
+            const notKiosk   = (o.source || '').toLowerCase() !== 'kiosk';
+            return statusMatch && notSeen && today && notKiosk;
         });
 
         // Auto-fermer les commandes annulées depuis commandes-live
@@ -2073,6 +2076,8 @@ function _nopStartPolling() {
 function _nopOnNewOrder({ payload }) {
     const o = payload;
     if (!NOP_TRIGGER_STATUSES.has(o.status)) return;
+    // Exclure les commandes du kiosk lui-même
+    if ((o.source || '').toLowerCase() === 'kiosk') return;
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     if (o.created_at && new Date(o.created_at) < todayStart) return;
     if (_nopSeenIds.has(String(o.id))) return;
