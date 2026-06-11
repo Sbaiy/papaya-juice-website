@@ -409,12 +409,177 @@
         }
         .social-links a:hover { color: var(--primary); }
 
-        /* Animations */
-        .hero-content { animation: fadeIn 2s ease; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
+        /* ===== SCROLL PROGRESS BAR ===== */
+        #scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+            background-size: 200% 100%;
+            z-index: 9999;
+            transition: width 0.1s linear;
+            animation: shimmer 2s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== HERO ANIMATIONS ===== */
+        .hero-content { opacity: 0; }
+        .hero-content.loaded { animation: heroEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes heroEntrance {
+            from { opacity: 0; transform: translateY(40px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .hero-content h1 { clip-path: inset(0 100% 0 0); }
+        .hero-content h1.revealed { animation: textReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+        @keyframes textReveal {
+            from { clip-path: inset(0 100% 0 0); }
+            to { clip-path: inset(0 0% 0 0); }
+        }
+        .hero-content p { opacity: 0; transform: translateY(15px); }
+        .hero-content p.revealed { animation: fadeUp 0.9s ease 0.7s forwards; }
+        .hero-content .btn { opacity: 0; transform: translateY(15px); }
+        .hero-content .btn.revealed { animation: fadeUp 0.9s ease 1s forwards; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.85);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-scale.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ===== STAGGER DELAYS ===== */
+        .stagger-1 { transition-delay: 0.1s !important; }
+        .stagger-2 { transition-delay: 0.2s !important; }
+        .stagger-3 { transition-delay: 0.3s !important; }
+        .stagger-4 { transition-delay: 0.4s !important; }
+        .stagger-5 { transition-delay: 0.5s !important; }
+        .stagger-6 { transition-delay: 0.6s !important; }
+
+        /* ===== MENU CARD ENHANCED ===== */
+        .menu-card {
+            transform-origin: center bottom;
+        }
+        .menu-card .icon {
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .menu-card:hover .icon {
+            transform: scale(1.12) rotate(-5deg);
+        }
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: radial-gradient(circle at 50% 0%, rgba(255, 98, 0, 0.12), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .menu-card:hover::before {
+            opacity: 1;
+        }
+        .menu-card { position: relative; overflow: hidden; }
+
+        /* ===== PARALLAX SECTION TITLE ===== */
+        .section-title {
+            overflow: hidden;
+        }
+        .section-title .title-inner {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.9s ease;
+        }
+        .section-title.visible .title-inner {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== FLOATING PARTICLES ===== */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: float-particle linear infinite;
+            opacity: 0;
+        }
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.2; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        /* ===== INFO BOX HOVER ===== */
+        .info-box {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        border-color 0.3s ease,
+                        box-shadow 0.3s ease !important;
+        }
+        .info-box:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--accent) !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.35) !important;
+        }
+
+        /* ===== CURSOR GLOW ===== */
+        #cursor-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 98, 0, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* ===== HIDDEN (legacy) ===== */
         .hidden { opacity: 0; transform: translateY(50px); transition: all 1s ease; }
         .show { opacity: 1; transform: translateY(0); }
 
@@ -486,6 +651,11 @@
 </head>
 <body>
 
+    <!-- Scroll Progress Bar -->
+    <div id="scroll-progress"></div>
+    <!-- Cursor Glow -->
+    <div id="cursor-glow"></div>
+
     <input type="checkbox" id="social-toggle" class="social-toggle-checkbox">
     <div class="floating-social">
         
@@ -533,11 +703,11 @@
     </section>
 
     <section class="about hidden" id="about">
-        <div class="about-img">
+        <div class="about-img reveal-left">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-20_09-32-51.jpg?w=719&h=964&rect=0%2C73%2C719%2C964" alt="About 1">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-33-05.jpg" alt="About 2">
         </div>
-        <div class="about-text">
+        <div class="about-text reveal-right">
             <h2 class="section-title">Our <span>Story</span></h2>
             <p>Welcome to <strong>Papaya Juice</strong>, your cozy corner in <strong>Mohammedia, Morocco</strong>. Born from a passion for fresh, healthy living, we bring you the finest selection of handcrafted juices, smoothies, and café delights.</p>
             <p>Come experience the warmth of Mohammedia with a glass of sunshine!</p>
@@ -545,12 +715,12 @@
     </section>
 
     <section class="about hidden">
-        <div class="about-text">
+        <div class="about-text reveal-left">
             <h2 class="section-title">Space <span>Games</span></h2>
             <p>Discover our interactive gaming table with more than 20 exciting games where fun, competition, and good vibes come together for the ultimate experience with friends 🎮🔥.</p>
             <p>Enjoy the thrill of billiard in a stylish gaming atmosphere where every shot brings excitement, competition, and unforgettable moments with friends 🎱🔥</p>
         </div>
-        <div class="about-img">
+        <div class="about-img reveal-right">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-12-35.jpg" alt="Space 1">
             <img src="https://6a0d58a2970fabf91b28b692.imgix.net/photo_2026-05-21_16-16-45.jpg" alt="Space 2">
         </div>
@@ -562,32 +732,32 @@
             <a href="/menu" class="btn">View Menu</a>
         </div>
         <div class="menu-grid my-menu-grid">
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-1">
                 <img src="breakfast.png" alt="Breakfasts" class="icon">
                 <h3>Breakfasts</h3>
                 <span class="price">30-99 MAD</span>
             </div>
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-2">
                 <img src="jusnatur.png" alt="Natural Juice" class="icon">
                 <h3>Natural Juice</h3>
                 <span class="price">23-50 MAD</span>
             </div>
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-3">
                 <img src="toast.png" alt="Toasts" class="icon">
                 <h3>Toasts</h3>
                 <span class="price">15-30 MAD</span>
             </div>
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-4">
                 <img src="crepes.png" alt="Crepes and Pancakes" class="icon">
                 <h3>Crepes and Pancakes</h3>
                 <span class="price">35-40 MAD</span>
             </div>
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-5">
                 <img src="smouties.png" alt="Smoothies" class="icon">
                 <h3>Smoothies</h3>
                 <span class="price">35 MAD</span>
             </div>
-            <div class="menu-card">
+            <div class="menu-card reveal-scale stagger-6">
                 <img src="mojito.png" alt="Mojito" class="icon">
                 <h3>Mojito</h3>
                 <span class="price">30-35 MAD</span>
@@ -600,15 +770,15 @@
     <section class="location hidden" id="location">
         <h2 class="section-title">Find <span>Us</span></h2>
         <div class="location-info">
-            <div class="info-box">
+            <div class="info-box reveal stagger-1">
                 <h3>📍 Address</h3>
                 <p>Papaya Juice Café<br>Mohammedia, Houria<br>(Near Maroc Telecom, Chhawta.)</p>
             </div>
-            <div class="info-box">
+            <div class="info-box reveal stagger-2">
                 <h3>🕒 Hours</h3>
                 <p>Monday - Sunday: 8:00 - 00:00</p>
             </div>
-            <div class="info-box">
+            <div class="info-box reveal stagger-3">
                 <h3>📞 Contact</h3>
                 <p>Phone: +212 601-556084<br>Email: papayajuicemohammedia@gmail.com</p>
             </div>
@@ -634,54 +804,166 @@
     </footer>
 
     <script>
-        // Smooth scroll
+        // ===== SMOOTH SCROLL =====
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-
-        // Mobile menu toggle
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const navLinks = document.querySelector('.nav-links');
-
-        mobileMenu.onclick = function () {
-            if (navLinks.style.display === "flex") {
-                navLinks.style.display = "none";
-            } else {
-                navLinks.style.display = "flex";
-                navLinks.style.flexDirection = "column";
-            }
-        }
-
-        // Animation on scroll elements
-        const hiddenElements = document.querySelectorAll('.hidden');
-        window.addEventListener('scroll', () => {
-            hiddenElements.forEach(el => {
-                const position = el.getBoundingClientRect().top;
-                if(position < window.innerHeight - 100){
-                    el.classList.add('show');
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             });
         });
 
-        // --- كود المينيو لي كيطلع ويهبط فالسكرول ---
+        // ===== MOBILE MENU =====
+        const mobileMenu = document.querySelector('.mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+        mobileMenu.onclick = function () {
+            navLinks.style.display = navLinks.style.display === "flex" ? "none" : "flex";
+            if (navLinks.style.display === "flex") navLinks.style.flexDirection = "column";
+        };
+
+        // ===== SCROLL PROGRESS BAR =====
+        const progressBar = document.getElementById('scroll-progress');
+        function updateProgress() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = progress + '%';
+        }
+
+        // ===== HERO ENTRANCE =====
+        window.addEventListener('load', () => {
+            const heroContent = document.querySelector('.hero-content');
+            const heroH1 = document.querySelector('.hero-content h1');
+            const heroPara = document.querySelector('.hero-content p');
+            const heroBtn = document.querySelector('.hero-content .btn');
+            if (heroContent) heroContent.classList.add('loaded');
+            setTimeout(() => { if (heroH1) heroH1.classList.add('revealed'); }, 200);
+            setTimeout(() => { if (heroPara) heroPara.classList.add('revealed'); }, 600);
+            setTimeout(() => { if (heroBtn) heroBtn.classList.add('revealed'); }, 900);
+        });
+
+        // ===== SCROLL REVEAL OBSERVER =====
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Keep observing for re-entry effect on scroll up
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+        document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+            revealObserver.observe(el);
+        });
+
+        // ===== LEGACY HIDDEN ELEMENTS =====
+        const hiddenObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('show');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.hidden').forEach(el => hiddenObserver.observe(el));
+
+        // ===== NAVBAR HIDE/SHOW ON SCROLL =====
         let lastScrollTop = 0;
         const navbar = document.getElementById('navbar');
 
-        window.addEventListener('scroll', function() {
-            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            
+        // ===== PARALLAX HERO =====
+        const hero = document.querySelector('.hero');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Progress bar
+            updateProgress();
+
+            // Parallax hero background
+            if (hero) {
+                hero.style.backgroundPositionY = `calc(50% + ${scrollTop * 0.3}px)`;
+            }
+
+            // Navbar hide/show
             if (scrollTop > lastScrollTop && scrollTop > 100) {
                 navbar.classList.add('hide-nav');
             } else {
                 navbar.classList.remove('hide-nav');
             }
-            
-            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+        }, { passive: true });
+
+        // ===== CURSOR GLOW =====
+        const cursorGlow = document.getElementById('cursor-glow');
+        let mouseX = 0, mouseY = 0;
+        let glowX = 0, glowY = 0;
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        function animateGlow() {
+            glowX += (mouseX - glowX) * 0.08;
+            glowY += (mouseY - glowY) * 0.08;
+            cursorGlow.style.left = glowX + 'px';
+            cursorGlow.style.top = glowY + 'px';
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
+
+        // ===== FLOATING PARTICLES =====
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            const size = Math.random() * 4 + 2;
+            const colors = ['rgba(255,98,0,0.5)', 'rgba(253,203,110,0.4)', 'rgba(255,150,50,0.3)'];
+            particle.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${Math.random() * 100}vw;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                animation-duration: ${Math.random() * 8 + 6}s;
+                animation-delay: ${Math.random() * 4}s;
+                filter: blur(${Math.random() > 0.5 ? '1px' : '0px'});
+            `;
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 15000);
+        }
+        // Create particles periodically
+        setInterval(createParticle, 800);
+        // Create initial batch
+        for (let i = 0; i < 5; i++) setTimeout(createParticle, i * 300);
+
+        // ===== ACTIVE NAV LINK ON SCROLL =====
+        const sections = document.querySelectorAll('section[id]');
+        const navItems = document.querySelectorAll('.nav-links a');
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navItems.forEach(a => a.classList.remove('active-link'));
+                    const active = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+                    if (active) active.classList.add('active-link');
+                }
+            });
+        }, { threshold: 0.5 });
+        sections.forEach(s => sectionObserver.observe(s));
+
+        // ===== MENU CARD TILT =====
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / centerY * -8;
+                const rotateY = (x - centerX) / centerX * 8;
+                card.style.transform = `translateY(-10px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
+                card.style.transition = 'transform 0.1s ease';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+                card.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            });
         });
     </script>
 </body>
