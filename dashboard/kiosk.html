@@ -2149,11 +2149,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // تحميل عدد الطاولات من Supabase
     (async () => {
         try {
-            const { data } = await _supabase.from('settings').select('value').eq('key', 'table_count').single();
+            const client = _supabase || window.supabase?.createClient(
+                'https://rlwshuurruvtnqwgbjkl.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw'
+            );
+            const { data } = await client.from('settings').select('value').eq('key', 'table_count').single();
             const n = data ? parseInt(data.value) : 20;
             const sel = document.getElementById('tableSelect');
-            // إزالة الطاولات القديمة إلا كانت موجودة
-            Array.from(sel.options).forEach(o => { if(o.value.startsWith('T')) sel.remove(o.index); });
+            // حذف الطاولات القديمة بشكل صحيح (من الآخر للأول)
+            for (let i = sel.options.length - 1; i >= 0; i--) {
+                if (sel.options[i].value.startsWith('T')) sel.remove(i);
+            }
             for (let i = 1; i <= n; i++) {
                 const opt = document.createElement('option');
                 opt.value = 'T' + i;
