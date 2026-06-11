@@ -1272,7 +1272,10 @@ async function submitOrder() {
                     if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
                 }
             } catch(e) {
-                console.warn('Background order error:', e);
+                // ملي كيفشل الإرسال — حفظ فـ offline queue
+                console.warn('[OfflineQueue] فشل الإرسال، حفظ الطلب:', e);
+                _oqPush(orderPayload);
+                showToast('⚠️ Wifi coupé — commande sauvegardée');
             }
         })();
     } catch(err) {
@@ -2094,6 +2097,54 @@ function showToast(msg) {
 // ── Reconnexion WiFi ──
 let _kioskWasOffline = false;
 
+// ── OFFLINE QUEUE — طلبات فاشلة بسبب انقطاع الـ wifi ──
+const OFFLINE_QUEUE_KEY = 'papaya_offline_queue';
+
+function _oqLoad() {
+    try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch(e) { return []; }
+}
+function _oqSave(q) {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q));
+}
+function _oqPush(payload) {
+    const q = _oqLoad();
+    q.push({ payload, ts: Date.now() });
+    _oqSave(q);
+    console.warn('[OfflineQueue] طلب محفوظ — queue:', q.length);
+}
+async function _oqFlush() {
+    const q = _oqLoad();
+    if (!q.length) return;
+    console.log('[OfflineQueue] flush', q.length, 'طلبات');
+    const remaining = [];
+    for (const item of q) {
+        try {
+            const createdOrder = await API.orders.create(item.payload);
+            const orderId = createdOrder?.id;
+            if (orderId) {
+                const token = localStorage.getItem('papaya_token');
+                try {
+                    const r = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ status: 'preparing' })
+                    });
+                    const updated = r.ok ? await r.json() : createdOrder;
+                    _broadcastOrder('new_order', { ...updated, status: 'en_preparation' });
+                } catch(e) {
+                    _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
+                }
+            }
+        } catch(e) {
+            remaining.push(item); // لم يرسل بعد
+        }
+    }
+    _oqSave(remaining);
+    if (remaining.length === 0) {
+        showToast('✅ ' + (q.length - remaining.length) + ' commande(s) offline synchronisée(s) !');
+    }
+}
+
 async function _resubscribeBroadcast() {
   try { await _broadcastChannel.unsubscribe(); } catch(e) {}
   _broadcastReady = false;
@@ -2110,6 +2161,7 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', async () => {
   if (!_kioskWasOffline) return;
   _kioskWasOffline = false;
+  await _oqFlush();          // إرسال الطلبات المحفوظة offline
   await _nopPollOrders();
   await _resubscribeBroadcast();
 });
