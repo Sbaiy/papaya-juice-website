@@ -11,7 +11,7 @@
 
 const API_BASE = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
-  : 'https://papaya-juice-backend-production.up.railway.app/api';
+  : 'https://api.papayajuice.xyz/api';
 
 // ── Token helpers ──
 const Auth = {
