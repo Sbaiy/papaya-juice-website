@@ -2185,6 +2185,7 @@ async function _oqFlush() {
     const q = _oqLoad();
     if (!q.length) return 0;
     const remaining = [];
+    const synced = [];
     for (const item of q) {
         try {
             const created = await API.orders.create(item.payload);
@@ -2198,9 +2199,12 @@ async function _oqFlush() {
                         body: JSON.stringify({ status: 'preparing' })
                     });
                     const updated = r.ok ? await r.json() : created;
-                    await _broadcastOrder('new_order', { ...updated, status: 'en_preparation' });
+                    synced.push({ ...updated, status: 'preparing' });
+                    // Broadcast après resubscribe (katji baad) — pas de await ici
+                    _broadcastOrder('new_order', { ...updated, status: 'en_preparation' }).catch(() => {});
                 } catch(e) {
-                    await _broadcastOrder('new_order', { ...created, status: 'en_preparation' });
+                    synced.push({ ...created, status: 'preparing' });
+                    _broadcastOrder('new_order', { ...created, status: 'en_preparation' }).catch(() => {});
                 }
             }
         } catch(e) {
@@ -2208,6 +2212,19 @@ async function _oqFlush() {
         }
     }
     _oqSave(remaining);
+
+    // ── Mettre à jour histAllOrders directement (sans dépendre du broadcast) ──
+    if (synced.length) {
+        const STATUS_NORM = {en_attente:'pending',paiement:'paid',en_preparation:'preparing',pret:'ready',termine:'done',delivered:'done',annule:'cancelled','annulé':'cancelled','canceled':'cancelled'};
+        synced.forEach(o => {
+            o.status = STATUS_NORM[o.status] || o.status;
+            if (!histAllOrders.find(x => x.id === o.id)) {
+                histAllOrders = [o, ...histAllOrders];
+            }
+        });
+        if (typeof _histUpdateUI === 'function') _histUpdateUI();
+    }
+
     return q.length - remaining.length; // عدد اللي تبعتوا بنجاح
 }
 
@@ -2240,10 +2257,13 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', async () => {
     _isOffline = false;
 
-    // 1. Envoyer les commandes sauvegardées offline
+    // 1. Reconstruire le channel broadcast EN PREMIER (pour que _oqFlush puisse broadcaster)
+    await _resubscribeBroadcast();
+
+    // 2. Envoyer les commandes sauvegardées offline
     const sent = await _oqFlush();
 
-    // 2. Récupérer les commandes manquées pendant l'offline
+    // 3. Récupérer les commandes manquées pendant l'offline
     //    et retirer leurs IDs de seenIds pour qu'elles apparaissent dans le popup
     try {
         const token = localStorage.getItem('papaya_token');
@@ -2260,13 +2280,15 @@ window.addEventListener('online', async () => {
         }
     } catch(e) { /* silencieux */ }
 
-    // 3. Afficher le popup pour les commandes manquées (un seul fetch, pas de polling)
+    // 4. Afficher le popup pour les commandes manquées
     await _nopPollOrders();
 
-    // 4. Reconstruire le channel broadcast proprement
-    await _resubscribeBroadcast();
+    // 5. Rafraîchir le historique si des commandes offline ont été synchronisées
+    if (sent > 0) {
+        try { await loadHistoriqueOrders(); } catch(e) {}
+    }
 
-    // 5. Banner de confirmation
+    // 6. Banner de confirmation
     _showOnlineBanner(sent);
 });
 
