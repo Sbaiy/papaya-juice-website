@@ -1119,6 +1119,7 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
+</script>
 
 <!-- ── PLAN DES TABLES MODAL ── -->
 <div id="planTablesModal">
@@ -1231,6 +1232,8 @@ async function renderPlanTables() {
 document.getElementById('planTablesModal').addEventListener('click', function(e) {
   if (e.target === this) closePlanTablesModal();
 });
+
+window.onload = loadOrders;
 </script>
 </body>
 </html>
