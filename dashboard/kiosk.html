@@ -1270,33 +1270,34 @@ function _contentToBase64(content) {
 async function _flushPrintQueue() {
     if (_printQueueBusy || _printQueue.length === 0) return;
     _printQueueBusy = true;
-    while (_printQueue.length > 0) {
-        const job = _printQueue[0];
-        try {
-            const res = await fetch('https://api.printnode.com/printjobs', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    printerId: parseInt(job.printerId),
-                    title: job.title,
-                    contentType: 'raw_base64',
-                    content: job.base64,
-                    source: 'Kiosk'
-                }),
-                signal: AbortSignal.timeout(8000)
-            });
-            if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-            _printQueue.shift();
-            _savePrintQueue();
-        } catch(e) {
-            console.warn('PrintNode indisponible, retry dans 2s:', e.message);
-            break;
-        }
+    const job = _printQueue[0];
+    try {
+        const res = await fetch('https://api.printnode.com/printjobs', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                printerId: parseInt(job.printerId),
+                title: job.title,
+                contentType: 'raw_base64',
+                content: job.base64,
+                source: 'Kiosk'
+            }),
+            signal: AbortSignal.timeout(4000)
+        });
+        if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
+        _printQueue.shift();
+        _savePrintQueue();
+        _printQueueBusy = false;
+        // Katkhrj t ticket li jay f queue immédiatement
+        if (_printQueue.length > 0) _flushPrintQueue();
+    } catch(e) {
+        console.warn('PrintNode indisponible:', e.message);
+        _printQueueBusy = false;
+        // Retry dyal setInterval kayji b3d 2s
     }
-    _printQueueBusy = false;
 }
 
 // ── Retry agressif koll 2s mli kayen tickets f queue ──
