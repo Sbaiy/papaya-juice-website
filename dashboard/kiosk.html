@@ -1113,9 +1113,73 @@ async function printViaPrintNode(content, type='kitchen') {
         }
     }
 
-    // Fallback: browser print
-    document.getElementById('ticket').innerHTML = content;
-    window.print();
+    // Fallback: impression silencieuse via iframe (sans popup navigateur)
+    silentPrint(content, type);
+}
+
+// Queue pour éviter que les 2 tickets se chevauchent en fallback
+let _silentPrintQueue = [];
+let _silentPrintBusy  = false;
+
+function silentPrint(content, type) {
+    _silentPrintQueue.push({ content, type });
+    if (!_silentPrintBusy) _processSilentQueue();
+}
+
+function _processSilentQueue() {
+    if (_silentPrintQueue.length === 0) { _silentPrintBusy = false; return; }
+    _silentPrintBusy = true;
+    const { content } = _silentPrintQueue.shift();
+
+    // Supprimer l'ancien iframe s'il existe
+    const old = document.getElementById('_silent_print_frame');
+    if (old) old.remove();
+
+    // Créer un iframe invisible
+    const iframe = document.createElement('iframe');
+    iframe.id = '_silent_print_frame';
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px;top:-9999px;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { margin: 0; size: 80mm auto; }
+  body {
+    font-family: 'Courier New', monospace;
+    font-size: 10.5px;
+    width: 72mm;
+    padding: 3mm 4mm;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
+</head>
+<body>${content.includes('\n') && !content.trim().startsWith('<')
+    ? '<pre style="font-family:Courier New,monospace;font-size:10.5px;margin:0;white-space:pre-wrap;">' + content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>'
+    : content
+}</body>
+</html>`);
+    doc.close();
+
+    iframe.contentWindow.focus();
+    setTimeout(() => {
+        try {
+            iframe.contentWindow.print();
+        } catch(e) {
+            console.warn('Silent print error:', e);
+        }
+        // Attendre la fin d'impression avant le prochain ticket (1.5s)
+        setTimeout(() => {
+            if (iframe.parentNode) iframe.remove();
+            _processSilentQueue(); // ticket suivant
+        }, 1500);
+    }, 300);
 }
 
 // ── SUBMIT ORDER ──
