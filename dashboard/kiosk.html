@@ -355,6 +355,7 @@
                 🔔 Commandes en attente
                 <span class="nop-reopen-count" style="background:var(--orange);color:white;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;margin-left:4px;">0</span>
             </button>
+            <button class="btn-action" onclick="openPlanTablesModal()">🪑 Plan des tables</button>
             <button class="btn-action" onclick="openHistoriqueModal()">📋 Historique des commandes</button>
             <button class="btn-action" onclick="openClotureModal()">🔒 Clôture</button>
             <button class="btn-action danger" onclick="openLogoutConfirm()">🚪 Déconnexion</button>
@@ -430,6 +431,37 @@
             <button class="btn-order" id="btnOrder" disabled onclick="submitOrder()">Envoyer la commande</button>
         </div>
     </aside>
+</div>
+
+<!-- ── MODAL PLAN DES TABLES ── -->
+<div id="planTablesModal" class="modal-overlay" style="display:none;z-index:5000;">
+  <div class="modal-box" style="max-width:640px;width:95%;max-height:88vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0;">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;">Plan des tables</div>
+        <div id="planTablesSubtitle" style="font-size:13px;color:var(--muted);margin-top:2px;">Chargement…</div>
+      </div>
+      <button onclick="closePlanTablesModal()" style="background:rgba(255,255,255,0.07);border:none;color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Légende -->
+    <div style="display:flex;gap:16px;margin-bottom:14px;flex-shrink:0;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+        <span style="width:12px;height:12px;border-radius:4px;background:#16a34a;display:inline-block;"></span> Libre
+      </span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+        <span style="width:12px;height:12px;border-radius:4px;background:#be123c;display:inline-block;"></span> Occupée
+      </span>
+    </div>
+
+    <!-- Grille tables -->
+    <div id="planTablesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;overflow-y:auto;padding-right:4px;flex:1;"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-shrink:0;">
+      <span id="planTablesFooter" style="font-size:13px;color:var(--muted);"></span>
+      <button onclick="closePlanTablesModal()" style="padding:9px 22px;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── MODAL HISTORIQUE ── -->
@@ -2374,6 +2406,95 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('userInitial').textContent = initials;
     }
 });
+</script>
+
+<!-- ══════════════════════════════════════════
+     PLAN DES TABLES — Script
+══════════════════════════════════════════ -->
+<script>
+const PLAN_OCCUPIED_STATUSES = new Set(['pending','en_attente','preparing','en_preparation','ready','pret']);
+
+async function openPlanTablesModal() {
+    document.getElementById('planTablesModal').style.display = 'flex';
+    await renderPlanTables();
+}
+
+function closePlanTablesModal() {
+    document.getElementById('planTablesModal').style.display = 'none';
+}
+
+async function renderPlanTables() {
+    const grid = document.getElementById('planTablesGrid');
+    const subtitle = document.getElementById('planTablesSubtitle');
+    const footer = document.getElementById('planTablesFooter');
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:30px 0;">Chargement…</div>';
+
+    try {
+        // 1. Nombre de tables
+        const { data: settingData } = await _supabase
+            .from('settings').select('value').eq('key','table_count').single();
+        const tableCount = settingData ? parseInt(settingData.value) : 20;
+
+        // 2. Commandes actives
+        const token = localStorage.getItem('papaya_token');
+        const res = await fetch(BACKEND_URL + '/api/orders', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        const ordersRes = res.ok ? await res.json() : {};
+        const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
+
+        // 3. Tables occupées = celles qui ont au moins une commande active
+        const occupiedTables = new Set();
+        orders.forEach(o => {
+            if (PLAN_OCCUPIED_STATUSES.has(o.status) && o.table_number && o.table_number.startsWith('T')) {
+                occupiedTables.add(o.table_number);
+            }
+        });
+
+        const occupiedCount = occupiedTables.size;
+        subtitle.textContent = occupiedCount + ' table(s) occupée(s)';
+        footer.textContent = occupiedCount + ' table(s) occupée(s)';
+
+        // 4. Render grille
+        grid.innerHTML = '';
+        for (let i = 1; i <= tableCount; i++) {
+            const tKey = 'T' + i;
+            const isOccupied = occupiedTables.has(tKey);
+            const card = document.createElement('button');
+            card.style.cssText = `
+                padding: 14px 8px;
+                border-radius: 12px;
+                border: 2px solid ${isOccupied ? 'rgba(190,18,60,0.5)' : 'rgba(22,163,74,0.4)'};
+                background: ${isOccupied ? 'rgba(190,18,60,0.15)' : 'rgba(22,163,74,0.12)'};
+                color: ${isOccupied ? '#fb7185' : '#4ade80'};
+                cursor: pointer;
+                display: flex; flex-direction: column; align-items: center; gap: 4px;
+                transition: transform 0.1s, opacity 0.1s;
+                font-family: 'DM Sans', sans-serif;
+            `;
+            card.innerHTML = `
+                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;">${i}</span>
+                <span style="font-size:9px;font-weight:600;letter-spacing:0.05em;opacity:0.8;">${isOccupied ? 'OCCUPÉE' : 'LIBRE'}</span>
+            `;
+            card.addEventListener('mouseenter', () => { card.style.transform = 'scale(1.04)'; });
+            card.addEventListener('mouseleave', () => { card.style.transform = 'scale(1)'; });
+            // Click → sélectionner la table + fermer
+            card.addEventListener('click', () => {
+                const sel = document.getElementById('tableSelect');
+                if (sel) {
+                    for (const opt of sel.options) {
+                        if (opt.value === tKey) { sel.value = tKey; break; }
+                    }
+                }
+                closePlanTablesModal();
+            });
+            grid.appendChild(card);
+        }
+    } catch(e) {
+        grid.innerHTML = `<div style="color:#f87171;font-size:13px;grid-column:1/-1;text-align:center;padding:30px 0;">❌ Erreur: ${e.message}</div>`;
+        subtitle.textContent = 'Erreur de chargement';
+    }
+}
 </script>
 
 <div id="ticket"></div>
