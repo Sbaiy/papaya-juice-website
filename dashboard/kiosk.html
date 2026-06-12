@@ -963,7 +963,7 @@ function changePrice(productId, delta) {
     renderCart();
 }
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
-function clearCart() { _modifMode = null; cart = []; renderCart(); }
+function clearCart() { _modifMode = null; cart = []; const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderCart(); }
 
 function renderCart() {
     const totalQty = cart.reduce((s,i) => s+i.qty, 0);
