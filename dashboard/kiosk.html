@@ -1273,73 +1273,41 @@ async function _flushPrintQueue() {
     while (_printQueue.length > 0) {
         const job = _printQueue[0];
         try {
-            // ── Essayer PrintNode LOCAL d'abord (port 8080, bla internet) ──
-            // PrintNode Desktop Client kaysmea3 3la localhost:8080
-            // Mli offline, local client kayprint direct via USB — bla cloud.
-            let success = false;
-
-            try {
-                const localRes = await fetch('http://localhost:8080/printjobs', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        printerId: parseInt(job.printerId),
-                        title: job.title,
-                        contentType: 'raw_base64',
-                        content: job.base64,
-                        source: 'Kiosk'
-                    }),
-                    signal: AbortSignal.timeout(3000)
-                });
-                if (localRes.ok) success = true;
-            } catch(localErr) {
-                // Local client machi available — essayer cloud
-            }
-
-            if (!success) {
-                // ── Fallback: PrintNode cloud (7taj internet) ──
-                const cloudRes = await fetch('https://api.printnode.com/printjobs', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        printerId: parseInt(job.printerId),
-                        title: job.title,
-                        contentType: 'raw_base64',
-                        content: job.base64,
-                        source: 'Kiosk'
-                    })
-                });
-                if (!cloudRes.ok) throw new Error('PrintNode cloud erreur ' + cloudRes.status);
-                success = true;
-            }
-
-            if (success) {
-                _printQueue.shift();
-                _savePrintQueue();
-            }
+            const res = await fetch('https://api.printnode.com/printjobs', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    printerId: parseInt(job.printerId),
+                    title: job.title,
+                    contentType: 'raw_base64',
+                    content: job.base64,
+                    source: 'Kiosk'
+                }),
+                signal: AbortSignal.timeout(8000)
+            });
+            if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
+            _printQueue.shift();
+            _savePrintQueue();
         } catch(e) {
-            console.warn('PrintNode indisponible (local + cloud), ticket en attente:', e.message);
+            console.warn('PrintNode indisponible, retry dans 2s:', e.message);
             break;
         }
     }
     _printQueueBusy = false;
 }
 
-// Réessayer automatiquement quand le réseau revient
-window.addEventListener('online', () => {
-    console.log('Réseau rétabli — envoi des tickets en attente...');
-    showToast('📶 Réseau rétabli — impression des tickets en attente...');
-    setTimeout(_flushPrintQueue, 1000);
-});
+// ── Retry agressif koll 2s mli kayen tickets f queue ──
+// Mli wifi 9t3 o rj3 → addition katkhrj f l7in (max 2 thwani delay)
+setInterval(() => { if (_printQueue.length > 0) _flushPrintQueue(); }, 2000);
 
-// Retry toutes les 30s si des tickets sont en attente (local aw cloud)
-setInterval(() => { if (_printQueue.length > 0) _flushPrintQueue(); }, 30000);
+// Retry immédiat mli yrj3 wifi
+window.addEventListener('online', () => {
+    showToast('📶 Réseau rétabli — impression en cours...');
+    _flushPrintQueue();
+});
 
 async function printViaPrintNode(content, type='kitchen') {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
