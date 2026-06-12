@@ -1148,32 +1148,90 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     return `<pre style="font-family:'Courier New',monospace;font-size:10px;line-height:1.6;white-space:pre;">${plainTicket}</pre>`;
 }
     
-// ── LOCAL BROWSER PRINT (fallback offline) ──
-// Mli PrintNode offline, kayesta3mel window.print() direct — bla internet.
-// Printer lazem ykon connected l PC/tablet via USB aw local network.
+// ── LOCAL SILENT PRINT (fallback offline) ──
+// Kayesta3mel hidden iframe bach yprint bla Chrome dialog o bla ma yprint la page kamla.
+// Printer lazem ykon connected (USB aw local network) o configured kdefault printer.
 let _localPrintBusy = false;
 
+function _extractPlainTicket(content) {
+    // content = HTML <pre>...</pre> avec ESC/POS chars — nkhrjou juste le texte propre
+    const tmp = document.createElement('div');
+    tmp.innerHTML = content;
+    // Strip ESC/POS control chars (0x00-0x1F sauf \n\r\t) o chars > 0x7E li makaynche f ASCII normal
+    return (tmp.innerText || tmp.textContent || '')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
 async function _printLocal(content) {
-    // Éviter prints simultanés
     if (_localPrintBusy) {
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 1200));
     }
     _localPrintBusy = true;
-    try {
-        const ticketDiv = document.getElementById('ticket');
-        if (!ticketDiv) { _localPrintBusy = false; return; }
+    return new Promise((resolve) => {
+        try {
+            const plainText = _extractPlainTicket(content);
 
-        // Injecter le contenu
-        ticketDiv.innerHTML = content;
+            // ── Iframe caché — kayprint juste le ticket, bla popup UI ──
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:80mm;height:1px;border:none;visibility:hidden;';
+            document.body.appendChild(iframe);
 
-        // Lancer l'impression
-        window.print();
+            const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iDoc.open();
+            iDoc.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<style>
+  @page { margin: 0; size: 80mm auto; }
+  html, body { margin: 0; padding: 2mm 3mm; background: #fff; }
+  pre {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    white-space: pre;
+    color: #000;
+    margin: 0;
+  }
+</style>
+</head><body>
+<pre>${plainText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+</body></html>`);
+            iDoc.close();
 
-        // Attendre que la boîte de dialogue se ferme (~1.5s)
-        await new Promise(r => setTimeout(r, 1500));
-    } finally {
-        _localPrintBusy = false;
-    }
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch(e) {
+                        console.warn('iframe print error:', e);
+                    }
+                    // Supprimer l'iframe après impression
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        _localPrintBusy = false;
+                        resolve();
+                    }, 2000);
+                }, 300);
+            };
+
+            // Fallback si onload makatji7 (vieux browsers)
+            setTimeout(() => {
+                if (_localPrintBusy) {
+                    try { iframe.contentWindow.print(); } catch(e) {}
+                    setTimeout(() => {
+                        if (iframe.parentNode) document.body.removeChild(iframe);
+                        _localPrintBusy = false;
+                        resolve();
+                    }, 2000);
+                }
+            }, 3000);
+
+        } catch(e) {
+            console.warn('_printLocal error:', e);
+            _localPrintBusy = false;
+            resolve();
+        }
+    });
 }
 
 // ── OFFLINE PRINT QUEUE ──
@@ -1260,26 +1318,23 @@ async function printViaPrintNode(content, type='kitchen') {
         return;
     }
 
-    const base64 = _contentToBase64(content);
-    const job = {
-        apiKey: cfg.apiKey,
-        printerId: printerId,
-        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-        base64: base64,
-        ts: Date.now()
-    };
-
-    // Ajouter à la queue et sauvegarder localement
-    _printQueue.push(job);
-    _savePrintQueue();
-
-    // ── Online → envoyer via PrintNode ──
     if (navigator.onLine) {
+        // ── Online → queue + envoyer via PrintNode cloud ──
+        const base64 = _contentToBase64(content);
+        const job = {
+            apiKey: cfg.apiKey,
+            printerId: printerId,
+            title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+            base64: base64,
+            ts: Date.now()
+        };
+        _printQueue.push(job);
+        _savePrintQueue();
         await _flushPrintQueue();
     } else {
-        // ── Offline → impression locale directe (browser print) ──
-        // Ticket kaikhrj F L7IN — bla internet — via window.print()
-        // PrintNode queue katzal saved bach ttwl mli yrj3 wifi (éviter doublons)
+        // ── Offline → impression locale directe via iframe (bla internet, bla popup) ──
+        // MATKHZENCHE f PrintNode queue — ticket déjà kaykhrej daba
+        // (PrintNode o local ma3ndhoumche connection — double print avoided)
         await _printLocal(content);
     }
 }
