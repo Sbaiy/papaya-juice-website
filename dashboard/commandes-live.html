@@ -146,65 +146,65 @@ body::before {
 }
 .verify-btn:hover { opacity: 0.85; }
 
-/* ── TABLE PLAN ── */
-.tables-plan-section {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  margin: 0 18px 14px;
-  overflow: hidden;
+/* ── PLAN TABLES MODAL ── */
+#planTablesModal {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.65);
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
-.tables-plan-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  cursor: pointer;
-  user-select: none;
-}
-.tables-plan-header:hover { background: rgba(255,255,255,0.03); }
-.tables-plan-title {
-  font-size: 14px; font-weight: 700; color: #fff;
-  display: flex; align-items: center; gap: 10px;
-}
-.tables-plan-subtitle { font-size: 12px; color: var(--muted); font-weight: 400; }
-.tables-plan-toggle {
-  background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3);
-  color: var(--primary); font-size: 12px; font-weight: 600;
-  padding: 5px 14px; border-radius: 20px; cursor: pointer;
-  font-family: 'Poppins', sans-serif; transition: all 0.2s;
-}
-.tables-plan-toggle:hover { background: var(--primary); color: #fff; }
-.tables-plan-body { padding: 16px 18px; }
-.tables-plan-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
-}
-.tp-card {
-  border-radius: 12px;
-  padding: 12px 8px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.15s;
-  border: 2px solid;
+#planTablesModal.open { display: flex; }
+.pt-box {
+  background: rgba(22,27,34,0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+  padding: 24px;
+  width: 95%; max-width: 640px;
+  max-height: 88vh;
+  display: flex; flex-direction: column;
   font-family: 'Poppins', sans-serif;
 }
-.tp-card:hover { transform: scale(1.04); }
-.tp-card.libre {
-  background: rgba(34,197,94,0.08);
-  border-color: rgba(34,197,94,0.3);
-  color: #4ade80;
+.pt-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px; flex-shrink: 0;
 }
-.tp-card.occupee {
-  background: rgba(239,68,68,0.12);
-  border-color: rgba(239,68,68,0.45);
-  color: #fb7185;
+.pt-title { font-size: 18px; font-weight: 700; color: #fff; }
+.pt-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.pt-close-btn {
+  background: rgba(255,255,255,0.07); border: none; color: rgba(255,255,255,0.5);
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
 }
-.tp-card.occupee:hover { box-shadow: 0 0 18px rgba(251,113,133,0.3); }
-.tp-num { font-weight: 800; font-size: 18px; }
-.tp-status { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; opacity: 0.85; }
-.tp-cmds { font-size: 10px; opacity: 0.75; margin-top: 1px; }
-
+.pt-close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.pt-legend {
+  display: flex; gap: 16px; margin-bottom: 14px; flex-shrink: 0;
+}
+.pt-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: rgba(255,255,255,0.5);
+}
+.pt-legend-dot {
+  width: 12px; height: 12px; border-radius: 4px; display: inline-block;
+}
+#ptGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px; overflow-y: auto; padding-right: 4px; flex: 1;
+}
+.pt-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 14px; flex-shrink: 0;
+}
+.pt-footer-text { font-size: 13px; color: rgba(255,255,255,0.5); }
+.pt-close-footer {
+  padding: 9px 22px; border-radius: 10px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  color: #fff; cursor: pointer; font-family: 'Poppins', sans-serif;
+  font-size: 13px; font-weight: 600; transition: background 0.15s;
+}
+.pt-close-footer:hover { background: rgba(255,255,255,0.12); }
 .filter-bar {
   display: flex; gap: 8px; flex-wrap: wrap;
   background: var(--card-bg); border-radius: var(--radius); padding: 12px 16px;
@@ -486,22 +486,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
     <div class="tables-info" id="tablesInfo">
       Vides: <b id="tablesVides">–</b> | Occupées: <b id="tablesOccupees">–</b>
     </div>
-    <button class="verify-btn" onclick="loadOrders()">Vérifier les tables vides</button>
-  </div>
-  <!-- TABLE PLAN -->
-  <div class="tables-plan-section" id="tablesPlanSection">
-    <div class="tables-plan-header" onclick="toggleTablesPlan()">
-      <div class="tables-plan-title">
-        🪑 Gestion des tables
-        <span class="tables-plan-subtitle" id="tpSubtitle">Chargement…</span>
-      </div>
-      <button class="tables-plan-toggle" id="tpToggleBtn" onclick="event.stopPropagation();toggleTablesPlan()">Masquer les tables</button>
-    </div>
-    <div class="tables-plan-body" id="tablesPlanBody">
-      <div class="tables-plan-grid" id="tablesPlanGrid">
-        <div style="color:var(--muted);font-size:13px;grid-column:1/-1;text-align:center;padding:20px 0;">Chargement…</div>
-      </div>
-    </div>
+    <button class="verify-btn" onclick="openPlanTablesModal()">Vérifier les tables vides</button>
   </div>
   <div class="filter-bar" id="filterBar">
     <button class="filter-tab active" data-status="all">📋 Tout <span class="tab-count" id="cnt-all">0</span></button>
@@ -991,36 +976,14 @@ function printTicket(order) {
   const w = window.open('', '_blank', 'width=400,height=600');
   w.document.write(`<html><head>
   <link rel="icon" type="image/png" href="/logo.png">
-  <link rel="apple-touch-icon" href="/logo.png"><title>Ticket</title><style>body{font-family:monospace;font-size:14px;padding:20px;max-width:280px}h2{text-align:center;font-size:18px}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between}.total{font-size:16px;font-weight:bold}.center{text-align:center}</style></head><body><h2>🧃 Papaya Juice</h2><div class="center">Commande #${order.order_number || order.id}</div><div class="center">${new Date(order.created_at).toLocaleString('fr-FR')}</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>TOTAL</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div>${order.serveur ? `<div class="center" style="margin-top:10px">Serveur: ${order.serveur}</div>` : ''}<div class="center" style="margin-top:20px">Merci de votre visite ! 🙏</div><script>window.onload=()=>{window.print();window.close();}<\/script>
-// Init table plan visibility
-document.addEventListener('DOMContentLoaded', () => {
-  if (!_tpVisible) {
-    const body = document.getElementById('tablesPlanBody');
-    const btn = document.getElementById('tpToggleBtn');
-    if (body) body.style.display = 'none';
-    if (btn) btn.textContent = 'Afficher les tables';
-  }
-});
-
-</body></html>`);
+  <link rel="apple-touch-icon" href="/logo.png"><title>Ticket</title><style>body{font-family:monospace;font-size:14px;padding:20px;max-width:280px}h2{text-align:center;font-size:18px}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between}.total{font-size:16px;font-weight:bold}.center{text-align:center}</style></head><body><h2>🧃 Papaya Juice</h2><div class="center">Commande #${order.order_number || order.id}</div><div class="center">${new Date(order.created_at).toLocaleString('fr-FR')}</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>TOTAL</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div>${order.serveur ? `<div class="center" style="margin-top:10px">Serveur: ${order.serveur}</div>` : ''}<div class="center" style="margin-top:20px">Merci de votre visite ! 🙏</div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
 }
 function printAddition(order) {
   let items = []; try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch {}
   const w = window.open('', '_blank', 'width=400,height=600');
   w.document.write(`<html><head>
   <link rel="icon" type="image/png" href="/logo.png">
-  <link rel="apple-touch-icon" href="/logo.png"><title>Addition</title><style>body{font-family:monospace;font-size:13px;padding:20px;max-width:280px}h2{text-align:center}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between;padding:3px 0}.total{font-size:15px;font-weight:bold;margin-top:8px}.center{text-align:center}</style></head><body><h2>ADDITION</h2><div class="center">Papaya Juice</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>À PAYER</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div><script>window.onload=()=>{window.print();window.close();}<\/script>
-// Init table plan visibility
-document.addEventListener('DOMContentLoaded', () => {
-  if (!_tpVisible) {
-    const body = document.getElementById('tablesPlanBody');
-    const btn = document.getElementById('tpToggleBtn');
-    if (body) body.style.display = 'none';
-    if (btn) btn.textContent = 'Afficher les tables';
-  }
-});
-
-</body></html>`);
+  <link rel="apple-touch-icon" href="/logo.png"><title>Addition</title><style>body{font-family:monospace;font-size:13px;padding:20px;max-width:280px}h2{text-align:center}hr{border:1px dashed #000}.row{display:flex;justify-content:space-between;padding:3px 0}.total{font-size:15px;font-weight:bold;margin-top:8px}.center{text-align:center}</style></head><body><h2>ADDITION</h2><div class="center">Papaya Juice</div><hr>${items.map(i => `<div class="row"><span>${i.qty||1}x ${i.title||i.name||''}</span><span>${((i.price||0)*(i.qty||1)).toFixed(2)} DH</span></div>`).join('')}<hr><div class="row total"><span>À PAYER</span><span>${parseFloat(order.total||0).toFixed(2)} DH</span></div><script>window.onload=()=>{window.print();window.close();}<\/script></body></html>`);
 }
 // ── Realtime : mise à jour locale sans re-fetch ──────────────────────────
 function _normalizeOrder(o) {
@@ -1156,104 +1119,118 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
-window.onload = loadOrders;
 
-// ── TABLE PLAN ──
-let _tpVisible = localStorage.getItem('tp_visible') !== 'false';
+<!-- ── PLAN DES TABLES MODAL ── -->
+<div id="planTablesModal">
+  <div class="pt-box">
+    <div class="pt-header">
+      <div>
+        <div class="pt-title">🪑 Plan des tables</div>
+        <div class="pt-subtitle" id="ptSubtitle">Chargement…</div>
+      </div>
+      <button class="pt-close-btn" onclick="closePlanTablesModal()">✕</button>
+    </div>
+    <div class="pt-legend">
+      <span class="pt-legend-item">
+        <span class="pt-legend-dot" style="background:#16a34a;"></span> Libre
+      </span>
+      <span class="pt-legend-item">
+        <span class="pt-legend-dot" style="background:#be123c;"></span> Occupée
+      </span>
+    </div>
+    <div id="ptGrid"></div>
+    <div class="pt-footer">
+      <span class="pt-footer-text" id="ptFooter"></span>
+      <button class="pt-close-footer" onclick="closePlanTablesModal()">Fermer</button>
+    </div>
+  </div>
+</div>
 
-function toggleTablesPlan() {
-  _tpVisible = !_tpVisible;
-  localStorage.setItem('tp_visible', _tpVisible);
-  document.getElementById('tablesPlanBody').style.display = _tpVisible ? 'block' : 'none';
-  document.getElementById('tpToggleBtn').textContent = _tpVisible ? 'Masquer les tables' : 'Afficher les tables';
+<script>
+async function openPlanTablesModal() {
+  document.getElementById('planTablesModal').classList.add('open');
+  await renderPlanTables();
+}
+function closePlanTablesModal() {
+  document.getElementById('planTablesModal').classList.remove('open');
 }
 
-function renderTablesPlan() {
-  const grid = document.getElementById('tablesPlanGrid');
-  const subtitle = document.getElementById('tpSubtitle');
-  if (!grid) return;
+async function renderPlanTables() {
+  const grid     = document.getElementById('ptGrid');
+  const subtitle = document.getElementById('ptSubtitle');
+  const footer   = document.getElementById('ptFooter');
+  grid.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:13px;grid-column:1/-1;text-align:center;padding:30px 0;">Chargement…</div>';
 
-  // Get table count from settings or default 60
-  const tableCount = parseInt(localStorage.getItem('tp_table_count') || '60');
+  try {
+    // 1. Nombre de tables depuis Supabase
+    let tableCount = 60;
+    try {
+      const { data } = await db.from('settings').select('value').eq('key','table_count').single();
+      if (data) tableCount = parseInt(data.value) || 60;
+    } catch(e) {}
 
-  // Build occupied map from allOrders
-  const occupiedMap = {}; // tKey → count of active orders
-  const activeStatuses = new Set(['paiement','en_preparation','pret','pending','paid','preparing','ready']);
-  allOrders.forEach(o => {
-    if (o.table_number && o.table_number.startsWith('T') && activeStatuses.has(o.status)) {
-      const k = o.table_number;
-      occupiedMap[k] = (occupiedMap[k] || 0) + 1;
-    }
-  });
+    // 2. Tables occupées depuis allOrders déjà chargé
+    const occupiedTables = new Set();
+    const tableOrders = {};
+    allOrders.forEach(o => {
+      if (o.status !== 'termine' && o.status !== 'payee' && o.status !== 'annule'
+          && o.table_number && o.table_number.toString().startsWith('T')) {
+        occupiedTables.add(o.table_number);
+        if (!tableOrders[o.table_number]) tableOrders[o.table_number] = [];
+        tableOrders[o.table_number].push(o);
+      }
+    });
 
-  const occupiedCount = Object.keys(occupiedMap).length;
-  subtitle.textContent = `Vides: ${tableCount - occupiedCount} | Occupées: ${occupiedCount}`;
+    const occupiedCount = occupiedTables.size;
+    const freeCount = Math.max(0, tableCount - occupiedCount);
+    subtitle.textContent = occupiedCount + ' occupée(s) · ' + freeCount + ' libre(s)';
+    footer.textContent   = occupiedCount + ' table(s) occupée(s)';
 
-  grid.innerHTML = '';
-  for (let i = 1; i <= tableCount; i++) {
-    const tKey = 'T' + i;
-    const isOccupied = !!occupiedMap[tKey];
-    const cmds = occupiedMap[tKey] || 0;
-
-    const card = document.createElement('div');
-    card.className = 'tp-card ' + (isOccupied ? 'occupee' : 'libre');
-    card.innerHTML = `
-      <span class="tp-num">${i}</span>
-      <span class="tp-status">${isOccupied ? 'OCCUPÉE' : 'LIBRE'}</span>
-      ${isOccupied ? `<span class="tp-cmds">${cmds} cmd${cmds > 1 ? 's' : ''}</span>` : ''}
-    `;
-    if (isOccupied) {
-      card.addEventListener('click', () => {
-        // Filter orders to this table
-        const tab = document.querySelector('.filter-tab[data-status="all"]');
-        if (tab) { document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); activeFilter = 'all'; }
-        renderOrders(tKey);
+    // 3. Render grille
+    grid.innerHTML = '';
+    for (let i = 1; i <= tableCount; i++) {
+      const tKey = 'T' + i;
+      const isOccupied = occupiedTables.has(tKey);
+      const card = document.createElement('button');
+      card.style.cssText = `
+        padding: 14px 8px;
+        border-radius: 12px;
+        border: 2px solid ${isOccupied ? 'rgba(190,18,60,0.5)' : 'rgba(22,163,74,0.4)'};
+        background: ${isOccupied ? 'rgba(190,18,60,0.15)' : 'rgba(22,163,74,0.12)'};
+        color: ${isOccupied ? '#fb7185' : '#4ade80'};
+        cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        transition: transform 0.1s, box-shadow 0.15s;
+        font-family: 'Poppins', sans-serif;
+      `;
+      const ordersForTable = tableOrders[tKey] || [];
+      const totalAmt = ordersForTable.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+      card.innerHTML = `
+        <span style="font-weight:700;font-size:20px;">${i}</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:0.05em;opacity:0.8;">${isOccupied ? 'OCCUPÉE' : 'LIBRE'}</span>
+        ${isOccupied ? `<span style="font-size:10px;opacity:0.7;">${totalAmt.toFixed(0)} DH</span>` : ''}
+      `;
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'scale(1.05)';
+        if (isOccupied) card.style.boxShadow = '0 0 18px rgba(251,113,133,0.35)';
+        else card.style.boxShadow = '0 0 14px rgba(74,222,128,0.25)';
       });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'scale(1)';
+        card.style.boxShadow = 'none';
+      });
+      grid.appendChild(card);
     }
-    grid.appendChild(card);
+  } catch(e) {
+    grid.innerHTML = `<div style="color:#f87171;font-size:13px;grid-column:1/-1;text-align:center;padding:30px 0;">❌ Erreur: ${e.message}</div>`;
+    subtitle.textContent = 'Erreur de chargement';
   }
-
-  // Fetch real table count from supabase settings
-  db.from('settings').select('value').eq('key','table_count').single().then(({data}) => {
-    if (data) {
-      localStorage.setItem('tp_table_count', data.value);
-      if (parseInt(data.value) !== tableCount) renderTablesPlan();
-    }
-  }).catch(() => {});
 }
 
-// Patch renderOrders to support table filter
-const _origRenderOrders = renderOrders;
-function renderOrders(tableFilter) {
-  if (!tableFilter) { _origRenderOrders(); renderTablesPlan(); return; }
-  // Filter by table
-  const hideFinished = document.getElementById('hideFinished').checked;
-  let filtered = allOrders.filter(o => o.table_number === tableFilter);
-  if (hideFinished) filtered = filtered.filter(o => o.status !== 'termine' && o.status !== 'payee' && o.status !== 'annule');
-  const grid = document.getElementById('ordersGrid');
-  if (!filtered.length) {
-    grid.innerHTML = '<div class="no-orders"><span class="no-icon">🪑</span>Aucune commande active pour cette table</div>';
-    return;
-  }
-  // Reuse existing render with filtered
-  const backup = allOrders;
-  allOrders = filtered;
-  _origRenderOrders();
-  allOrders = backup;
-  renderTablesPlan();
-}
-
-</script>
-
-// Init table plan visibility
-document.addEventListener('DOMContentLoaded', () => {
-  if (!_tpVisible) {
-    const body = document.getElementById('tablesPlanBody');
-    const btn = document.getElementById('tpToggleBtn');
-    if (body) body.style.display = 'none';
-    if (btn) btn.textContent = 'Afficher les tables';
-  }
+// Close on backdrop click
+document.getElementById('planTablesModal').addEventListener('click', function(e) {
+  if (e.target === this) closePlanTablesModal();
 });
-
+</script>
 </body>
 </html>
