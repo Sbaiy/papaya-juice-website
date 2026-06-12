@@ -2752,22 +2752,42 @@ function formatTdPrice(v) {
 }
 
 async function encaisserOrder(orderId, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    if (btn) { btn.disabled = true; btn.textContent = "…"; }
     try {
-        await updateOrderStatusFromKiosk(orderId, 'done');
-        // Refresh the popup
-        const popup = document.getElementById('tableDetailPopup');
-        if (popup && popup._currentOrders) {
-            const o = popup._currentOrders.find(x => x.id === orderId);
-            if (o) o.status = 'done';
-            // re-open with updated orders
-            openTableDetailPopup(popup._currentTable, popup._currentOrders,
-                document.getElementById('tdOccupied').textContent.replace(/\D+/g,'') * 1);
+        await updateOrderStatusFromKiosk(orderId, "done");
+        showToast("✅ Commande encaissée !");
+
+        // Re-fetch fresh data from API
+        const popup = document.getElementById("tableDetailPopup");
+        const tKey = popup._currentTable;
+        if (!tKey) return;
+
+        const token = localStorage.getItem("papaya_token");
+        const res = await fetch(BACKEND_URL + "/api/orders", {
+            headers: token ? { "Authorization": "Bearer " + token } : {}
+        });
+        const ordersRes = res.ok ? await res.json() : {};
+        const allOrders = Array.isArray(ordersRes) ? ordersRes : (ordersRes.data || []);
+
+        const occupiedTables = new Set();
+        const tableOrders = {};
+        allOrders.forEach(o => {
+            if (PLAN_OCCUPIED_STATUSES.has(o.status) && o.table_number && o.table_number.startsWith("T")) {
+                occupiedTables.add(o.table_number);
+                if (!tableOrders[o.table_number]) tableOrders[o.table_number] = [];
+                tableOrders[o.table_number].push(o);
+            }
+        });
+
+        if (occupiedTables.has(tKey) && tableOrders[tKey]) {
+            openTableDetailPopup(tKey, tableOrders[tKey], occupiedTables.size);
+        } else {
+            closeTableDetailPopup();
+            await renderPlanTables();
         }
-        showToast('✅ Commande encaissée !');
     } catch(e) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Encaisser'; }
-        showToast('❌ Erreur encaissement');
+        if (btn) { btn.disabled = false; btn.textContent = "Encaisser"; }
+        showToast("❌ Erreur encaissement");
     }
 }
 </script>
