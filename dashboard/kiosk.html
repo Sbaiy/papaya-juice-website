@@ -2601,14 +2601,17 @@ function openTableDetailPopup(tKey, orders, occupiedCount) {
         const statusColor = isPaid ? '#3fb950' : '#f59e0b';
         const statusBg = isPaid ? 'rgba(63,185,80,0.15)' : 'rgba(245,158,11,0.15)';
 
-        // Build items list
+        // Build items list — parse JSON string if needed
         let itemsHtml = '';
-        const items = order.items || order.cart || [];
-        if (Array.isArray(items)) {
-            items.forEach(it => {
+        let rawItems = order.items || order.cart || [];
+        if (typeof rawItems === 'string') {
+            try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+        }
+        if (Array.isArray(rawItems)) {
+            rawItems.forEach(it => {
                 const qty = it.quantity || it.qty || 1;
-                const name = it.name || it.product_name || '';
-                itemsHtml += `<div style="font-size:13px;color:var(--orange-light);margin-bottom:2px;">${qty}× ${name}</div>`;
+                const name = it.name || it.title || it.product_name || it.label || '';
+                if (name) itemsHtml += `<div style="font-size:13px;color:var(--orange-light);margin-bottom:2px;">${qty}× ${name}</div>`;
             });
         }
 
@@ -2621,13 +2624,12 @@ function openTableDetailPopup(tKey, orders, occupiedCount) {
         `;
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${order.id || order.order_number || '—'}</span>
-                <span style="background:${statusBg};color:${statusColor};font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;">${statusLabel}</span>
+                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${String(order.id||'').slice(-6).padStart(3,'0')}</span>
             </div>
             <div style="margin-bottom:10px;">${itemsHtml || '<span style="color:var(--muted);font-size:12px;">Aucun article</span>'}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--orange);">${formatTdPrice(total)}</span>
-                ${!isPaid ? `<button onclick="encaisserOrder('${order.id}')" style="background:var(--green);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Encaisser</button>` : ''}
+                ${!isPaid ? `<button onclick="encaisserOrder('${order.id}', this)" style="background:var(--green);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;cursor:pointer;">Encaisser</button>` : ''}
             </div>
         `;
         list.appendChild(card);
@@ -2749,10 +2751,24 @@ function formatTdPrice(v) {
     return parseFloat(v || 0).toFixed(2) + ' DH';
 }
 
-function encaisserOrder(orderId) {
-    // Hook into existing encaissement if available
-    if (typeof encaisser === 'function') encaisser(orderId);
-    else showToast('Encaissement: #' + orderId);
+async function encaisserOrder(orderId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+        await updateOrderStatusFromKiosk(orderId, 'done');
+        // Refresh the popup
+        const popup = document.getElementById('tableDetailPopup');
+        if (popup && popup._currentOrders) {
+            const o = popup._currentOrders.find(x => x.id === orderId);
+            if (o) o.status = 'done';
+            // re-open with updated orders
+            openTableDetailPopup(popup._currentTable, popup._currentOrders,
+                document.getElementById('tdOccupied').textContent.replace(/\D+/g,'') * 1);
+        }
+        showToast('✅ Commande encaissée !');
+    } catch(e) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Encaisser'; }
+        showToast('❌ Erreur encaissement');
+    }
 }
 </script>
 
