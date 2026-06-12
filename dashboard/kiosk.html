@@ -1148,6 +1148,34 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     return `<pre style="font-family:'Courier New',monospace;font-size:10px;line-height:1.6;white-space:pre;">${plainTicket}</pre>`;
 }
     
+// ── LOCAL BROWSER PRINT (fallback offline) ──
+// Mli PrintNode offline, kayesta3mel window.print() direct — bla internet.
+// Printer lazem ykon connected l PC/tablet via USB aw local network.
+let _localPrintBusy = false;
+
+async function _printLocal(content) {
+    // Éviter prints simultanés
+    if (_localPrintBusy) {
+        await new Promise(r => setTimeout(r, 800));
+    }
+    _localPrintBusy = true;
+    try {
+        const ticketDiv = document.getElementById('ticket');
+        if (!ticketDiv) { _localPrintBusy = false; return; }
+
+        // Injecter le contenu
+        ticketDiv.innerHTML = content;
+
+        // Lancer l'impression
+        window.print();
+
+        // Attendre que la boîte de dialogue se ferme (~1.5s)
+        await new Promise(r => setTimeout(r, 1500));
+    } finally {
+        _localPrintBusy = false;
+    }
+}
+
 // ── OFFLINE PRINT QUEUE ──
 // Les tickets sont mis en queue et envoyés à PrintNode dès que le réseau revient.
 // Jamais de popup navigateur.
@@ -1245,11 +1273,14 @@ async function printViaPrintNode(content, type='kitchen') {
     _printQueue.push(job);
     _savePrintQueue();
 
-    // Essayer d'envoyer immédiatement si online
+    // ── Online → envoyer via PrintNode ──
     if (navigator.onLine) {
         await _flushPrintQueue();
     } else {
-        showToast('📵 Hors ligne — ticket sauvegardé, sera imprimé au retour du réseau');
+        // ── Offline → impression locale directe (browser print) ──
+        // Ticket kaikhrj F L7IN — bla internet — via window.print()
+        // PrintNode queue katzal saved bach ttwl mli yrj3 wifi (éviter doublons)
+        await _printLocal(content);
     }
 }
 
@@ -1406,7 +1437,8 @@ async function submitOrder() {
                 }
             } catch(e) {
                 // ملي كيفشل الإرسال — حفظ فـ offline queue
-                _oqPush(orderPayload);
+                // printed:true لأن tickets خرجو دابا via _printLocal
+                _oqPush(orderPayload, true);
                 _isOffline = true;
                 _showOfflineBanner();
             }
@@ -2243,8 +2275,8 @@ let _isOffline = false;
 function _showOfflineBanner() {
     const b = document.getElementById('offlineBanner');
     if (!b) return;
-    b.innerHTML = '📵 Hors ligne — commandes sauvegardées localement';
-    b.style.background = '#ef4444';
+    b.innerHTML = '📵 Hors ligne — ticket imprimé ✓ | commandes sauvegardées';
+    b.style.background = '#b45309';
     b.style.display = 'flex';
 }
 
@@ -2267,9 +2299,10 @@ function _oqLoad() {
     try { return JSON.parse(localStorage.getItem(OQ_KEY) || '[]'); } catch(e) { return []; }
 }
 function _oqSave(q) { localStorage.setItem(OQ_KEY, JSON.stringify(q)); }
-function _oqPush(payload) {
+function _oqPush(payload, alreadyPrinted = false) {
     const q = _oqLoad();
-    q.push({ payload, ts: Date.now() });
+    // alreadyPrinted = true mli tickets khrejou offline via _printLocal
+    q.push({ payload, ts: Date.now(), printed: alreadyPrinted });
     _oqSave(q);
 }
 
@@ -2298,6 +2331,13 @@ async function _oqFlush() {
                 } catch(e) {
                     synced.push({ ...created, status: 'preparing' });
                     _broadcastOrder('new_order', { ...created, status: 'en_preparation' }).catch(() => {});
+                }
+                // ── Tickets: mli printed:true → tickets khrejou offline déjà ──
+                // Mandirou print mra thanya, walakin nflushiw PrintNode queue
+                // (pour que les tickets déjà en queue partent via cloud aussi)
+                if (item.printed) {
+                    // Tickets déjà imprimés localement — juste flush PrintNode si online
+                    _flushPrintQueue().catch(() => {});
                 }
             }
         } catch(e) {
