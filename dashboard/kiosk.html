@@ -1046,140 +1046,109 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     return `<pre style="font-family:'Courier New',monospace;font-size:10px;line-height:1.6;white-space:pre;">${plainTicket}</pre>`;
 }
     
-async function printViaPrintNode(content, type='kitchen') {
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
+// ── OFFLINE PRINT QUEUE ──
+// Les tickets sont mis en queue et envoyés à PrintNode dès que le réseau revient.
+// Jamais de popup navigateur.
 
-    // PrintNode si configuré
-    if (cfg.apiKey && printerId) {
+let _printQueue = JSON.parse(localStorage.getItem('_printQueue') || '[]');
+let _printQueueBusy = false;
+
+function _savePrintQueue() {
+    localStorage.setItem('_printQueue', JSON.stringify(_printQueue));
+}
+
+function _contentToBase64(content) {
+    let plainText;
+    if (content.includes('\n') && !content.trim().startsWith('<')) {
+        plainText = content;
+    } else {
+        const tmp = document.createElement('pre');
+        tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
+        tmp.innerHTML = content;
+        document.body.appendChild(tmp);
+        plainText = tmp.innerText || tmp.textContent || '';
+        document.body.removeChild(tmp);
+    }
+    const ESC = '\x1B', GS = '\x1D';
+    const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
+    const bytes = [];
+    for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
+    const uint8 = new Uint8Array(bytes);
+    let binary = '';
+    uint8.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+}
+
+async function _flushPrintQueue() {
+    if (_printQueueBusy || _printQueue.length === 0) return;
+    _printQueueBusy = true;
+    while (_printQueue.length > 0) {
+        const job = _printQueue[0];
         try {
-            // Si content est déjà du texte brut (contient \n), l'utiliser directement
-            // Sinon extraire le texte du HTML
-            let plainText;
-            if (content.includes('\n') && !content.trim().startsWith('<')) {
-                plainText = content;
-            } else {
-                // HTML → texte: utiliser un element temporaire visible hors écran
-                const tmp = document.createElement('pre');
-                tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
-                tmp.innerHTML = content;
-                document.body.appendChild(tmp);
-                plainText = tmp.innerText || tmp.textContent || '';
-                document.body.removeChild(tmp);
-            }
-
-            // ESC/POS commands
-            const ESC = '\x1B';
-            const GS  = '\x1D';
-            const INIT         = ESC + '@';          // Initialize printer
-            const ALIGN_CENTER = ESC + 'a' + '\x01'; // Center align
-            const ALIGN_LEFT   = ESC + 'a' + '\x00'; // Left align
-            const BOLD_ON      = ESC + 'E' + '\x01';
-            const BOLD_OFF     = ESC + 'E' + '\x00';
-            const FEED_5       = ESC + 'd' + '\x01'; // Feed 1 line before cut
-            const CUT          = GS  + 'V' + '\x41' + '\x03'; // Partial cut
-
-            // Construire le ticket ESC/POS
-            const ticket = INIT + ALIGN_LEFT + plainText + FEED_5 + CUT;
-
-            // Encoder en base64 (byte par byte pour ESC/POS)
-            const bytes = [];
-            for (let i = 0; i < ticket.length; i++) {
-                bytes.push(ticket.charCodeAt(i) & 0xFF);
-            }
-            const uint8 = new Uint8Array(bytes);
-            let binary = '';
-            uint8.forEach(b => binary += String.fromCharCode(b));
-            const base64 = btoa(binary);
-
             const res = await fetch('https://api.printnode.com/printjobs', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
+                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    printerId: parseInt(printerId),
-                    title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+                    printerId: parseInt(job.printerId),
+                    title: job.title,
                     contentType: 'raw_base64',
-                    content: base64,
+                    content: job.base64,
                     source: 'Kiosk'
                 })
             });
             if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-            return; // Imprimé via PrintNode avec auto-cut
+            _printQueue.shift(); // succès → retirer de la queue
+            _savePrintQueue();
         } catch(e) {
-            console.warn('PrintNode failed, fallback browser:', e.message);
+            // Réseau indisponible → arrêter et réessayer plus tard
+            console.warn('PrintNode offline, ticket en attente:', e.message);
+            break;
         }
     }
-
-    // Fallback: impression silencieuse via iframe (sans popup navigateur)
-    silentPrint(content, type);
+    _printQueueBusy = false;
 }
 
-// Queue pour éviter que les 2 tickets se chevauchent en fallback
-let _silentPrintQueue = [];
-let _silentPrintBusy  = false;
+// Réessayer automatiquement quand le réseau revient
+window.addEventListener('online', () => {
+    console.log('Réseau rétabli — envoi des tickets en attente...');
+    showToast('📶 Réseau rétabli — impression des tickets en attente...');
+    setTimeout(_flushPrintQueue, 1000);
+});
 
-function silentPrint(content, type) {
-    _silentPrintQueue.push({ content, type });
-    if (!_silentPrintBusy) _processSilentQueue();
-}
+// Retry toutes les 30s si des tickets sont en attente
+setInterval(() => { if (_printQueue.length > 0 && navigator.onLine) _flushPrintQueue(); }, 30000);
 
-function _processSilentQueue() {
-    if (_silentPrintQueue.length === 0) { _silentPrintBusy = false; return; }
-    _silentPrintBusy = true;
-    const { content } = _silentPrintQueue.shift();
+async function printViaPrintNode(content, type='kitchen') {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
 
-    // Supprimer l'ancien iframe s'il existe
-    const old = document.getElementById('_silent_print_frame');
-    if (old) old.remove();
+    if (!cfg.apiKey || !printerId) {
+        console.warn('PrintNode non configuré — ticket ignoré');
+        return;
+    }
 
-    // Créer un iframe invisible
-    const iframe = document.createElement('iframe');
-    iframe.id = '_silent_print_frame';
-    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px;top:-9999px;';
-    document.body.appendChild(iframe);
+    const base64 = _contentToBase64(content);
+    const job = {
+        apiKey: cfg.apiKey,
+        printerId: printerId,
+        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+        base64: base64,
+        ts: Date.now()
+    };
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { margin: 0; size: 80mm auto; }
-  body {
-    font-family: 'Courier New', monospace;
-    font-size: 10.5px;
-    width: 72mm;
-    padding: 3mm 4mm;
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-</style>
-</head>
-<body>${content.includes('\n') && !content.trim().startsWith('<')
-    ? '<pre style="font-family:Courier New,monospace;font-size:10.5px;margin:0;white-space:pre-wrap;">' + content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>'
-    : content
-}</body>
-</html>`);
-    doc.close();
+    // Ajouter à la queue et sauvegarder localement
+    _printQueue.push(job);
+    _savePrintQueue();
 
-    iframe.contentWindow.focus();
-    setTimeout(() => {
-        try {
-            iframe.contentWindow.print();
-        } catch(e) {
-            console.warn('Silent print error:', e);
-        }
-        // Attendre la fin d'impression avant le prochain ticket (1.5s)
-        setTimeout(() => {
-            if (iframe.parentNode) iframe.remove();
-            _processSilentQueue(); // ticket suivant
-        }, 1500);
-    }, 300);
+    // Essayer d'envoyer immédiatement si online
+    if (navigator.onLine) {
+        await _flushPrintQueue();
+    } else {
+        showToast('📵 Hors ligne — ticket sauvegardé, sera imprimé au retour du réseau');
+    }
 }
 
 // ── SUBMIT ORDER ──
