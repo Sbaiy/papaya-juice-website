@@ -1260,6 +1260,7 @@ async function renderPlanTables() {
         grid.appendChild(card2);
       });
     }
+  } catch(e) {
     grid.innerHTML = `<div style="color:#f87171;font-size:13px;grid-column:1/-1;text-align:center;padding:30px 0;">❌ Erreur: ${e.message}</div>`;
     subtitle.textContent = 'Erreur de chargement';
   }
