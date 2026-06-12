@@ -1273,26 +1273,58 @@ async function _flushPrintQueue() {
     while (_printQueue.length > 0) {
         const job = _printQueue[0];
         try {
-            const res = await fetch('https://api.printnode.com/printjobs', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    printerId: parseInt(job.printerId),
-                    title: job.title,
-                    contentType: 'raw_base64',
-                    content: job.base64,
-                    source: 'Kiosk'
-                })
-            });
-            if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-            _printQueue.shift(); // succès → retirer de la queue
-            _savePrintQueue();
+            // ── Essayer PrintNode LOCAL d'abord (port 8080, bla internet) ──
+            // PrintNode Desktop Client kaysmea3 3la localhost:8080
+            // Mli offline, local client kayprint direct via USB — bla cloud.
+            let success = false;
+
+            try {
+                const localRes = await fetch('http://localhost:8080/printjobs', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        printerId: parseInt(job.printerId),
+                        title: job.title,
+                        contentType: 'raw_base64',
+                        content: job.base64,
+                        source: 'Kiosk'
+                    }),
+                    signal: AbortSignal.timeout(3000)
+                });
+                if (localRes.ok) success = true;
+            } catch(localErr) {
+                // Local client machi available — essayer cloud
+            }
+
+            if (!success) {
+                // ── Fallback: PrintNode cloud (7taj internet) ──
+                const cloudRes = await fetch('https://api.printnode.com/printjobs', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        printerId: parseInt(job.printerId),
+                        title: job.title,
+                        contentType: 'raw_base64',
+                        content: job.base64,
+                        source: 'Kiosk'
+                    })
+                });
+                if (!cloudRes.ok) throw new Error('PrintNode cloud erreur ' + cloudRes.status);
+                success = true;
+            }
+
+            if (success) {
+                _printQueue.shift();
+                _savePrintQueue();
+            }
         } catch(e) {
-            // Réseau indisponible → arrêter et réessayer plus tard
-            console.warn('PrintNode offline, ticket en attente:', e.message);
+            console.warn('PrintNode indisponible (local + cloud), ticket en attente:', e.message);
             break;
         }
     }
@@ -1306,8 +1338,8 @@ window.addEventListener('online', () => {
     setTimeout(_flushPrintQueue, 1000);
 });
 
-// Retry toutes les 30s si des tickets sont en attente
-setInterval(() => { if (_printQueue.length > 0 && navigator.onLine) _flushPrintQueue(); }, 30000);
+// Retry toutes les 30s si des tickets sont en attente (local aw cloud)
+setInterval(() => { if (_printQueue.length > 0) _flushPrintQueue(); }, 30000);
 
 async function printViaPrintNode(content, type='kitchen') {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
@@ -1318,25 +1350,20 @@ async function printViaPrintNode(content, type='kitchen') {
         return;
     }
 
-    if (navigator.onLine) {
-        // ── Online → queue + envoyer via PrintNode cloud ──
-        const base64 = _contentToBase64(content);
-        const job = {
-            apiKey: cfg.apiKey,
-            printerId: printerId,
-            title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-            base64: base64,
-            ts: Date.now()
-        };
-        _printQueue.push(job);
-        _savePrintQueue();
-        await _flushPrintQueue();
-    } else {
-        // ── Offline → impression locale directe via iframe (bla internet, bla popup) ──
-        // MATKHZENCHE f PrintNode queue — ticket déjà kaykhrej daba
-        // (PrintNode o local ma3ndhoumche connection — double print avoided)
-        await _printLocal(content);
-    }
+    // ── Toujours PrintNode — online aw offline ──
+    // PrintNode Desktop Client kaykhdem LOCAL via USB — ma7tajche internet.
+    // navigator.onLine = false maynaa9che print — l client local kayhandliw.
+    const base64 = _contentToBase64(content);
+    const job = {
+        apiKey: cfg.apiKey,
+        printerId: printerId,
+        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+        base64: base64,
+        ts: Date.now()
+    };
+    _printQueue.push(job);
+    _savePrintQueue();
+    await _flushPrintQueue();
 }
 
 // ── SUBMIT ORDER ──
