@@ -2178,14 +2178,10 @@ async function updateOrderStatusFromKiosk(orderId, newStatus) {
         });
         if (!res.ok) { showToast('❌ Erreur mise à jour'); return; }
         const updated = await res.json();
-        const STATUS_NORM = { ready: 'ready', delivered: 'done', done: 'done' };
-        const idx = histAllOrders.findIndex(o => o.id === orderId);
-        if (idx !== -1) {
-            histAllOrders[idx].status = STATUS_NORM[updated.status] || updated.status;
-        }
-        _histUpdateUI();
         await _broadcastOrder('update_order', updated);
         showToast(newStatus === 'ready' ? '✅ Commande marquée Prête !' : '✔️ Commande Terminée !');
+        // Re-fetch fresh data from API — single source of truth
+        await loadHistoriqueOrders();
     } catch(e) {
         showToast('❌ Erreur: ' + e.message);
     }
