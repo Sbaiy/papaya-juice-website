@@ -2637,6 +2637,7 @@ function openTableDetailPopup(tKey, orders, occupiedCount) {
 
     // Store current table for "Ajouter une commande"
     popup._currentTable = tKey;
+    popup._currentOrders = orders;
     popup.style.display = 'flex';
 }
 
@@ -2651,15 +2652,97 @@ function tdGoBack() {
 
 function tdAddOrder() {
     const popup = document.getElementById('tableDetailPopup');
-    const tKey = popup._currentTable;
-    const sel = document.getElementById('tableSelect');
-    if (sel && tKey) {
-        for (const opt of sel.options) {
-            if (opt.value === tKey) { sel.value = tKey; break; }
+    const orders = popup._currentOrders || [];
+
+    if (orders.length === 1) {
+        // Un seul ordre → mode ajout direct
+        const encoded = encodeURIComponent(JSON.stringify(orders[0]));
+        closeTableDetailPopup();
+        closePlanTablesModal();
+        openModifierModal(encoded);
+    } else if (orders.length > 1) {
+        // Plusieurs ordres → choisir lequel modifier
+        openTdOrderPicker(orders);
+    } else {
+        // Aucun ordre (ne devrait pas arriver) → sélectionner table + fermer
+        const tKey = popup._currentTable;
+        const sel = document.getElementById('tableSelect');
+        if (sel && tKey) {
+            for (const opt of sel.options) {
+                if (opt.value === tKey) { sel.value = tKey; break; }
+            }
         }
+        closeTableDetailPopup();
+        closePlanTablesModal();
     }
-    closeTableDetailPopup();
-    closePlanTablesModal();
+}
+
+function openTdOrderPicker(orders) {
+    // Show a small overlay inside the popup to pick which order to add to
+    const existing = document.getElementById('tdOrderPickerOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'tdOrderPickerOverlay';
+    overlay.style.cssText = `
+        position:absolute; inset:0; border-radius:20px;
+        background:rgba(13,17,23,0.82);
+        backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:10px; padding:24px; z-index:10;
+    `;
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-family:"Syne",sans-serif;font-weight:700;font-size:16px;color:#e6edf3;margin-bottom:4px;text-align:center;';
+    title.textContent = 'Ajouter à quelle commande ?';
+    overlay.appendChild(title);
+
+    orders.forEach(order => {
+        const idShort = '#' + String(order.id||'').slice(-6).padStart(3,'0');
+        const items = order.items || order.cart || [];
+        const preview = Array.isArray(items) ? items.slice(0,2).map(i=>(i.name||i.title||'')).join(', ') : '';
+        const total = parseFloat(order.total||0).toFixed(2) + ' DH';
+
+        const btn = document.createElement('button');
+        btn.style.cssText = `
+            width:100%; padding:12px 16px; border-radius:12px;
+            background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+            color:#e6edf3; cursor:pointer; text-align:left;
+            display:flex; justify-content:space-between; align-items:center; gap:12px;
+            font-family:'DM Sans',sans-serif; transition:background 0.15s;
+        `;
+        btn.onmouseenter = () => btn.style.background = 'rgba(255,140,0,0.12)';
+        btn.onmouseleave = () => btn.style.background = 'rgba(255,255,255,0.06)';
+        btn.innerHTML = `
+            <div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">${idShort}</div>
+                <div style="font-size:11px;color:#7d8590;margin-top:2px;">${preview || 'Voir commande'}</div>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:#ff8c00;font-size:14px;white-space:nowrap;">${total}</div>
+        `;
+        btn.addEventListener('click', () => {
+            const encoded = encodeURIComponent(JSON.stringify(order));
+            closeTableDetailPopup();
+            closePlanTablesModal();
+            openModifierModal(encoded);
+        });
+        overlay.appendChild(btn);
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.style.cssText = `
+        margin-top:6px; padding:9px 22px; border-radius:10px;
+        background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+        color:#7d8590; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px;
+    `;
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.onclick = () => overlay.remove();
+    overlay.appendChild(cancelBtn);
+
+    // Attach to popup box
+    const popupBox = document.getElementById('tableDetailPopup').firstElementChild;
+    popupBox.style.position = 'relative';
+    popupBox.appendChild(overlay);
 }
 
 function formatTdPrice(v) {
