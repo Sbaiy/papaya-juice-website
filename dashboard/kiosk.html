@@ -976,7 +976,7 @@ function changePrice(productId, delta) {
     renderCart();
 }
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
-function clearCart() { _modifMode = null; cart = []; terrasseMode = false; const btn = document.getElementById('btnTerrasse'); if (btn) btn.classList.remove('active'); const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderProducts(); renderCart(); }
+function clearCart() { _modifMode = null; cart = []; const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderProducts(); renderCart(); }
 
 // Toggle Terrasse — bascule entre prix kiosk et prix normal
 function toggleTerrasse() {
