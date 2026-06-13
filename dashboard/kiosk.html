@@ -1385,7 +1385,7 @@ async function submitOrder() {
     }
 
     // ── MODE NORMAL — nouvelle commande ──
-    const tableVal = terrasseMode ? 'terrasse' : (document.getElementById('tableSelect').value || 'Comptoir');
+    const tableVal = document.getElementById('tableSelect').value || (terrasseMode ? 'terrasse' : 'Comptoir');
     const btnOrder = document.getElementById('btnOrder');
     btnOrder.disabled = true; btnOrder.textContent = 'Envoi…';
     try {
