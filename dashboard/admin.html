@@ -293,7 +293,8 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
 
                 <input type="text" id="title" placeholder="Item Name (e.g. Coca-Cola)">
                 <input type="text" id="description" placeholder="Short Description (Optional)">
-                <input type="text" id="price" placeholder="Price (DH) (e.g. 15.00)" style="grid-column: span 2;">
+                <input type="text" id="price" placeholder="Prix Table / Normal (DH)">
+                <input type="text" id="price_kiosk" placeholder="Prix Kiosk (DH)">
             </div>
             
             <input type="file" id="imageInput" accept="image/*" style="padding: 9px; grid-column: span 2;">
@@ -487,10 +488,11 @@ async function handleSubmit() { if (currentEditingProductId === null) { await ad
 async function addProduct(){ 
     const title = document.getElementById('title').value; 
     const description = document.getElementById('description').value || "-"; 
-    const price = document.getElementById('price').value; 
+    const price = document.getElementById('price').value;
+    const price_kiosk = document.getElementById('price_kiosk').value;
     const category = document.getElementById('categorySelect').value; 
     if(!title || !price || !imageData || !category){ alert('Please fill in all required fields!'); return; } 
-    try { await apiCall('POST', '/api/menu/products', { title, price, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(category); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
+    try { await apiCall('POST', '/api/menu/products', { title, price, price_kiosk: price_kiosk || null, image: imageData, category, description, disponible: true }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(category); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error saving data: ' + e.message); } 
 }
 
 async function startEdit(id) {
@@ -503,6 +505,7 @@ async function startEdit(id) {
     document.getElementById('title').value = product.title;
     document.getElementById('description').value = product.description || "";
     document.getElementById('price').value = product.price;
+    document.getElementById('price_kiosk').value = product.price_kiosk || '';
     await loadCategoriesSelect(product.category);
     imageData = product.image; preview.src = imageData; preview.style.display = 'block';
     document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
@@ -512,9 +515,10 @@ async function updateProduct() {
     const title = document.getElementById('title').value;
     const description = document.getElementById('description').value || "-"; 
     const price = document.getElementById('price').value;
+    const price_kiosk = document.getElementById('price_kiosk').value;
     const category = document.getElementById('categorySelect').value;
     if(!title || !price || !imageData){ alert('Please fill in all required fields!'); return; }
-    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
+    try { await apiCall('PUT', '/api/menu/products/' + currentEditingProductId, { title, price, price_kiosk: price_kiosk || null, image: imageData, category, description }); localStorage.removeItem('papaya_menu_cache'); await broadcastMenuUpdate(); clearForm(); await new Promise(r => setTimeout(r, 600)); await loadProducts(); } catch(e) { alert('Error updating data: ' + e.message); }
 }
 
 function clearForm(keepCategory) {
@@ -525,6 +529,7 @@ function clearForm(keepCategory) {
     document.getElementById('title').value = ''; 
     document.getElementById('description').value = ''; 
     document.getElementById('price').value = ''; 
+    document.getElementById('price_kiosk').value = '';
     if (keepCategory) {
         // Garder la même catégorie pour enchaîner les produits rapidement
         const sel = document.getElementById('categorySelect');
@@ -593,7 +598,7 @@ function makeCategoryEditable(id, currentCat) {
 async function loadProducts(){ 
     const list = document.getElementById('productsList'); 
     list.innerHTML = "<div style='text-align:center; padding:20px; color:#fff;'>Loading...</div>"; 
-    let { data: products, error } = await _supabase.from('products').select('id, title, price, category, description, image, disponible, sort_order').order('sort_order', { ascending: true }); 
+    let { data: products, error } = await _supabase.from('products').select('id, title, price, price_kiosk, category, description, image, disponible, sort_order').order('sort_order', { ascending: true }); 
     if(error) { 
         list.innerHTML = `<div style='color:red; padding:20px; text-align:center;'><b>Failed to load data</b></div>`; 
         return; 
@@ -623,7 +628,7 @@ async function loadProducts(){
         <table class="custom-table">
             <thead>
                 <tr>
-                    <th>ID</th><th>IMAGE</th><th>CATEGORY</th><th>NAME</th><th>DESCRIPTION</th><th>PRICE</th><th>AVAIL.</th><th>EXTRAS</th>
+                    <th>ID</th><th>IMAGE</th><th>CATEGORY</th><th>NAME</th><th>DESCRIPTION</th><th>PRIX TABLE</th><th>PRIX KIOSK</th><th>AVAIL.</th><th>EXTRAS</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -661,8 +666,13 @@ async function loadProducts(){
                         ${pencilIcon} ${desc}
                     </div>
                 </td>
-                <td id="price-cell-${product.id}" onclick="makePriceEditable(${product.id}, '${product.price}')">
+                <td id="price-cell-${product.id}" onclick="makePriceEditable(${product.id}, '${product.price}', 'price')">
                     <div class="td-price">${product.price} <span class="dh">DH</span></div>
+                </td>
+                <td id="price-kiosk-cell-${product.id}" onclick="makePriceEditable(${product.id}, '${product.price_kiosk || ''}', 'price_kiosk')">
+                    <div class="td-price" style="${product.price_kiosk ? '' : 'color:rgba(255,255,255,0.25);font-size:12px;'}">
+                        ${product.price_kiosk ? `${product.price_kiosk} <span class="dh">DH</span>` : '<span style="font-size:11px;opacity:0.4">— cliquer</span>'}
+                    </div>
                 </td>
                 <td>
                     <label class="switch">
@@ -720,31 +730,57 @@ async function toggleDisponibilite(id, isChecked) {
     try { await apiCall('PUT', '/api/menu/products/' + id, { disponible: isChecked }); await broadcastMenuUpdate(); } catch(e) { console.error(e); }
 }
 
-function makePriceEditable(id, currentPrice) {
-    const cell = document.getElementById('price-cell-' + id);
-    if (cell.querySelector('input')) return;
+function makePriceEditable(id, currentPrice, priceField = 'price') {
+    const cellId = priceField === 'price_kiosk' ? `price-kiosk-cell-${id}` : `price-cell-${id}`;
+    const cell = document.getElementById(cellId);
+    if (!cell || cell.querySelector('input')) return;
     cell.onclick = null;
-    cell.innerHTML = `<input class="price-input" id="pinput-${id}" type="number" step="0.01" value="${currentPrice}" autofocus>`;
-    const input = document.getElementById('pinput-' + id);
+    const inputId = `pinput-${priceField}-${id}`;
+    cell.innerHTML = `<input class="price-input" id="${inputId}" type="number" step="0.01" value="${currentPrice}" autofocus placeholder="0.00">`;
+    const input = document.getElementById(inputId);
     input.focus(); input.select();
+
+    const renderCell = (val) => {
+        if (priceField === 'price_kiosk') {
+            cell.innerHTML = val
+                ? `<div class="td-price">${val} <span class="dh">DH</span></div>`
+                : `<div class="td-price"><span style="font-size:11px;opacity:0.4">— cliquer</span></div>`;
+            cell.onclick = () => makePriceEditable(id, val || '', 'price_kiosk');
+        } else {
+            cell.innerHTML = `<div class="td-price">${val} <span class="dh">DH</span></div>`;
+            cell.onclick = () => makePriceEditable(id, val, 'price');
+        }
+    };
+
     async function savePrice() {
-        const newPrice = parseFloat(input.value);
-        if (isNaN(newPrice) || newPrice < 0) { 
-            cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`;
+        const rawVal = input.value.trim();
+        // For kiosk price, allow empty to clear it
+        if (priceField === 'price_kiosk' && rawVal === '') {
+            try {
+                await apiCall('PUT', '/api/menu/products/' + id, { price_kiosk: null });
+                let p = globalProductsArray.find(p => p.id === id);
+                if (p) p.price_kiosk = null;
+                renderCell('');
+            } catch(e) { renderCell(currentPrice); }
+            return;
+        }
+        const newPrice = parseFloat(rawVal);
+        if (isNaN(newPrice) || newPrice < 0) {
+            renderCell(currentPrice);
         } else {
             try {
-                await apiCall('PUT', '/api/menu/products/' + id, { price: newPrice });
-                cell.innerHTML = `<div class="td-price">${newPrice} <span class="dh">DH</span></div>`;
+                const updateData = {}; updateData[priceField] = newPrice;
+                await apiCall('PUT', '/api/menu/products/' + id, updateData);
                 let p = globalProductsArray.find(p => p.id === id);
-                if (p) p.price = newPrice;
-            } catch(e) { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; }
+                if (p) p[priceField] = newPrice;
+                renderCell(newPrice);
+            } catch(e) { renderCell(currentPrice); }
         }
-        cell.onclick = () => makePriceEditable(id, newPrice || currentPrice);
     }
     input.addEventListener('blur', savePrice);
-    input.addEventListener('keydown', e => { 
-        if (e.key === 'Enter') input.blur(); 
-        if (e.key === 'Escape') { cell.innerHTML = `<div class="td-price">${currentPrice} <span class="dh">DH</span></div>`; cell.onclick = () => makePriceEditable(id, currentPrice); } 
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') { renderCell(currentPrice); }
     });
 }
 

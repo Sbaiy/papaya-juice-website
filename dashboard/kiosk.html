@@ -420,10 +420,11 @@
         <div class="cart-footer">
             <div class="table-row">
                 <span class="table-label">🪑 Table</span>
-                <select class="table-select" id="tableSelect">
+                <select class="table-select" id="tableSelect" onchange="onTableTypeChange()">
                     <option value="">— Sélectionner —</option>
                     <option value="emporter">À emporter</option>
                     <option value="comptoir">Comptoir</option>
+                    <option value="terrasse">☀️ Terrasse</option>
                 </select>
             </div>
             <div class="cart-summary" id="cartSummary" style="display:none">
@@ -720,6 +721,15 @@ async function _broadcastOrder(event, orderData) {
 let pendingAction = '';
 
 let allProducts = [];
+// Helper: retourne le prix kiosk (terrasse) si la table sélectionnée est Terrasse, sinon prix normal
+function getKioskPrice(product) {
+    const tableVal = (document.getElementById('tableSelect')?.value || '').toLowerCase();
+    const isTerrasse = tableVal === 'terrasse';
+    if (isTerrasse && product.price_kiosk != null && product.price_kiosk !== '') {
+        return parseFloat(product.price_kiosk);
+    }
+    return parseFloat(product.price) || 0;
+}
 let _productExtrasCache = {}; // productId -> groups[] (loaded once at startup)
 let filteredProducts = [];
 let currentCategory = '';
@@ -920,7 +930,7 @@ function renderProducts() {
         return `<div class="product-card${unavailable?' unavailable':''}" onclick="${unavailable?'':` addToCart(${p.id})`}">
             <div class="product-img-area">${imgHtml}<div class="product-placeholder" style="${placeholderStyle}">${getCatIcon(p.category)}</div>${unavailable?'<div class="badge-unavailable">Indisponible</div>':''}</div>
             <div class="product-body"><div class="product-cat">${p.category}</div><div class="product-name">${p.title}</div><div class="product-desc">${p.description||''}</div>
-            <div class="product-footer"><div class="product-price">${Number(p.price).toFixed(2)} DH</div><button class="btn-add">+</button></div></div></div>`;
+            <div class="product-footer"><div class="product-price">${getKioskPrice(p).toFixed(2)} DH</div><button class="btn-add">+</button></div></div></div>`;
     }).join('');
 }
 
@@ -957,7 +967,7 @@ function changeQty(productId, delta) {
 function changePrice(productId, delta) {
     const idx = cart.findIndex(i => i.product.id === productId);
     if (idx < 0) return;
-    const originalPrice = parseFloat(cart[idx].product.price) || 0;
+    const originalPrice = getKioskPrice(cart[idx].product);
     const current = parseFloat(cart[idx].customPrice ?? originalPrice);
     const newPrice = parseFloat((current + delta).toFixed(2));
     cart[idx].customPrice = Math.max(originalPrice, newPrice);
@@ -965,6 +975,12 @@ function changePrice(productId, delta) {
 }
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
 function clearCart() { _modifMode = null; cart = []; const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderCart(); }
+
+// Quand on change de type de table, reset les customPrices pour recalculer avec le bon tarif
+function onTableTypeChange() {
+    cart.forEach(item => { delete item.customPrice; });
+    renderCart();
+}
 
 function renderCart() {
     const totalQty = cart.reduce((s,i) => s+i.qty, 0);
@@ -981,16 +997,16 @@ function renderCart() {
         const imgEl = p.image ? `<img class="cart-item-img" src="${p.image.replace("/upload/", "/upload/q_auto,f_auto/")}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : `<div class="cart-item-img-placeholder">${getCatIcon(p.category)}</div>`;
         const cartItem = cart.find(i => i.product.id === p.id);
         const extrasPrice = (cartItem?.extras || []).reduce((s, e) => s + (e.priceAdd || 0), 0);
-        const basePrice = parseFloat(cartItem?.customPrice ?? p.price) || 0;
+        const basePrice = parseFloat(cartItem?.customPrice ?? getKioskPrice(p)) || 0;
         const displayPrice = (basePrice + extrasPrice).toFixed(2);
         const extrasHtml = (cartItem?.extras || []).length > 0
           ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.4;">${(cartItem.extras||[]).map(e=>`+ ${e.optionName}`).join(', ')}</div>`
           : '';
-        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)" ${parseFloat(cartItem?.customPrice ?? p.price) <= parseFloat(p.price) ? "disabled style='opacity:0.3;cursor:not-allowed'" : ""}>−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
+        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)" ${parseFloat(cartItem?.customPrice ?? getKioskPrice(p)) <= getKioskPrice(p) ? "disabled style='opacity:0.3;cursor:not-allowed'" : ""}>−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
     const sub = cart.reduce((s,i) => {
         const extrasPrice = (i.extras||[]).reduce((ea, e) => ea + (e.priceAdd || 0), 0);
-        return s + (parseFloat(i.customPrice ?? i.product.price) + extrasPrice) * i.qty;
+        return s + (parseFloat(i.customPrice ?? getKioskPrice(i.product)) + extrasPrice) * i.qty;
     }, 0);
     document.getElementById('subtotal').textContent = sub.toFixed(2)+' DH';
     document.getElementById('total').textContent = sub.toFixed(2)+' DH';
@@ -1017,7 +1033,7 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
-    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : `Table N° ${table.replace('T','')}`;
+    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `Table N° ${table.replace('T','')}`;
     const W = 42;
     const sep  = '='.repeat(W);
     const sep2 = '-'.repeat(W);
@@ -1045,7 +1061,7 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
 
     let total = 0;
     cartItems.forEach(i => {
-        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const unitPrice = parseFloat(i.customPrice ?? getKioskPrice(i.product)) || 0;
         const lineTotal = unitPrice * i.qty;
         total += lineTotal;
         lines.push('  >> ' + itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
@@ -1073,8 +1089,8 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
-    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : `N° ${table.replace('T','')}`;
-    const mode = (table === 'emporter') ? 'À Emporter' : 'Sur Place';
+    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `N° ${table.replace('T','')}`;
+    const mode = (table === 'emporter') ? 'À Emporter' : table === 'terrasse' ? 'Terrasse' : 'Sur Place';
 
     const W = 42; // largeur ticket 80mm = 42 caractères
     const sep1 = '-'.repeat(W);
@@ -1097,7 +1113,7 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
 
     let itemsRows = '';
     cartItems.forEach(i => {
-        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const unitPrice = parseFloat(i.customPrice ?? getKioskPrice(i.product)) || 0;
         const price = (unitPrice * i.qty).toFixed(2);
         itemsRows += itemLine(i.qty, i.product.title, price) + '\n';
         // Print extras below the item
@@ -1382,7 +1398,7 @@ async function submitOrder() {
         try {
             const newItems = cart.map(({product,qty,customPrice,extras}) => ({
                 id: product.id, title: product.title,
-                price: parseFloat(customPrice ?? product.price), qty,
+                price: parseFloat(customPrice ?? getKioskPrice(product)), qty,
                 category: product.category || '',
                 extras: extras || []
             }));
@@ -1438,8 +1454,8 @@ async function submitOrder() {
     try {
         const orderPayload = {
             table_number: tableVal,
-            items: cart.map(({product,qty,customPrice,extras}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??product.price),qty,category:product.category||'',extras:extras||[]})),
-            total: cart.reduce((s,i) => s+parseFloat(i.customPrice??i.product.price)*i.qty, 0),
+            items: cart.map(({product,qty,customPrice,extras}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??getKioskPrice(product)),qty,category:product.category||'',extras:extras||[]})),
+            total: cart.reduce((s,i) => s+parseFloat(i.customPrice??getKioskPrice(i.product))*i.qty, 0),
             status: 'pending',
             source: 'kiosk',
             serveur: document.getElementById('userName').textContent.trim() || 'Kiosk'
@@ -1720,7 +1736,7 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
-    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : `N° ${table.replace('T','')}`;
+    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `N° ${table.replace('T','')}`;
     const supplement = newItems.reduce((s,i) => s + parseFloat(i.price||0)*(i.qty||1), 0).toFixed(2);
 
     const W = 42;
@@ -1744,7 +1760,7 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const newTitles = newItems.map(i => (i.title||i.name||'').toLowerCase());
     let itemsRows = '';
     cartItems.forEach(i => {
-        const unitPrice = parseFloat(i.customPrice ?? i.product.price) || 0;
+        const unitPrice = parseFloat(i.customPrice ?? getKioskPrice(i.product)) || 0;
         const price = (unitPrice * i.qty).toFixed(2);
         const isNew = newTitles.includes((i.product.title||'').toLowerCase());
         itemsRows += itemLine(i.qty, i.product.title, price, isNew) + '\n';
@@ -1860,11 +1876,11 @@ async function validerCloture() {
             const allOrders = res.ok ? (await res.json().then(r => Array.isArray(r) ? r : (r.data || []))) : [];
             if (allOrders.length > 0) {
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-                const STATUS_DONE = ['done', 'termine', 'terminé', 'delivered', 'preparing', 'en_preparation', 'ready', 'pret', 'paid', 'paiement'];
                 const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
+                // Compter TOUT sauf les annulées (en_attente inclus)
                 clotureOrders = loginTime
-                    ? allOrders.filter(o => new Date(o.created_at) >= new Date(loginTime) && STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status))
-                    : allOrders.filter(o => STATUS_DONE.includes(o.status) && !STATUS_CANCELLED.has(o.status));
+                    ? allOrders.filter(o => new Date(o.created_at) >= new Date(loginTime) && !STATUS_CANCELLED.has(o.status))
+                    : allOrders.filter(o => !STATUS_CANCELLED.has(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
@@ -2073,6 +2089,7 @@ function _nopShowPopup() {
         const tableDisplay = !o.table_number ? 'Sans table'
             : o.table_number === 'emporter' ? 'À Emporter'
             : o.table_number === 'comptoir' ? 'Comptoir'
+            : o.table_number === 'terrasse' ? '☀️ Terrasse'
             : `Table ${o.table_number.replace('T','')}`;
         const total = parseFloat(o.total || 0).toFixed(2);
         return `<div class="nop-order" id="nop-order-${o.id}">
