@@ -976,7 +976,7 @@ function changePrice(productId, delta) {
     renderCart();
 }
 function removeItem(productId) { cart = cart.filter(i => i.product.id !== productId); renderCart(); }
-function clearCart() { _modifMode = null; cart = []; terrasseMode = false; const btn = document.getElementById('btnTerrasse'); if (btn) btn.classList.remove('active'); const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderCart(); }
+function clearCart() { _modifMode = null; cart = []; terrasseMode = false; const btn = document.getElementById('btnTerrasse'); if (btn) btn.classList.remove('active'); const sel = document.getElementById("tableSelect"); if (sel) sel.value = ""; renderProducts(); renderCart(); }
 
 // Toggle Terrasse — bascule entre prix kiosk et prix normal
 function toggleTerrasse() {
@@ -985,6 +985,7 @@ function toggleTerrasse() {
     if (btn) btn.classList.toggle('active', terrasseMode);
     // Reset customPrices pour recalculer avec le bon tarif
     cart.forEach(item => { delete item.customPrice; });
+    renderProducts();
     renderCart();
 }
 
@@ -1420,23 +1421,9 @@ async function submitOrder() {
                 const createdOrder = await API.orders.create(orderPayload);
                 const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
 
-                // Mettre status en_preparation + broadcast
-                if (orderId) {
-                    try {
-                        const token = localStorage.getItem('papaya_token');
-                        const statusRes = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/status', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ status: 'preparing' })
-                        });
-                        const updatedOrder = statusRes.ok ? await statusRes.json() : createdOrder;
-                        _broadcastOrder('new_order', { ...updatedOrder, status: 'en_preparation' });
-                    } catch(e) {
-                        console.warn('Status update failed:', e);
-                        _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
-                    }
-                } else {
-                    if (createdOrder) _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
+                // Backend crée direct en 'preparing' si source=kiosk — juste broadcast
+                if (createdOrder) {
+                    _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
                 }
             } catch(e) {
                 // ملي كيفشل الإرسال — حفظ فـ offline queue
