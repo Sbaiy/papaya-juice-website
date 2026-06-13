@@ -163,6 +163,33 @@
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
         .btn-cancel { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; transition: 0.2s; font-family: 'DM Sans', sans-serif; }
         .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+
+        /* PIN keypad — iOS circular glass */
+        .pin-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: transparent;
+            transition: background 0.15s, border-color 0.15s;
+            display: inline-block;
+        }
+        .pin-dot.filled { background: white; border-color: white; }
+
+        .pin-key {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px rgba(0,0,0,0.25);
+            color: white; font-size: 22px; font-family: 'Syne', sans-serif; font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), background 0.12s;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        .pin-key:hover { background: rgba(255,255,255,0.18); }
+        .pin-key:active { transform: scale(0.9); background: rgba(255,255,255,0.25); }
+        .pin-key-clear { background: rgba(255,80,80,0.12); border-color: rgba(255,80,80,0.25); color: #fb7185; }
+        .pin-key-clear:hover { background: rgba(255,80,80,0.22); }
+        .pin-key-ok { background: var(--orange); border-color: var(--orange); box-shadow: 0 4px 16px rgba(255,140,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2); font-size: 16px; }
+        .pin-key-ok:hover { background: #e07800; }
         .btn-confirm { padding: 10px 16px; border-radius: 8px; border: none; background: var(--orange); color: white; cursor: pointer; font-weight: bold; transition: 0.2s; font-family: 'DM Sans', sans-serif; }
         .btn-confirm:hover { background: var(--orange-light); }
         ::-webkit-scrollbar { width: 4px; }
@@ -297,23 +324,44 @@
 
 <!-- ── PIN MODAL (cloture uniquement) ── -->
 <div id="pinModal" class="modal-overlay" style="z-index: 9999; display:none;">
-    <div class="modal-content" style="width: 280px;">
-        <h3 style="margin-bottom:15px;">🔐 Code PIN</h3>
-        <input type="password" id="pinInput" maxlength="4" readonly
-               style="width:100%;padding:10px;font-size:24px;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:8px;color:white;margin-bottom:20px;">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-            <button onclick="addPin('1')" class="btn-cancel">1</button>
-            <button onclick="addPin('2')" class="btn-cancel">2</button>
-            <button onclick="addPin('3')" class="btn-cancel">3</button>
-            <button onclick="addPin('4')" class="btn-cancel">4</button>
-            <button onclick="addPin('5')" class="btn-cancel">5</button>
-            <button onclick="addPin('6')" class="btn-cancel">6</button>
-            <button onclick="addPin('7')" class="btn-cancel">7</button>
-            <button onclick="addPin('8')" class="btn-cancel">8</button>
-            <button onclick="addPin('9')" class="btn-cancel">9</button>
-            <button onclick="clearPin()" class="btn-cancel" style="color:var(--red)">C</button>
-            <button onclick="addPin('0')" class="btn-cancel">0</button>
-            <button onclick="checkPin()" class="btn-confirm">OK</button>
+    <div style="
+        background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 32px;
+        width: 300px;
+        padding: 28px 24px 32px;
+        text-align: center;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18);
+        backdrop-filter: blur(40px) saturate(1.8);
+        -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    ">
+        <h3 style="margin-bottom:20px;font-size:16px;font-weight:700;letter-spacing:0.01em;">🔐 Code PIN</h3>
+
+        <!-- Dots indicator -->
+        <div id="pinDots" style="display:flex;justify-content:center;gap:14px;margin-bottom:28px;">
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+        </div>
+
+        <!-- Hidden input -->
+        <input type="password" id="pinInput" maxlength="4" readonly style="position:absolute;opacity:0;pointer-events:none;">
+
+        <!-- Keypad -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;justify-items:center;">
+            <button onclick="addPin('1')" class="pin-key">1</button>
+            <button onclick="addPin('2')" class="pin-key">2</button>
+            <button onclick="addPin('3')" class="pin-key">3</button>
+            <button onclick="addPin('4')" class="pin-key">4</button>
+            <button onclick="addPin('5')" class="pin-key">5</button>
+            <button onclick="addPin('6')" class="pin-key">6</button>
+            <button onclick="addPin('7')" class="pin-key">7</button>
+            <button onclick="addPin('8')" class="pin-key">8</button>
+            <button onclick="addPin('9')" class="pin-key">9</button>
+            <button onclick="clearPin()" class="pin-key pin-key-clear">⌫</button>
+            <button onclick="addPin('0')" class="pin-key">0</button>
+            <button onclick="checkPin()" class="pin-key pin-key-ok">OK</button>
         </div>
     </div>
 </div>
@@ -769,11 +817,17 @@ function openPinModal(action) {
         localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
     }
 }
+function _syncPinDots() {
+    const len = document.getElementById('pinInput').value.length;
+    document.querySelectorAll('.pin-dot').forEach((d, i) => {
+        d.classList.toggle('filled', i < len);
+    });
+}
 function addPin(num) {
     const input = document.getElementById('pinInput');
-    if (input.value.length < 4) input.value += num;
+    if (input.value.length < 4) { input.value += num; _syncPinDots(); }
 }
-function clearPin() { document.getElementById('pinInput').value = ''; }
+function clearPin() { document.getElementById('pinInput').value = ''; _syncPinDots(); }
 function checkPin() {
     const input = document.getElementById('pinInput');
     if (input.value === SECRET_PIN) {
