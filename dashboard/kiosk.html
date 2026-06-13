@@ -1202,202 +1202,59 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     return `<pre style="font-family:'Courier New',monospace;font-size:10px;line-height:1.6;white-space:pre;">${plainTicket}</pre>`;
 }
     
-// ── LOCAL SILENT PRINT (fallback offline) ──
-// Kayesta3mel hidden iframe bach yprint bla Chrome dialog o bla ma yprint la page kamla.
-// Printer lazem ykon connected (USB aw local network) o configured kdefault printer.
-let _localPrintBusy = false;
-
-function _extractPlainTicket(content) {
-    // content = HTML <pre>...</pre> avec ESC/POS chars — nkhrjou juste le texte propre
-    const tmp = document.createElement('div');
-    tmp.innerHTML = content;
-    // Strip ESC/POS control chars (0x00-0x1F sauf \n\r\t) o chars > 0x7E li makaynche f ASCII normal
-    return (tmp.innerText || tmp.textContent || '')
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-}
-
-async function _printLocal(content) {
-    if (_localPrintBusy) {
-        await new Promise(r => setTimeout(r, 1200));
-    }
-    _localPrintBusy = true;
-    return new Promise((resolve) => {
-        try {
-            const plainText = _extractPlainTicket(content);
-
-            // ── Iframe caché — kayprint juste le ticket, bla popup UI ──
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:80mm;height:1px;border:none;visibility:hidden;';
-            document.body.appendChild(iframe);
-
-            const iDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iDoc.open();
-            iDoc.write(`<!DOCTYPE html><html><head>
-<meta charset="UTF-8">
-<style>
-  @page { margin: 0; size: 80mm auto; }
-  html, body { margin: 0; padding: 2mm 3mm; background: #fff; }
-  pre {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 10.5px;
-    line-height: 1.5;
-    white-space: pre;
-    color: #000;
-    margin: 0;
-  }
-</style>
-</head><body>
-<pre>${plainText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
-</body></html>`);
-            iDoc.close();
-
-            iframe.onload = () => {
-                setTimeout(() => {
-                    try {
-                        iframe.contentWindow.focus();
-                        iframe.contentWindow.print();
-                    } catch(e) {
-                        console.warn('iframe print error:', e);
-                    }
-                    // Supprimer l'iframe après impression
-                    setTimeout(() => {
-                        document.body.removeChild(iframe);
-                        _localPrintBusy = false;
-                        resolve();
-                    }, 2000);
-                }, 300);
-            };
-
-            // Fallback si onload makatji7 (vieux browsers)
-            setTimeout(() => {
-                if (_localPrintBusy) {
-                    try { iframe.contentWindow.print(); } catch(e) {}
-                    setTimeout(() => {
-                        if (iframe.parentNode) document.body.removeChild(iframe);
-                        _localPrintBusy = false;
-                        resolve();
-                    }, 2000);
-                }
-            }, 3000);
-
-        } catch(e) {
-            console.warn('_printLocal error:', e);
-            _localPrintBusy = false;
-            resolve();
-        }
-    });
-}
-
-// ── OFFLINE PRINT QUEUE ──
-// Les tickets sont mis en queue et envoyés à PrintNode dès que le réseau revient.
-// Jamais de popup navigateur.
-
-let _printQueue = JSON.parse(localStorage.getItem('_printQueue') || '[]');
-let _printQueueBusy = false;
-
-function _savePrintQueue() {
-    localStorage.setItem('_printQueue', JSON.stringify(_printQueue));
-}
-
-function _contentToBase64(content) {
-    let plainText;
-    if (content.includes('\n') && !content.trim().startsWith('<')) {
-        plainText = content;
-    } else {
-        const tmp = document.createElement('pre');
-        tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
-        tmp.innerHTML = content;
-        document.body.appendChild(tmp);
-        plainText = tmp.innerText || tmp.textContent || '';
-        document.body.removeChild(tmp);
-    }
-    const ESC = '\x1B', GS = '\x1D';
-    const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
-    const bytes = [];
-    for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
-    const uint8 = new Uint8Array(bytes);
-    let binary = '';
-    uint8.forEach(b => binary += String.fromCharCode(b));
-    return btoa(binary);
-}
-
-async function _flushPrintQueue() {
-    if (_printQueueBusy || _printQueue.length === 0) return;
-    _printQueueBusy = true;
-    const job = _printQueue[0];
-    try {
-        const res = await fetch('https://api.printnode.com/printjobs', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                printerId: parseInt(job.printerId),
-                title: job.title,
-                contentType: 'raw_base64',
-                content: job.base64,
-                source: 'Kiosk'
-            }),
-            signal: AbortSignal.timeout(4000)
-        });
-        if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-        _printQueue.shift();
-        _savePrintQueue();
-        _printQueueBusy = false;
-        // Katkhrj t ticket li jay f queue immédiatement
-        if (_printQueue.length > 0) _flushPrintQueue();
-    } catch(e) {
-        console.warn('PrintNode indisponible:', e.message);
-        _printQueueBusy = false;
-        // Retry dyal setInterval kayji b3d 2s
-    }
-}
-
-// ── Retry agressif koll 2s mli kayen tickets f queue ──
-// Mli wifi 9t3 o rj3 → addition katkhrj f l7in (max 2 thwani delay)
-setInterval(() => { if (_printQueue.length > 0) _flushPrintQueue(); }, 2000);
-
-// Retry immédiat mli yrj3 wifi
-window.addEventListener('online', () => {
-    showToast('📶 Réseau rétabli — impression en cours...');
-    _flushPrintQueue();
-});
 
 async function printViaPrintNode(content, type='kitchen') {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
 
-    if (!cfg.apiKey || !printerId) {
-        // PrintNode ma-configuré-ch → impression locale directe
-        await _printLocal(content);
-        return;
+    // PrintNode si configuré
+    if (cfg.apiKey && printerId) {
+        try {
+            let plainText;
+            if (content.includes('\n') && !content.trim().startsWith('<')) {
+                plainText = content;
+            } else {
+                const tmp = document.createElement('pre');
+                tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
+                tmp.innerHTML = content;
+                document.body.appendChild(tmp);
+                plainText = tmp.innerText || tmp.textContent || '';
+                document.body.removeChild(tmp);
+            }
+
+            const ESC = '\x1B', GS = '\x1D';
+            const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
+            const bytes = [];
+            for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
+            const uint8 = new Uint8Array(bytes);
+            let binary = '';
+            uint8.forEach(b => binary += String.fromCharCode(b));
+            const base64 = btoa(binary);
+
+            const res = await fetch('https://api.printnode.com/printjobs', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    printerId: parseInt(printerId),
+                    title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+                    contentType: 'raw_base64',
+                    content: base64,
+                    source: 'Kiosk'
+                })
+            });
+            if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
+            return;
+        } catch(e) {
+            console.warn('PrintNode failed, fallback browser:', e.message);
+        }
     }
 
-    if (!navigator.onLine) {
-        // ── OFFLINE: print local immédiatement (USB direct) ──
-        await _printLocal(content);
-        // Mettre aussi f queue PrintNode (pour cloud logs mli yrj3 wifi)
-        const base64 = _contentToBase64(content);
-        _printQueue.push({
-            apiKey: cfg.apiKey, printerId,
-            title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-            base64, ts: Date.now(), _localDone: true
-        });
-        _savePrintQueue();
-        return;
-    }
-
-    // ── ONLINE: PrintNode normal ──
-    const base64 = _contentToBase64(content);
-    const job = {
-        apiKey: cfg.apiKey, printerId,
-        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-        base64, ts: Date.now()
-    };
-    _printQueue.push(job);
-    _savePrintQueue();
-    await _flushPrintQueue();
+    // Fallback: browser print via @media print
+    document.getElementById('ticket').innerHTML = content;
+    window.print();
 }
 
 // ── SUBMIT ORDER ──
@@ -1553,10 +1410,10 @@ async function submitOrder() {
                 }
             } catch(e) {
                 // ملي كيفشل الإرسال — حفظ فـ offline queue
-                // printed:true لأن tickets خرجو دابا via _printLocal
-                _oqPush(orderPayload, true);
+                _oqPush(orderPayload, false);
                 _isOffline = true;
                 _showOfflineBanner();
+                _startSyncPolling(); // démarre polling — s'arrête automatiquement mli queue vide
             }
         })();
     } catch(err) {
@@ -2424,7 +2281,9 @@ let _isOffline = false;
 function _showOfflineBanner() {
     const b = document.getElementById('offlineBanner');
     if (!b) return;
-    b.innerHTML = '📵 Hors ligne — ticket imprimé ✓ | commandes sauvegardées';
+    const q = _oqLoad();
+    const count = q.length;
+    b.innerHTML = `📵 Hors ligne — ${count} commande${count>1?'s':''} sauvegardée${count>1?'s':''} · tickets en attente`;
     b.style.background = '#b45309';
     b.style.display = 'flex';
 }
@@ -2450,7 +2309,6 @@ function _oqLoad() {
 function _oqSave(q) { localStorage.setItem(OQ_KEY, JSON.stringify(q)); }
 function _oqPush(payload, alreadyPrinted = false) {
     const q = _oqLoad();
-    // alreadyPrinted = true mli tickets khrejou offline via _printLocal
     q.push({ payload, ts: Date.now(), printed: alreadyPrinted });
     _oqSave(q);
 }
@@ -2484,10 +2342,7 @@ async function _oqFlush() {
                 // ── Tickets: mli printed:true → tickets khrejou offline déjà ──
                 // Mandirou print mra thanya, walakin nflushiw PrintNode queue
                 // (pour que les tickets déjà en queue partent via cloud aussi)
-                if (item.printed) {
-                    // Tickets déjà imprimés localement — juste flush PrintNode si online
-                    _flushPrintQueue().catch(() => {});
-                }
+                // Tickets: printed flag ignoré — printViaPrintNode gère le fallback
             }
         } catch(e) {
             remaining.push(item);
@@ -2535,6 +2390,36 @@ window.addEventListener('offline', () => {
     _showOfflineBanner();
 });
 
+// ── Sync retry — démarre seulement quand kayen orders offline ──
+let _syncInterval = null;
+let _syncBusy = false;
+
+function _startSyncPolling() {
+    if (_syncInterval) return; // déjà actif
+    _syncInterval = setInterval(async () => {
+        const q = _oqLoad();
+        if (!q.length) {
+            // Queue vide → stop polling
+            clearInterval(_syncInterval);
+            _syncInterval = null;
+            return;
+        }
+        if (_syncBusy) return;
+        try {
+            _syncBusy = true;
+            const res = await fetch(BACKEND_URL + '/api/menu/categories', {
+                method: 'HEAD', signal: AbortSignal.timeout(3000)
+            });
+            if (!res.ok && res.status !== 405) { _syncBusy = false; return; }
+            // Wifi rj3 ✅
+            if (_isOffline) { _isOffline = false; await _resubscribeBroadcast(); }
+            const sent = await _oqFlush();
+            if (sent > 0) _showOnlineBanner(sent);
+            _syncBusy = false;
+        } catch(e) { _syncBusy = false; }
+    }, 5000);
+}
+
 // ── Online event ──
 window.addEventListener('online', async () => {
     _isOffline = false;
@@ -2544,6 +2429,8 @@ window.addEventListener('online', async () => {
 
     // 2. Envoyer les commandes sauvegardées offline
     const sent = await _oqFlush();
+
+    if (sent > 0) { _showOnlineBanner(sent); }
 
     // 3. Récupérer les commandes manquées pendant l'offline
     //    et retirer leurs IDs de seenIds pour qu'elles apparaissent dans le popup
@@ -2613,6 +2500,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('papaya_kiosk_login_time')) {
         localStorage.setItem('papaya_kiosk_login_time', new Date().toISOString());
     }
+    // Reprendre sync si orders offline restants d'une session précédente
+    if (_oqLoad().length > 0) _startSyncPolling();
 
     if (typeof API === 'undefined') {
         window.API = {
