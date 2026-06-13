@@ -460,7 +460,7 @@
     </div>
 
     <!-- Grille tables -->
-    <div id="planTablesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;overflow-y:auto;padding-right:4px;flex:1;"></div>
+    <div id="planTablesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:12px;overflow-y:auto;padding-right:4px;padding-bottom:4px;flex:1;"></div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-shrink:0;">
       <span id="planTablesFooter" style="font-size:13px;color:var(--muted);"></span>
@@ -2630,27 +2630,40 @@ async function renderPlanTables() {
             const isOccupied = occupiedTables.has(tKey);
             const card = document.createElement('button');
             card.style.cssText = `
-                padding: 14px 8px;
-                border-radius: 12px;
-                border: 2px solid ${isOccupied ? 'rgba(190,18,60,0.5)' : 'rgba(22,163,74,0.4)'};
-                background: ${isOccupied ? 'rgba(190,18,60,0.15)' : 'rgba(22,163,74,0.12)'};
-                color: ${isOccupied ? '#fb7185' : '#4ade80'};
+                padding: 16px 8px 12px;
+                border-radius: 18px;
+                border: 1px solid ${isOccupied ? 'rgba(251,113,133,0.35)' : 'rgba(134,239,172,0.25)'};
+                background: ${isOccupied
+                    ? 'linear-gradient(145deg, rgba(190,18,60,0.22) 0%, rgba(136,10,42,0.12) 100%)'
+                    : 'linear-gradient(145deg, rgba(22,163,74,0.18) 0%, rgba(15,110,50,0.08) 100%)'};
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                box-shadow: ${isOccupied
+                    ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px rgba(190,18,60,0.15)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 16px rgba(0,0,0,0.2)'};
+                color: ${isOccupied ? '#fda4af' : '#86efac'};
                 cursor: pointer;
-                display: flex; flex-direction: column; align-items: center; gap: 4px;
-                transition: transform 0.1s, opacity 0.1s, box-shadow 0.15s;
+                display: flex; flex-direction: column; align-items: center; gap: 5px;
+                transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
                 font-family: 'DM Sans', sans-serif;
+                position: relative;
+                overflow: hidden;
             `;
             card.innerHTML = `
-                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;">${i}</span>
-                <span style="font-size:9px;font-weight:600;letter-spacing:0.05em;opacity:0.8;">${isOccupied ? 'OCCUPÉE' : 'LIBRE'}</span>
+                <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1;letter-spacing:-0.5px;">${i}</span>
+                <span style="font-size:8px;font-weight:700;letter-spacing:0.12em;opacity:0.75;text-transform:uppercase;">${isOccupied ? 'Occupée' : 'Libre'}</span>
             `;
             card.addEventListener('mouseenter', () => {
-                card.style.transform = 'scale(1.04)';
-                if (isOccupied) card.style.boxShadow = '0 0 18px rgba(251,113,133,0.35)';
+                card.style.transform = 'scale(1.06) translateY(-2px)';
+                card.style.boxShadow = isOccupied
+                    ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 28px rgba(190,18,60,0.3)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 24px rgba(22,163,74,0.25)';
             });
             card.addEventListener('mouseleave', () => {
-                card.style.transform = 'scale(1)';
-                card.style.boxShadow = 'none';
+                card.style.transform = 'scale(1) translateY(0)';
+                card.style.boxShadow = isOccupied
+                    ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px rgba(190,18,60,0.15)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 16px rgba(0,0,0,0.2)';
             });
             card.addEventListener('click', () => {
                 if (isOccupied && tableOrders[tKey]) {
