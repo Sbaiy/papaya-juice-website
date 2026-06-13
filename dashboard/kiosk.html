@@ -1207,54 +1207,84 @@ async function printViaPrintNode(content, type='kitchen') {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
 
-    // PrintNode si configuré
-    if (cfg.apiKey && printerId) {
+    if (!cfg.apiKey || !printerId) {
+        console.warn('PrintNode non configuré');
+        return;
+    }
+
+    // Encoder le ticket ESC/POS en base64
+    let plainText;
+    if (content.includes('\n') && !content.trim().startsWith('<')) {
+        plainText = content;
+    } else {
+        const tmp = document.createElement('pre');
+        tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
+        tmp.innerHTML = content;
+        document.body.appendChild(tmp);
+        plainText = tmp.innerText || tmp.textContent || '';
+        document.body.removeChild(tmp);
+    }
+    const ESC = '\x1B', GS = '\x1D';
+    const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
+    const bytes = [];
+    for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
+    const uint8 = new Uint8Array(bytes);
+    let binary = '';
+    uint8.forEach(b => binary += String.fromCharCode(b));
+    const base64 = btoa(binary);
+
+    const jobPayload = JSON.stringify({
+        printerId: parseInt(printerId),
+        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+        contentType: 'raw_base64',
+        content: base64,
+        source: 'Kiosk'
+    });
+
+    try {
+        const res = await fetch('https://api.printnode.com/printjobs', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
+                'Content-Type': 'application/json'
+            },
+            body: jobPayload,
+            signal: AbortSignal.timeout(4000)
+        });
+        if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
+        // Imprimé ✅
+    } catch(e) {
+        console.warn('PrintNode indisponible:', e.message);
+        // Sauvegarder le job pour retry automatique mli yrj3 wifi
+        const printJobs = JSON.parse(localStorage.getItem('_pq') || '[]');
+        printJobs.push({ apiKey: cfg.apiKey, printerId, jobPayload, ts: Date.now() });
+        localStorage.setItem('_pq', JSON.stringify(printJobs));
+        if (!_syncInterval) _startSyncPolling();
+    }
+}
+
+// ── Flush print jobs queue mli yrj3 wifi ──
+async function _flushPrintJobs() {
+    const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
+    if (!jobs.length) return;
+    const remaining = [];
+    for (const job of jobs) {
         try {
-            let plainText;
-            if (content.includes('\n') && !content.trim().startsWith('<')) {
-                plainText = content;
-            } else {
-                const tmp = document.createElement('pre');
-                tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
-                tmp.innerHTML = content;
-                document.body.appendChild(tmp);
-                plainText = tmp.innerText || tmp.textContent || '';
-                document.body.removeChild(tmp);
-            }
-
-            const ESC = '\x1B', GS = '\x1D';
-            const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
-            const bytes = [];
-            for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
-            const uint8 = new Uint8Array(bytes);
-            let binary = '';
-            uint8.forEach(b => binary += String.fromCharCode(b));
-            const base64 = btoa(binary);
-
             const res = await fetch('https://api.printnode.com/printjobs', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
+                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    printerId: parseInt(printerId),
-                    title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-                    contentType: 'raw_base64',
-                    content: base64,
-                    source: 'Kiosk'
-                })
+                body: job.jobPayload,
+                signal: AbortSignal.timeout(4000)
             });
-            if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-            return;
+            if (!res.ok) remaining.push(job);
         } catch(e) {
-            console.warn('PrintNode failed, fallback browser:', e.message);
+            remaining.push(job);
         }
     }
-
-    // Fallback: browser print via @media print
-    document.getElementById('ticket').innerHTML = content;
-    window.print();
+    localStorage.setItem('_pq', JSON.stringify(remaining));
 }
 
 // ── SUBMIT ORDER ──
@@ -2414,6 +2444,7 @@ function _startSyncPolling() {
             // Wifi rj3 ✅
             if (_isOffline) { _isOffline = false; await _resubscribeBroadcast(); }
             const sent = await _oqFlush();
+            await _flushPrintJobs(); // flush tickets en attente aussi
             if (sent > 0) _showOnlineBanner(sent);
             _syncBusy = false;
         } catch(e) { _syncBusy = false; }
@@ -2429,6 +2460,7 @@ window.addEventListener('online', async () => {
 
     // 2. Envoyer les commandes sauvegardées offline
     const sent = await _oqFlush();
+    await _flushPrintJobs();
 
     if (sent > 0) { _showOnlineBanner(sent); }
 
