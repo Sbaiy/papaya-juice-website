@@ -1239,7 +1239,8 @@ async function renderPlanTables() {
       grid.appendChild(sep);
 
       otherOrders.forEach(o => {
-        const label = o.table_number || o.table || 'Sans table';
+        const _tn = o.table_number || o.table || '';
+        const label = !_tn ? 'Sans table' : _tn === 'terrasse' ? '☀️ Terrasse' : _tn === 'emporter' ? 'À Emporter' : _tn === 'comptoir' ? 'Comptoir' : `Table ${_tn}`;
         const amt = parseFloat(o.total || 0);
         const card2 = document.createElement('button');
         card2.style.cssText = `
