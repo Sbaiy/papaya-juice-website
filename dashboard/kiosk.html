@@ -2344,11 +2344,15 @@ function _oqPush(payload, alreadyPrinted = false) {
 }
 
 // ── Flush queue ملي كيرجع wifi ──
+let _oqFlushBusy = false;
 async function _oqFlush() {
+    if (_oqFlushBusy) return 0; // déjà en cours — évite double-envoi
+    _oqFlushBusy = true;
     const q = _oqLoad();
-    if (!q.length) return 0;
+    if (!q.length) { _oqFlushBusy = false; return 0; }
     const remaining = [];
     const synced = [];
+    try {
     for (const item of q) {
         try {
             const created = await API.orders.create(item.payload);
@@ -2393,6 +2397,9 @@ async function _oqFlush() {
     }
 
     return q.length - remaining.length; // عدد اللي تبعتوا بنجاح
+    } finally {
+        _oqFlushBusy = false; // toujours libérer le lock
+    }
 }
 
 // ── Resubscribe channel ──
