@@ -842,7 +842,7 @@ function buildCard(order) {
 
   card.innerHTML = `
     <div class="card-head">
-      <div class="order-num"><span class="order-icon">${isFromMenu ? '📱' : isFromKiosk ? '🖥️' : '📦'}</span>${tableNum ? `Table ${tableNum} · ` : ''}${orderNum}</div>
+      <div class="order-num"><span class="order-icon">${isFromMenu ? '📱' : isFromKiosk ? '🖥️' : '📦'}</span>${tableNum ? (tableNum === 'terrasse' ? '☀️ Terrasse · ' : `Table ${tableNum} · `) : ''}${orderNum}</div>
       <div style="display:flex;align-items:center;gap:8px;">
         ${sourceBadge}
         <div class="status-badge badge-${cssStatus}">${isAnnule ? '🚫 Annulé' : statusName(order.status)}</div>
