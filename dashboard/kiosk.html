@@ -982,6 +982,32 @@ function onTableTypeChange() {
     renderCart();
 }
 
+// Click sur le prix dans le cart → input éditable
+function editCartPrice(productId) {
+    const span = document.getElementById('price-display-' + productId);
+    if (!span || span.querySelector('input')) return;
+    const idx = cart.findIndex(i => i.product.id === productId);
+    if (idx < 0) return;
+    const basePrice = getKioskPrice(cart[idx].product);
+    const current = parseFloat(cart[idx].customPrice ?? basePrice);
+    span.style.borderBottom = 'none';
+    span.innerHTML = `<input id="cprice-${productId}" type="number" step="0.5" value="${current.toFixed(2)}" style="width:62px;font-size:12px;font-weight:700;color:var(--orange);background:var(--card-hover);border:1px solid var(--orange);border-radius:6px;padding:2px 4px;text-align:center;outline:none;" onclick="event.stopPropagation()">`;
+    const inp = document.getElementById('cprice-' + productId);
+    inp.focus(); inp.select();
+    function save() {
+        const val = parseFloat(inp.value);
+        if (!isNaN(val) && val >= 0) {
+            cart[idx].customPrice = val;
+        }
+        renderCart();
+    }
+    inp.addEventListener('blur', save);
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') inp.blur();
+        if (e.key === 'Escape') { cart[idx].customPrice = current; renderCart(); }
+    });
+}
+
 function renderCart() {
     const totalQty = cart.reduce((s,i) => s+i.qty, 0);
     const badge = document.getElementById('cartBadge');
@@ -1002,7 +1028,7 @@ function renderCart() {
         const extrasHtml = (cartItem?.extras || []).length > 0
           ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.4;">${(cartItem.extras||[]).map(e=>`+ ${e.optionName}`).join(', ')}</div>`
           : '';
-        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)" ${parseFloat(cartItem?.customPrice ?? getKioskPrice(p)) <= getKioskPrice(p) ? "disabled style='opacity:0.3;cursor:not-allowed'" : ""}>−</button><span style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
+        return `<div class="cart-item">${imgEl}<div class="cart-item-info"><div class="cart-item-name">${p.title}</div>${extrasHtml}<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button><span class="qty-val" style="font-size:13px;font-weight:700;min-width:20px;text-align:center;">${qty}</span><button class="qty-btn" onclick="changeQty(${p.id},1)">+</button></div><div style="display:flex;align-items:center;gap:6px;"><button class="qty-btn" onclick="changePrice(${p.id},-1)" ${parseFloat(cartItem?.customPrice ?? getKioskPrice(p)) <= getKioskPrice(p) ? "disabled style='opacity:0.3;cursor:not-allowed'" : ""}>−</button><span id="price-display-${p.id}" onclick="editCartPrice(${p.id})" style="font-size:12px;font-weight:700;color:var(--orange);min-width:60px;text-align:center;cursor:pointer;border-bottom:1px dashed var(--orange);padding-bottom:1px;" title="Cliquer pour modifier">${displayPrice} DH</span><button class="qty-btn" onclick="changePrice(${p.id},1)">+</button></div></div></div><button class="cart-item-remove" onclick="removeItem(${p.id})">✕</button></div>`;
     }).join('');
     const sub = cart.reduce((s,i) => {
         const extrasPrice = (i.extras||[]).reduce((ea, e) => ea + (e.priceAdd || 0), 0);
