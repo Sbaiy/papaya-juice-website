@@ -1369,20 +1369,31 @@ async function printViaPrintNode(content, type='kitchen') {
     const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
 
     if (!cfg.apiKey || !printerId) {
-        console.warn('PrintNode non configuré — ticket ignoré');
+        // PrintNode ma-configuré-ch → impression locale directe
+        await _printLocal(content);
         return;
     }
 
-    // ── Toujours PrintNode — online aw offline ──
-    // PrintNode Desktop Client kaykhdem LOCAL via USB — ma7tajche internet.
-    // navigator.onLine = false maynaa9che print — l client local kayhandliw.
+    if (!navigator.onLine) {
+        // ── OFFLINE: print local immédiatement (USB direct) ──
+        await _printLocal(content);
+        // Mettre aussi f queue PrintNode (pour cloud logs mli yrj3 wifi)
+        const base64 = _contentToBase64(content);
+        _printQueue.push({
+            apiKey: cfg.apiKey, printerId,
+            title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
+            base64, ts: Date.now(), _localDone: true
+        });
+        _savePrintQueue();
+        return;
+    }
+
+    // ── ONLINE: PrintNode normal ──
     const base64 = _contentToBase64(content);
     const job = {
-        apiKey: cfg.apiKey,
-        printerId: printerId,
+        apiKey: cfg.apiKey, printerId,
         title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-        base64: base64,
-        ts: Date.now()
+        base64, ts: Date.now()
     };
     _printQueue.push(job);
     _savePrintQueue();
@@ -1641,6 +1652,19 @@ async function loadHistoriqueOrders() {
     if (!histAllOrders.length) {
         listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Chargement…</div>';
     }
+
+    // ── Toujours afficher les orders offline en attente ──
+    const offlineQueue = _oqLoad();
+    const offlineFakeHist = offlineQueue.map((item, i) => ({
+        id: 'offline-' + i,
+        table_number: item.payload.table_number,
+        items: item.payload.items,
+        total: item.payload.total,
+        status: 'pending',
+        created_at: new Date(item.ts || Date.now()).toISOString(),
+        _offline: true // flag pour affichage
+    }));
+
     try {
         const token = localStorage.getItem('papaya_token');
         const res = await fetch(BACKEND_URL + '/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -1649,10 +1673,14 @@ async function loadHistoriqueOrders() {
         const newOrders = Array.isArray(newOrdersRes) ? newOrdersRes : (newOrdersRes.data || []);
         // Merge avec les orders déjà reçus via Realtime (éviter doublons)
         const fetchedNorm = _histNormalizeOrders(newOrders);
-        const realtimeOnly = histAllOrders.filter(r => !fetchedNorm.find(f => f.id === r.id));
-        histAllOrders = _histNormalizeOrders([...fetchedNorm, ...realtimeOnly]);
+        const realtimeOnly = histAllOrders.filter(r => !fetchedNorm.find(f => f.id === r.id) && !String(r.id).startsWith('offline-'));
+        histAllOrders = _histNormalizeOrders([...fetchedNorm, ...realtimeOnly, ...offlineFakeHist]);
         _histUpdateUI();
     } catch(e) {
+        // Offline → afficher au moins les orders locaux
+        const existing = histAllOrders.filter(r => !String(r.id).startsWith('offline-'));
+        histAllOrders = _histNormalizeOrders([...existing, ...offlineFakeHist]);
+        _histUpdateUI();
         if (!histAllOrders.length) listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#f87171;">❌ ${e.message}</div>`;
     }
 }
@@ -1681,11 +1709,12 @@ function renderHistOrders() {
         const orderJson = encodeURIComponent(JSON.stringify(o));
         const caissierName = o.caissier || o.serveur || o.created_by || '';
         const caissierBadge = caissierName ? `<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;">👤 ${caissierName}</span>` : '';
+        const offlineBadge = o._offline ? `<span style="font-size:11px;font-weight:700;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.4);color:#fb923c;border-radius:20px;padding:2px 8px;">📵 Non sync</span>` : '';
         return `<div class="hist-order">
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;">
               <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;">#${idShort}</span>
-              <span class="hist-status ${stClass}">${st.icon} ${st.label}</span>${caissierBadge}${payment}
+              <span class="hist-status ${stClass}">${st.icon} ${st.label}</span>${caissierBadge}${offlineBadge}${payment}
             </div>
             <div style="font-size:11px;color:var(--muted);">${time?`<span>${time}</span>`:''} ${o.table_number?`&nbsp;·&nbsp; Table <b style="color:var(--text)">${o.table_number}</b>`:''} ${items?`&nbsp;·&nbsp; ${items}`:''}</div>
           </div>
@@ -1912,13 +1941,27 @@ async function validerCloture() {
             // ── Fetch TOUTES les commandes sans limite ──
             const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
             const allOrders = res.ok ? (await res.json().then(r => Array.isArray(r) ? r : (r.data || []))) : [];
-            if (allOrders.length > 0) {
+
+            // ── Ajouter les commandes offline en attente de sync ──
+            const offlineQueue = _oqLoad();
+            const offlineFake = offlineQueue.map((item, i) => ({
+                id: 'offline-' + i,
+                table_number: item.payload.table_number,
+                items: item.payload.items,
+                total: item.payload.total,
+                status: 'pending',
+                created_at: new Date(item.ts || Date.now()).toISOString(),
+                source: 'kiosk-offline'
+            }));
+            const allOrdersWithOffline = [...allOrders, ...offlineFake];
+
+            if (allOrdersWithOffline.length > 0) {
                 const loginTime = localStorage.getItem('papaya_kiosk_login_time');
                 const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
                 // Compter TOUT sauf les annulées (en_attente inclus)
                 clotureOrders = loginTime
-                    ? allOrders.filter(o => new Date(o.created_at) >= new Date(loginTime) && !STATUS_CANCELLED.has(o.status))
-                    : allOrders.filter(o => !STATUS_CANCELLED.has(o.status));
+                    ? allOrdersWithOffline.filter(o => new Date(o.created_at) >= new Date(loginTime) && !STATUS_CANCELLED.has(o.status))
+                    : allOrdersWithOffline.filter(o => !STATUS_CANCELLED.has(o.status));
                 nbrCommandes = clotureOrders.length;
                 totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
             }
