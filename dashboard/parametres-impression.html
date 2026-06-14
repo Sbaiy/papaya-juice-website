@@ -126,11 +126,22 @@
   .toast.err { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 </style>
+</head><style>
+  .spin { width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .status-badge { display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid var(--border); }
+  .status-badge.connected { background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#86efac; }
+  .status-badge.disconnected { background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5; }
+  .status-dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
+  .printer-list { display:flex;flex-direction:column;gap:8px;margin-top:16px; }
+  .printer-item { display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px; }
+  .printer-name { font-size:13px;font-weight:600; }
+  .printer-id { font-size:11px;color:var(--muted);margin-top:2px; }
+</style>
 </head>
 <body>
-<div style="position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 18px 60px;">
+<div style="position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 18px 80px;">
 
-  <!-- TOPBAR -->
   <div class="topbar">
     <a href="/dashboard/" class="nav-brand">
       <div class="brand-icon">🍹</div>
@@ -138,51 +149,69 @@
     </a>
     <div class="topbar-right">
       <a href="/dashboard/" class="btn-back">← Retour</a>
-      <button class="btn-icon" onclick="logout()" title="Déconnexion">⎋</button>
+      <button class="btn-icon" onclick="logout()">⎋</button>
     </div>
   </div>
 
-  <!-- HEADER -->
-  <div style="margin: 32px 0 24px;">
+  <div style="margin:32px 0 24px;">
     <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;">🖨️ Paramètres Impression</h1>
     <p style="font-size:14px;color:var(--muted);">Système hybride — PrintNode (online) + Local (offline)</p>
   </div>
 
-  <!-- NOTE -->
   <div class="note-box">
     🔄 <strong>Online (WiFi OK)</strong> → tickets via PrintNode cloud<br>
-    📴 <strong>Offline (WiFi coupé)</strong> → tickets via print server local (localhost:3001)<br>
-    Les tests locaux fonctionnent uniquement depuis le PC du kiosk.
+    📴 <strong>Offline (WiFi coupé)</strong> → tickets via print server local (localhost:3001)
   </div>
 
-  <!-- CARD 1: PRINTNODE (ONLINE) -->
+  <!-- ══ PRINTNODE ══ -->
   <div class="card">
     <div class="card-title">☁️ PrintNode — Online</div>
-    <div class="card-sub">Utilisé quand le WiFi est disponible · Configuration via printnode.com</div>
+    <div class="card-sub">Utilisé quand le WiFi est disponible</div>
 
-    <div class="form-group" style="margin-bottom:16px;">
-      <label class="form-label">API Key</label>
-      <input class="form-input" id="apiKey" type="password" placeholder="••••••••••••••••">
+    <div class="form-row" style="align-items:flex-end;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">API Key</label>
+        <input class="form-input" id="apiKey" type="password" placeholder="••••••••••••••••"
+          oninput="resetPNStatus()">
+      </div>
+      <button class="btn-primary" onclick="connectPrintNode()" style="flex-shrink:0;height:44px;">
+        Connecter
+      </button>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">🍳 Printer ID Cuisine</label>
-        <input class="form-input" id="kitchenPrinter" type="text" placeholder="123456">
-      </div>
-      <div class="form-group">
-        <label class="form-label">🧾 Printer ID Addition</label>
-        <input class="form-input" id="cashPrinter" type="text" placeholder="123457">
-      </div>
+    <div style="margin-top:14px;margin-bottom:20px;">
+      <span class="status-badge" id="connectionStatus">
+        <div class="status-dot"></div><span>Non connecté</span>
+      </span>
     </div>
 
-    <div class="status-row">
-      <button class="btn-test" onclick="testPrintNode()">🔌 Tester PrintNode</button>
-      <span id="statusPN" style="font-size:12px;color:var(--muted);">—</span>
+    <!-- Printers list -->
+    <div id="printersList"></div>
+
+    <!-- Selects (cachés jusqu'à connexion) -->
+    <div id="selectsSection" style="display:none;margin-top:20px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">🍳 Imprimante Cuisine</label>
+          <select class="form-input" id="kitchenPrinter">
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🧾 Imprimante Addition</label>
+          <select class="form-input" id="cashPrinter">
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px;">
+        <button class="btn-test" onclick="testPrint('kitchen')">🧪 Test Cuisine</button>
+        <button class="btn-test" onclick="testPrint('cash')">🧪 Test Addition</button>
+      </div>
     </div>
   </div>
 
-  <!-- CARD 2: LOCAL OFFLINE -->
+  <!-- ══ LOCAL OFFLINE ══ -->
   <div class="card">
     <div class="card-title">📴 Local — Offline</div>
     <div class="card-sub">Fallback automatique quand PrintNode est inaccessible · node print-server.js</div>
@@ -194,29 +223,29 @@
       </div>
       <div class="form-group" style="flex:1;">
         <label class="form-label">Port</label>
-        <input class="form-input" id="cuisinePort" type="number" placeholder="9100" value="9100">
+        <input class="form-input" id="cuisinePort" type="number" placeholder="9100">
       </div>
     </div>
 
     <div class="form-group" style="margin-bottom:16px;">
       <label class="form-label">🧾 Nom Windows Imprimante Addition (USB)</label>
       <input class="form-input" id="usbName" type="text" placeholder="XP-80C (copy 2)">
-      <span class="form-hint">Gestionnaire de périphériques → Files d'attente à l'impression</span>
+      <span class="form-hint" style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">
+        Gestionnaire de périphériques → Files d'attente à l'impression
+      </span>
     </div>
 
-    <div class="status-row" style="gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
       <button class="btn-test" onclick="testLAN()">🔌 Tester Cuisine LAN</button>
       <span id="statusLAN" style="font-size:12px;color:var(--muted);">—</span>
-      <button class="btn-test" onclick="testUSB()" style="margin-left:auto;">🔌 Tester Addition USB</button>
+      <button class="btn-test" onclick="testUSB()">🔌 Tester Addition USB</button>
       <span id="statusUSB" style="font-size:12px;color:var(--muted);">—</span>
     </div>
   </div>
 
-  <!-- SAVE -->
   <div class="actions-row">
     <button class="btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
   </div>
-
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
@@ -224,96 +253,169 @@
 <script>
 const CFG_KEY = 'papaya_print_config';
 const PRINT_SERVER = 'http://localhost:3001';
+let printers = [];
 
 function loadCfg() { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); }
-function saveCfgRaw(obj) { localStorage.setItem(CFG_KEY, JSON.stringify(obj)); }
+function saveCfgRaw(o) { localStorage.setItem(CFG_KEY, JSON.stringify(o)); }
 
 window.addEventListener('DOMContentLoaded', () => {
   const cfg = loadCfg();
-  document.getElementById('apiKey').value        = cfg.apiKey          || '';
-  document.getElementById('kitchenPrinter').value = cfg.kitchenPrinter || '';
-  document.getElementById('cashPrinter').value    = cfg.cashPrinter    || '';
-  document.getElementById('cuisineIP').value      = cfg.kitchenPrinterIP   || '';
-  document.getElementById('cuisinePort').value    = cfg.kitchenPrinterPort || 9100;
-  document.getElementById('usbName').value        = cfg.usbPrinterName || '';
+  if (cfg.apiKey) {
+    document.getElementById('apiKey').value = cfg.apiKey;
+    connectPrintNode(true);
+  }
+  document.getElementById('cuisineIP').value   = cfg.kitchenPrinterIP   || '';
+  document.getElementById('cuisinePort').value = cfg.kitchenPrinterPort || 9100;
+  document.getElementById('usbName').value     = cfg.usbPrinterName     || '';
 });
 
-function saveConfig() {
-  const apiKey    = document.getElementById('apiKey').value.trim();
-  const kitchen   = document.getElementById('kitchenPrinter').value.trim();
-  const cash      = document.getElementById('cashPrinter').value.trim();
-  const ip        = document.getElementById('cuisineIP').value.trim();
-  const port      = parseInt(document.getElementById('cuisinePort').value) || 9100;
-  const usbName   = document.getElementById('usbName').value.trim();
-
-  if (!ip || !usbName) { toast('⚠️ Config locale incomplète (IP + nom USB)', 'err'); return; }
-
-  const cfg = { apiKey, kitchenPrinter: kitchen, cashPrinter: cash, kitchenPrinterIP: ip, kitchenPrinterPort: port, usbPrinterName: usbName };
-  saveCfgRaw(cfg);
-  toast('✅ Configuration enregistrée !', 'ok');
+function resetPNStatus() {
+  const s = document.getElementById('connectionStatus');
+  s.className = 'status-badge';
+  s.innerHTML = '<div class="status-dot"></div><span>Non connecté</span>';
+  document.getElementById('printersList').innerHTML = '';
+  document.getElementById('selectsSection').style.display = 'none';
 }
 
-async function testPrintNode() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const el = document.getElementById('statusPN');
-  if (!apiKey) { toast('Entre l'API key d'abord', 'err'); return; }
-  el.textContent = '⏳ Test…';
+async function connectPrintNode(silent = false) {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) { toast('Entre l\'API Key d\'abord', 'err'); return; }
+
+  const statusEl = document.getElementById('connectionStatus');
+  statusEl.className = 'status-badge';
+  statusEl.innerHTML = '<div class="spin"></div><span>Connexion…</span>';
+
   try {
-    const res = await fetch('https://api.printnode.com/whoami', {
-      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':') },
-      signal: AbortSignal.timeout(5000)
+    const res = await fetch('https://api.printnode.com/printers', {
+      headers: { 'Authorization': 'Basic ' + btoa(key + ':') },
+      signal: AbortSignal.timeout(6000)
     });
-    if (res.ok) { const d = await res.json(); el.textContent = '✅ Connecté — ' + d.email; el.style.color = '#86efac'; }
-    else        { el.textContent = '❌ API key invalide'; el.style.color = '#fca5a5'; }
-  } catch(e) { el.textContent = '❌ Pas de connexion internet'; el.style.color = '#fca5a5'; }
+    if (!res.ok) throw new Error('API Key incorrecte');
+    const data = await res.json();
+    printers = Array.isArray(data) ? data : [];
+
+    statusEl.className = 'status-badge connected';
+    statusEl.innerHTML = `<div class="status-dot"></div><span>✅ Connecté — ${printers.length} imprimante(s)</span>`;
+
+    renderPrinters();
+    if (!silent) toast('PrintNode connecté !', 'ok');
+  } catch(e) {
+    statusEl.className = 'status-badge disconnected';
+    statusEl.innerHTML = `<div class="status-dot"></div><span>❌ ${e.message}</span>`;
+    if (!silent) toast('Erreur: ' + e.message, 'err');
+  }
+}
+
+function renderPrinters() {
+  const cfg = loadCfg();
+  const opts = '<option value="">— Sélectionner —</option>' +
+    printers.map(p => `<option value="${p.id}">${p.name} (ID: ${p.id})</option>`).join('');
+
+  const ks = document.getElementById('kitchenPrinter');
+  const cs = document.getElementById('cashPrinter');
+  ks.innerHTML = opts;
+  cs.innerHTML = opts;
+  if (cfg.kitchenPrinter) ks.value = cfg.kitchenPrinter;
+  if (cfg.cashPrinter)    cs.value = cfg.cashPrinter;
+
+  const listEl = document.getElementById('printersList');
+  if (!printers.length) {
+    listEl.innerHTML = '<p style="font-size:12px;color:var(--muted);">⚠️ Aucune imprimante — vérifiez que le client PrintNode est lancé sur le PC.</p>';
+  } else {
+    listEl.innerHTML = `<div class="printer-list">${printers.map(p => `
+      <div class="printer-item">
+        <div>
+          <div class="printer-name">🖨️ ${p.name}</div>
+          <div class="printer-id">ID: ${p.id} · ${p.computer?.name || 'PC local'}</div>
+        </div>
+        <button class="btn-test" onclick="quickTest(${p.id},'${p.name.replace(/'/g,"\\'")}')">Test</button>
+      </div>`).join('')}</div>`;
+  }
+  document.getElementById('selectsSection').style.display = 'block';
+}
+
+async function quickTest(id, name) {
+  const key = document.getElementById('apiKey').value.trim() || loadCfg().apiKey;
+  try {
+    toast('Test…', 'info');
+    const content = `\n  PAPAYA JUICE\n  TEST: ${name}\n--------------------------------\n  Imprimante OK !\n\n\n`;
+    const b64 = btoa(unescape(encodeURIComponent(content)));
+    const res = await fetch('https://api.printnode.com/printjobs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + btoa(key + ':'), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ printerId: parseInt(id), title: 'Test', contentType: 'raw_base64', content: b64, source: 'Papaya' })
+    });
+    if (res.ok) toast(`✅ ${name} — OK !`, 'ok');
+    else toast('❌ Erreur impression', 'err');
+  } catch(e) { toast('❌ ' + e.message, 'err'); }
+}
+
+async function testPrint(role) {
+  const key = document.getElementById('apiKey').value.trim() || loadCfg().apiKey;
+  const id  = document.getElementById(role === 'kitchen' ? 'kitchenPrinter' : 'cashPrinter').value;
+  if (!id) { toast('Sélectionne l\'imprimante d\'abord', 'err'); return; }
+  await quickTest(parseInt(id), role === 'kitchen' ? 'Cuisine' : 'Addition');
 }
 
 async function testLAN() {
-  const ip   = document.getElementById('cuisineIP').value.trim();
+  const ip = document.getElementById('cuisineIP').value.trim();
   const port = parseInt(document.getElementById('cuisinePort').value) || 9100;
-  const el   = document.getElementById('statusLAN');
-  if (!ip) { toast('Entre l'IP d'abord', 'err'); return; }
+  const el = document.getElementById('statusLAN');
+  if (!ip) { toast('Entre l\'IP d\'abord', 'err'); return; }
   el.textContent = '⏳ Test…';
   try {
     const ESC = '\x1B', GS = '\x1D';
-    const text = '\n  TEST CUISINE OK\n\n\n';
-    const ticket = ESC + '@' + ESC + 'a\x01' + text + ESC + 'd\x03' + GS + 'V\x41\x03';
-    const bytes = []; for (let i=0; i<ticket.length; i++) bytes.push(ticket.charCodeAt(i)&0xFF);
+    const t = ESC + '@' + '\n  TEST CUISINE OK\n\n\n' + ESC + 'd\x03' + GS + 'V\x41\x03';
+    const bytes = []; for (let i=0;i<t.length;i++) bytes.push(t.charCodeAt(i)&0xFF);
     const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
     const res = await fetch(PRINT_SERVER + '/print/lan', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ content_base64: b64, ip, port }),
       signal: AbortSignal.timeout(6000)
     });
-    if (res.ok) { el.textContent = '✅ Connectée !'; el.style.color = '#86efac'; }
-    else        { el.textContent = '❌ Erreur ' + res.status; el.style.color = '#fca5a5'; }
+    el.textContent = res.ok ? '✅ Connectée !' : '❌ Erreur ' + res.status;
+    el.style.color = res.ok ? '#86efac' : '#fca5a5';
   } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
 }
 
 async function testUSB() {
   const name = document.getElementById('usbName').value.trim();
-  const el   = document.getElementById('statusUSB');
-  if (!name) { toast('Entre le nom d'abord', 'err'); return; }
+  const el = document.getElementById('statusUSB');
+  if (!name) { toast('Entre le nom d\'abord', 'err'); return; }
   el.textContent = '⏳ Test…';
   try {
     const ESC = '\x1B', GS = '\x1D';
-    const text = '\n  TEST ADDITION OK\n\n\n';
-    const ticket = ESC + '@' + ESC + 'a\x01' + text + ESC + 'd\x03' + GS + 'V\x41\x03';
-    const bytes = []; for (let i=0; i<ticket.length; i++) bytes.push(ticket.charCodeAt(i)&0xFF);
+    const t = ESC + '@' + '\n  TEST ADDITION OK\n\n\n' + ESC + 'd\x03' + GS + 'V\x41\x03';
+    const bytes = []; for (let i=0;i<t.length;i++) bytes.push(t.charCodeAt(i)&0xFF);
     const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
     const res = await fetch(PRINT_SERVER + '/print/usb', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ content_base64: b64, printer_name: name }),
       signal: AbortSignal.timeout(8000)
     });
-    if (res.ok) { el.textContent = '✅ Imprimée !'; el.style.color = '#86efac'; }
-    else        { el.textContent = '❌ Erreur ' + res.status; el.style.color = '#fca5a5'; }
+    el.textContent = res.ok ? '✅ Imprimée !' : '❌ Erreur ' + res.status;
+    el.style.color = res.ok ? '#86efac' : '#fca5a5';
   } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
+}
+
+function saveConfig() {
+  const apiKey  = document.getElementById('apiKey').value.trim();
+  const kitchen = document.getElementById('kitchenPrinter')?.value || '';
+  const cash    = document.getElementById('cashPrinter')?.value    || '';
+  const ip      = document.getElementById('cuisineIP').value.trim();
+  const port    = parseInt(document.getElementById('cuisinePort').value) || 9100;
+  const usbName = document.getElementById('usbName').value.trim();
+
+  if (!ip || !usbName) { toast('⚠️ Config locale incomplète (IP + nom USB)', 'err'); return; }
+
+  saveCfgRaw({ apiKey, kitchenPrinter: kitchen, cashPrinter: cash, kitchenPrinterIP: ip, kitchenPrinterPort: port, usbPrinterName: usbName });
+  toast('✅ Configuration enregistrée !', 'ok');
 }
 
 function toast(msg, type='info') {
   const el = document.createElement('div');
-  el.className = 'toast ' + type; el.textContent = msg;
+  el.className = 'toast ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'ok');
+  el.textContent = msg;
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
