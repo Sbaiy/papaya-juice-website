@@ -412,6 +412,7 @@
             </button>
             <button class="btn-action" onclick="openPlanTablesModal()">🪑 Plan des tables</button>
             <button class="btn-action" onclick="openHistoriqueModal()">📋 Historique des commandes</button>
+            <button class="btn-action" onclick="openPrintSettingsModal()">🖨️ Imprimantes</button>
             <button class="btn-action" onclick="openClotureModal()">🔒 Clôture</button>
             <button class="btn-action danger" onclick="openLogoutConfirm()">🚪 Déconnexion</button>
         </div>
@@ -620,7 +621,44 @@
 </div>
 
 <!-- ── MODAL CLOTURE ── -->
-<div id="clotureModal" class="modal-overlay" style="display:none; z-index:4000;">
+<!-- ── PRINT SETTINGS MODAL ── -->
+<div id="printSettingsModal" class="modal-overlay" style="display:none;z-index:5000;">
+  <div style="background:linear-gradient(145deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);border:1px solid rgba(255,255,255,0.15);border-radius:28px;width:400px;max-width:95vw;padding:28px;box-shadow:0 32px 80px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.18);backdrop-filter:blur(40px) saturate(1.8);-webkit-backdrop-filter:blur(40px) saturate(1.8);">
+    <h3 style="margin-bottom:6px;font-size:16px;font-weight:700;">🖨️ Configuration Imprimantes</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:24px;">Addition → USB &nbsp;·&nbsp; Cuisine → LAN</p>
+
+    <!-- Cuisine LAN -->
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;">🍳 Imprimante Cuisine (LAN)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="psCuisineIP" type="text" placeholder="192.168.1.X" maxlength="15"
+          style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;">
+        <input id="psCuisinePort" type="number" placeholder="9100" maxlength="5" value="9100"
+          style="width:80px;padding:10px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;text-align:center;">
+      </div>
+      <button onclick="_testLANPrinter()" style="margin-top:8px;padding:7px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Tester la connexion
+      </button>
+    </div>
+
+    <!-- Addition USB -->
+    <div style="margin-bottom:28px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;">🧾 Imprimante Addition (USB)</label>
+      <button onclick="_selectUSBPrinter()" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:white;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;">
+        🔌 Sélectionner port USB…
+      </button>
+      <p id="psUSBStatus" style="font-size:11px;color:var(--muted);margin-top:6px;">—</p>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="document.getElementById('printSettingsModal').style.display='none'" class="btn-cancel">Annuler</button>
+      <button onclick="_savePrintSettings()" class="btn-confirm">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
     <div class="modal-content">
         <h3 style="margin-bottom:10px;">🔒 Clôture de Caisse</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Voulez-vous vraiment clôturer la caisse pour aujourd'hui ? Un ticket récapitulatif sera imprimé.</p>
@@ -852,6 +890,65 @@ function doLogout() {
 }
 
 // ── CLOTURE MODAL ──
+function openPrintSettingsModal() {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    document.getElementById('psCuisineIP').value   = cfg.kitchenPrinterIP   || '';
+    document.getElementById('psCuisinePort').value = cfg.kitchenPrinterPort || 9100;
+    const usbStatus = document.getElementById('psUSBStatus');
+    navigator.serial?.getPorts().then(ports => {
+        usbStatus.textContent = ports.length ? `✅ ${ports.length} port(s) USB autorisé(s)` : 'Aucun port USB sélectionné';
+    }).catch(() => { usbStatus.textContent = 'Web Serial non supporté sur ce navigateur'; });
+    document.getElementById('printSettingsModal').style.display = 'flex';
+}
+
+function _savePrintSettings() {
+    const ip   = document.getElementById('psCuisineIP').value.trim();
+    const port = parseInt(document.getElementById('psCuisinePort').value) || 9100;
+    if (!ip) { showToast('⚠️ Entre l\'IP de l\'imprimante cuisine'); return; }
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    cfg.kitchenPrinterIP   = ip;
+    cfg.kitchenPrinterPort = port;
+    localStorage.setItem('papaya_print_config', JSON.stringify(cfg));
+    document.getElementById('printSettingsModal').style.display = 'none';
+    showToast('✅ Config imprimantes enregistrée !');
+}
+
+async function _testLANPrinter() {
+    const ip   = document.getElementById('psCuisineIP').value.trim();
+    const port = parseInt(document.getElementById('psCuisinePort').value) || 9100;
+    if (!ip) { showToast('⚠️ Entre l\'IP d\'abord'); return; }
+    showToast('⏳ Test connexion…');
+    try {
+        const token = localStorage.getItem('papaya_token');
+        // Envoyer un ticket de test vide (juste un saut de ligne)
+        const testContent = '\n  TEST CONNEXION OK\n\n\n';
+        const { base64 } = _encodeEscPos(testContent);
+        const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ content_base64: base64, ip, port }),
+            signal: AbortSignal.timeout(6000)
+        });
+        if (res.ok) showToast('✅ Imprimante cuisine connectée !');
+        else showToast('❌ Erreur: ' + res.status);
+    } catch(e) { showToast('❌ Connexion échouée: ' + e.message); }
+}
+
+async function _selectUSBPrinter() {
+    if (!navigator.serial) {
+        showToast('⚠️ Web Serial non supporté — utilise Chrome/Edge');
+        return;
+    }
+    try {
+        _usbSerialPort = await navigator.serial.requestPort();
+        document.getElementById('psUSBStatus').textContent = '✅ Port USB sélectionné et autorisé';
+        showToast('✅ Imprimante USB sélectionnée !');
+    } catch(e) {
+        if (e.name !== 'NotFoundError') showToast('❌ ' + e.message);
+    }
+}
+
+
 function openClotureModal()  { document.getElementById('clotureModal').style.display = 'flex'; }
 function closeClotureModal() { document.getElementById('clotureModal').style.display = 'none'; }
 
@@ -1264,81 +1361,119 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
 }
     
 
-async function printViaPrintNode(content, type='kitchen') {
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
+// ════════════════════════════════════════════════════════
+//  PRINT SYSTEM
+//  - Addition  → USB (Web Serial API, offline total)
+//  - Cuisine   → LAN TCP via backend /api/print/kitchen
+// ════════════════════════════════════════════════════════
 
-    if (!cfg.apiKey || !printerId) {
-        console.warn('PrintNode non configuré');
-        return;
-    }
+let _usbSerialPort = null; // port USB gardé en mémoire après 1er connect
 
-    // Encoder le ticket ESC/POS en base64
-    let plainText;
-    if (content.includes('\n') && !content.trim().startsWith('<')) {
-        plainText = content;
-    } else {
+// ── Encode text → ESC/POS base64 ──
+function _encodeEscPos(content) {
+    let text = content;
+    if (!content.includes('\n') || content.trim().startsWith('<')) {
         const tmp = document.createElement('pre');
         tmp.style.cssText = 'position:absolute;left:-9999px;white-space:pre-wrap;';
         tmp.innerHTML = content;
         document.body.appendChild(tmp);
-        plainText = tmp.innerText || tmp.textContent || '';
+        text = tmp.innerText || tmp.textContent || '';
         document.body.removeChild(tmp);
     }
     const ESC = '\x1B', GS = '\x1D';
-    const ticket = ESC + '@' + ESC + 'a\x00' + plainText + ESC + 'd\x01' + GS + 'V\x41\x03';
+    const ticket = ESC + '@' + ESC + 'a\x00' + text + ESC + 'd\x03' + GS + 'V\x41\x03';
     const bytes = [];
     for (let i = 0; i < ticket.length; i++) bytes.push(ticket.charCodeAt(i) & 0xFF);
     const uint8 = new Uint8Array(bytes);
-    let binary = '';
-    uint8.forEach(b => binary += String.fromCharCode(b));
-    const base64 = btoa(binary);
+    let bin = '';
+    uint8.forEach(b => bin += String.fromCharCode(b));
+    return { uint8, base64: btoa(bin) };
+}
 
-    const jobPayload = JSON.stringify({
-        printerId: parseInt(printerId),
-        title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse',
-        contentType: 'raw_base64',
-        content: base64,
-        source: 'Kiosk'
+// ── Addition → USB (Web Serial) ──
+async function _printUSB(content) {
+    if (!navigator.serial) {
+        console.warn('Web Serial API non supportée');
+        return;
+    }
+    const { uint8 } = _encodeEscPos(content);
+
+    // Récupérer port déjà autorisé ou en demander un nouveau
+    if (!_usbSerialPort) {
+        const ports = await navigator.serial.getPorts();
+        _usbSerialPort = ports[0] || null;
+    }
+    if (!_usbSerialPort) {
+        _usbSerialPort = await navigator.serial.requestPort();
+    }
+
+    if (!_usbSerialPort.readable || _usbSerialPort.readable.locked === false) {
+        await _usbSerialPort.open({ baudRate: 9600 }).catch(() => {});
+    }
+
+    const writer = _usbSerialPort.writable.getWriter();
+    await writer.write(uint8);
+    writer.releaseLock();
+}
+
+// ── Cuisine → LAN TCP via backend ──
+async function _printLAN(content) {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const ip = cfg.kitchenPrinterIP;
+    const port = cfg.kitchenPrinterPort || 9100;
+
+    if (!ip) {
+        console.warn('IP imprimante cuisine non configurée');
+        return;
+    }
+
+    const { base64 } = _encodeEscPos(content);
+    const token = localStorage.getItem('papaya_token');
+
+    const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ content_base64: base64, ip, port }),
+        signal: AbortSignal.timeout(6000)
     });
+    if (!res.ok) throw new Error('LAN print erreur ' + res.status);
+}
 
+// ── Wrapper principal (remplace printViaPrintNode) ──
+async function printViaPrintNode(content, type = 'kitchen') {
     try {
-        const res = await fetch('https://api.printnode.com/printjobs', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'),
-                'Content-Type': 'application/json'
-            },
-            body: jobPayload,
-            signal: AbortSignal.timeout(4000)
-        });
-        if (!res.ok) throw new Error('PrintNode erreur ' + res.status);
-        // Imprimé ✅
+        if (type === 'cash') {
+            await _printUSB(content);
+        } else {
+            await _printLAN(content);
+        }
     } catch(e) {
-        console.warn('PrintNode indisponible:', e.message);
-        // Sauvegarder le job pour retry automatique mli yrj3 wifi
-        const printJobs = JSON.parse(localStorage.getItem('_pq') || '[]');
-        printJobs.push({ apiKey: cfg.apiKey, printerId, jobPayload, ts: Date.now() });
-        localStorage.setItem('_pq', JSON.stringify(printJobs));
-        if (!_syncInterval) _startSyncPolling();
+        console.warn(`Print [${type}] échoué:`, e.message);
+        // Queue locale si LAN indisponible (retry au prochain call)
+        if (type === 'kitchen') {
+            const { base64 } = _encodeEscPos(content);
+            const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+            const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
+            queue.push({ base64, ip: cfg.kitchenPrinterIP, port: cfg.kitchenPrinterPort || 9100, ts: Date.now() });
+            localStorage.setItem('_pq', JSON.stringify(queue));
+            if (!_syncInterval) _startSyncPolling();
+        }
     }
 }
 
-// ── Flush print jobs queue mli yrj3 wifi ──
+// ── Flush LAN queue mli yrj3 réseau ──
 async function _flushPrintJobs() {
     const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
     if (!jobs.length) return;
+    const token = localStorage.getItem('papaya_token');
     const remaining = [];
     for (const job of jobs) {
         try {
-            const res = await fetch('https://api.printnode.com/printjobs', {
+            const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
                 method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(job.apiKey + ':'),
-                    'Content-Type': 'application/json'
-                },
-                body: job.jobPayload,
-                signal: AbortSignal.timeout(4000)
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ content_base64: job.base64, ip: job.ip, port: job.port }),
+                signal: AbortSignal.timeout(6000)
             });
             if (!res.ok) remaining.push(job);
         } catch(e) {
@@ -1347,6 +1482,7 @@ async function _flushPrintJobs() {
     }
     localStorage.setItem('_pq', JSON.stringify(remaining));
 }
+
 
 // ── SUBMIT ORDER ──
 
@@ -1810,9 +1946,6 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
 // Imprimer addition complète depuis historique (tous les articles)
 async function printAdditionOrder(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
-    if (!cfg.apiKey || !cfg.cashPrinter) { showToast('⚠️ PrintNode non configuré'); return; }
-    const allItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
     try {
         const idShort = String(o.id||'').slice(-6).padStart(6,'0');
         const now = new Date().toLocaleString('fr-FR');
@@ -1820,26 +1953,20 @@ async function printAdditionOrder(encodedOrder) {
         let ticket = `\n       PAPAYA JUICE\n         ADDITION\n${sep}`;
         ticket += `Commande #${idShort}  Table: ${o.table_number||'?'}\n`;
         ticket += `${now}\n${sep}`;
+        const allItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
         allItems.forEach(i => {
             const name = (i.title||i.name||'').substring(0,20).padEnd(20,' ');
             const price = (parseFloat(i.price||0)*(i.qty||1)).toFixed(2).padStart(8,' ');
             ticket += `${i.qty||1}x ${name} ${price}\n`;
         });
         ticket += `${sep}À PAYER:            ${parseFloat(o.total||0).toFixed(2)} DH\n`;
-        const ESC = '\x1B', GS = '\x1D';
-        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x01' + GS + 'V' + '\x41' + '\x03';
-        const bytes = []; for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
-        const uint8 = new Uint8Array(bytes); let binary = ''; uint8.forEach(b => binary += String.fromCharCode(b));
-        const base64 = btoa(binary);
-        await fetch('https://api.printnode.com/printjobs',{method:'POST',headers:{'Authorization':'Basic '+btoa(cfg.apiKey+':'),'Content-Type':'application/json'},body:JSON.stringify({printerId:parseInt(cfg.cashPrinter),title:'Addition',contentType:'raw_base64',content:base64,source:'Kiosk'})});
+        await _printUSB(ticket);
         showToast('✅ Addition imprimée !');
     } catch(e) { showToast('❌ Erreur impression: '+e.message); }
 }
 
 async function reprintOrder(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
-    if (!cfg.apiKey || !cfg.cashPrinter) { showToast('⚠️ PrintNode non configuré'); return; }
     try {
         const now = new Date(o.created_at||Date.now()).toLocaleString('fr-FR');
         const sep = '--------------------------------\n';
@@ -1853,15 +1980,7 @@ async function reprintOrder(encodedOrder) {
             ticket += `${i.qty||1}x ${name} ${price}\n`;
         });
         ticket += `${sep}TOTAL:              ${parseFloat(o.total||0).toFixed(2)} DH\n`;
-        const ESC = '\x1B', GS = '\x1D';
-        const escTicket = ESC + '@' + ticket + ESC + 'd' + '\x05' + GS + 'V' + '\x41' + '\x03';
-        const bytes = [];
-        for (let i = 0; i < escTicket.length; i++) bytes.push(escTicket.charCodeAt(i) & 0xFF);
-        const uint8 = new Uint8Array(bytes);
-        let binary = '';
-        uint8.forEach(b => binary += String.fromCharCode(b));
-        const base64 = btoa(binary);
-        await fetch('https://api.printnode.com/printjobs',{method:'POST',headers:{'Authorization':'Basic '+btoa(cfg.apiKey+':'),'Content-Type':'application/json'},body:JSON.stringify({printerId:parseInt(cfg.cashPrinter),title:'Réimpression',contentType:'raw_base64',content:base64,source:'Kiosk'})});
+        await _printUSB(ticket);
         showToast('✅ Ticket réimprimé !');
     } catch(e) { showToast('❌ Erreur impression: '+e.message); }
 }
