@@ -145,25 +145,52 @@
   <!-- HEADER -->
   <div style="margin: 32px 0 24px;">
     <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;">🖨️ Paramètres Impression</h1>
-    <p style="font-size:14px;color:var(--muted);">Configuration des imprimantes thermiques — Local Print Server</p>
+    <p style="font-size:14px;color:var(--muted);">Système hybride — PrintNode (online) + Local (offline)</p>
   </div>
 
   <!-- NOTE -->
   <div class="note-box">
-    ⚠️ Le print server doit tourner sur le PC du kiosk : <strong>node print-server.js</strong><br>
-    Les tests de connexion fonctionnent uniquement depuis le PC du kiosk (localhost:3001).
+    🔄 <strong>Online (WiFi OK)</strong> → tickets via PrintNode cloud<br>
+    📴 <strong>Offline (WiFi coupé)</strong> → tickets via print server local (localhost:3001)<br>
+    Les tests locaux fonctionnent uniquement depuis le PC du kiosk.
   </div>
 
-  <!-- CARD 1: CUISINE LAN -->
+  <!-- CARD 1: PRINTNODE (ONLINE) -->
   <div class="card">
-    <div class="card-title">🍳 Imprimante Cuisine — LAN</div>
-    <div class="card-sub">Connexion directe via câble RJ45 · Port TCP 9100</div>
+    <div class="card-title">☁️ PrintNode — Online</div>
+    <div class="card-sub">Utilisé quand le WiFi est disponible · Configuration via printnode.com</div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label">API Key</label>
+      <input class="form-input" id="apiKey" type="password" placeholder="••••••••••••••••">
+    </div>
 
     <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🍳 Printer ID Cuisine</label>
+        <input class="form-input" id="kitchenPrinter" type="text" placeholder="123456">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🧾 Printer ID Addition</label>
+        <input class="form-input" id="cashPrinter" type="text" placeholder="123457">
+      </div>
+    </div>
+
+    <div class="status-row">
+      <button class="btn-test" onclick="testPrintNode()">🔌 Tester PrintNode</button>
+      <span id="statusPN" style="font-size:12px;color:var(--muted);">—</span>
+    </div>
+  </div>
+
+  <!-- CARD 2: LOCAL OFFLINE -->
+  <div class="card">
+    <div class="card-title">📴 Local — Offline</div>
+    <div class="card-sub">Fallback automatique quand PrintNode est inaccessible · node print-server.js</div>
+
+    <div class="form-row" style="margin-bottom:16px;">
       <div class="form-group" style="flex:2;">
-        <label class="form-label">Adresse IP</label>
+        <label class="form-label">🍳 IP Imprimante Cuisine (LAN)</label>
         <input class="form-input" id="cuisineIP" type="text" placeholder="192.168.123.100">
-        <span class="form-hint">Visible sur le selftest de l'imprimante</span>
       </div>
       <div class="form-group" style="flex:1;">
         <label class="form-label">Port</label>
@@ -171,34 +198,23 @@
       </div>
     </div>
 
-    <div class="status-row">
-      <button class="btn-test" onclick="testLAN()">🔌 Tester la connexion</button>
-      <span id="statusLAN" style="font-size:12px;color:var(--muted);">—</span>
-    </div>
-  </div>
-
-  <!-- CARD 2: ADDITION USB -->
-  <div class="card">
-    <div class="card-title">🧾 Imprimante Addition — USB</div>
-    <div class="card-sub">Via Windows printer · Nom exact comme dans le Gestionnaire de périphériques</div>
-
     <div class="form-group" style="margin-bottom:16px;">
-      <label class="form-label">Nom Windows de l'imprimante</label>
+      <label class="form-label">🧾 Nom Windows Imprimante Addition (USB)</label>
       <input class="form-input" id="usbName" type="text" placeholder="XP-80C (copy 2)">
       <span class="form-hint">Gestionnaire de périphériques → Files d'attente à l'impression</span>
     </div>
 
-    <div class="status-row">
-      <button class="btn-test" onclick="testUSB()">🔌 Tester l'impression</button>
+    <div class="status-row" style="gap:16px;flex-wrap:wrap;">
+      <button class="btn-test" onclick="testLAN()">🔌 Tester Cuisine LAN</button>
+      <span id="statusLAN" style="font-size:12px;color:var(--muted);">—</span>
+      <button class="btn-test" onclick="testUSB()" style="margin-left:auto;">🔌 Tester Addition USB</button>
       <span id="statusUSB" style="font-size:12px;color:var(--muted);">—</span>
     </div>
   </div>
 
   <!-- SAVE -->
   <div class="actions-row">
-    <button class="btn-primary" onclick="saveConfig()">
-      💾 Enregistrer la configuration
-    </button>
+    <button class="btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
   </div>
 
 </div>
@@ -214,31 +230,50 @@ function saveCfgRaw(obj) { localStorage.setItem(CFG_KEY, JSON.stringify(obj)); }
 
 window.addEventListener('DOMContentLoaded', () => {
   const cfg = loadCfg();
-  document.getElementById('cuisineIP').value   = cfg.kitchenPrinterIP   || '';
-  document.getElementById('cuisinePort').value = cfg.kitchenPrinterPort || 9100;
-  document.getElementById('usbName').value     = cfg.usbPrinterName     || '';
+  document.getElementById('apiKey').value        = cfg.apiKey          || '';
+  document.getElementById('kitchenPrinter').value = cfg.kitchenPrinter || '';
+  document.getElementById('cashPrinter').value    = cfg.cashPrinter    || '';
+  document.getElementById('cuisineIP').value      = cfg.kitchenPrinterIP   || '';
+  document.getElementById('cuisinePort').value    = cfg.kitchenPrinterPort || 9100;
+  document.getElementById('usbName').value        = cfg.usbPrinterName || '';
 });
 
 function saveConfig() {
-  const ip      = document.getElementById('cuisineIP').value.trim();
-  const port    = parseInt(document.getElementById('cuisinePort').value) || 9100;
-  const usbName = document.getElementById('usbName').value.trim();
-  if (!ip)      { toast('⚠️ Entre l\'IP de l\'imprimante cuisine', 'err'); return; }
-  if (!usbName) { toast('⚠️ Entre le nom de l\'imprimante addition', 'err'); return; }
-  const cfg = loadCfg();
-  cfg.kitchenPrinterIP   = ip;
-  cfg.kitchenPrinterPort = port;
-  cfg.usbPrinterName     = usbName;
+  const apiKey    = document.getElementById('apiKey').value.trim();
+  const kitchen   = document.getElementById('kitchenPrinter').value.trim();
+  const cash      = document.getElementById('cashPrinter').value.trim();
+  const ip        = document.getElementById('cuisineIP').value.trim();
+  const port      = parseInt(document.getElementById('cuisinePort').value) || 9100;
+  const usbName   = document.getElementById('usbName').value.trim();
+
+  if (!ip || !usbName) { toast('⚠️ Config locale incomplète (IP + nom USB)', 'err'); return; }
+
+  const cfg = { apiKey, kitchenPrinter: kitchen, cashPrinter: cash, kitchenPrinterIP: ip, kitchenPrinterPort: port, usbPrinterName: usbName };
   saveCfgRaw(cfg);
   toast('✅ Configuration enregistrée !', 'ok');
+}
+
+async function testPrintNode() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const el = document.getElementById('statusPN');
+  if (!apiKey) { toast('Entre l'API key d'abord', 'err'); return; }
+  el.textContent = '⏳ Test…';
+  try {
+    const res = await fetch('https://api.printnode.com/whoami', {
+      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':') },
+      signal: AbortSignal.timeout(5000)
+    });
+    if (res.ok) { const d = await res.json(); el.textContent = '✅ Connecté — ' + d.email; el.style.color = '#86efac'; }
+    else        { el.textContent = '❌ API key invalide'; el.style.color = '#fca5a5'; }
+  } catch(e) { el.textContent = '❌ Pas de connexion internet'; el.style.color = '#fca5a5'; }
 }
 
 async function testLAN() {
   const ip   = document.getElementById('cuisineIP').value.trim();
   const port = parseInt(document.getElementById('cuisinePort').value) || 9100;
   const el   = document.getElementById('statusLAN');
-  if (!ip) { toast('Entre l\'IP d\'abord', 'err'); return; }
-  el.textContent = '⏳ Test en cours…';
+  if (!ip) { toast('Entre l'IP d'abord', 'err'); return; }
+  el.textContent = '⏳ Test…';
   try {
     const ESC = '\x1B', GS = '\x1D';
     const text = '\n  TEST CUISINE OK\n\n\n';
@@ -252,17 +287,14 @@ async function testLAN() {
     });
     if (res.ok) { el.textContent = '✅ Connectée !'; el.style.color = '#86efac'; }
     else        { el.textContent = '❌ Erreur ' + res.status; el.style.color = '#fca5a5'; }
-  } catch(e) {
-    el.textContent = '❌ Print server machi actif';
-    el.style.color = '#fca5a5';
-  }
+  } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
 }
 
 async function testUSB() {
   const name = document.getElementById('usbName').value.trim();
   const el   = document.getElementById('statusUSB');
-  if (!name) { toast('Entre le nom d\'abord', 'err'); return; }
-  el.textContent = '⏳ Test en cours…';
+  if (!name) { toast('Entre le nom d'abord', 'err'); return; }
+  el.textContent = '⏳ Test…';
   try {
     const ESC = '\x1B', GS = '\x1D';
     const text = '\n  TEST ADDITION OK\n\n\n';
@@ -276,15 +308,12 @@ async function testUSB() {
     });
     if (res.ok) { el.textContent = '✅ Imprimée !'; el.style.color = '#86efac'; }
     else        { el.textContent = '❌ Erreur ' + res.status; el.style.color = '#fca5a5'; }
-  } catch(e) {
-    el.textContent = '❌ Print server machi actif';
-    el.style.color = '#fca5a5';
-  }
+  } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
 }
 
 function toast(msg, type='info') {
   const el = document.createElement('div');
-  el.className = `toast ${type}`; el.textContent = msg;
+  el.className = 'toast ' + type; el.textContent = msg;
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
