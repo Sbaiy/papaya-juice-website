@@ -657,7 +657,6 @@
 </div>
 
 
-<div id="clotureModal" class="modal-overlay" style="display:none;z-index:5000;">
     <div class="modal-content">
         <h3 style="margin-bottom:10px;">🔒 Clôture de Caisse</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Voulez-vous vraiment clôturer la caisse pour aujourd'hui ? Un ticket récapitulatif sera imprimé.</p>
@@ -1359,14 +1358,15 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     
 
 // ════════════════════════════════════════════════════════
-//  PRINT SYSTEM
-//  - Addition  → USB (Web Serial API, offline total)
-//  - Cuisine   → LAN TCP via backend /api/print/kitchen
+// ════════════════════════════════════════════════════════
+//  PRINT SYSTEM — Hybrid
+//  Online  → PrintNode (cloud)
+//  Offline → Local print server (localhost:3001)
 // ════════════════════════════════════════════════════════
 
-let _usbSerialPort = null; // port USB gardé en mémoire après 1er connect
+let _usbSerialPort = null;
 
-// ── Encode text → ESC/POS base64 ──
+// ── Encode text → ESC/POS base64 + uint8 ──
 function _encodeEscPos(content) {
     let text = content;
     if (!content.includes('\n') || content.trim().startsWith('<')) {
@@ -1392,82 +1392,84 @@ async function _printUSB(content) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     const printerName = cfg.usbPrinterName || 'XP-80C (copy 2)';
     const { base64 } = _encodeEscPos(content);
-
     const res = await fetch('http://localhost:3001/print/usb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
         signal: AbortSignal.timeout(6000)
     });
     if (!res.ok) throw new Error('USB print erreur ' + res.status);
 }
 
-// ── Cuisine → LAN TCP via local print server (localhost:3001) ──
+// ── Cuisine → LAN via local print server ──
 async function _printLAN(content) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     const ip   = cfg.kitchenPrinterIP;
     const port = cfg.kitchenPrinterPort || 9100;
-
-    if (!ip) {
-        console.warn('IP imprimante cuisine non configurée');
-        return;
-    }
-
+    if (!ip) { console.warn('IP imprimante cuisine non configurée'); return; }
     const { base64 } = _encodeEscPos(content);
-
-    // Local print server — bla internet, nfs PC
-    const res = await fetch('http://localhost:3001/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const res = await fetch('http://localhost:3001/print/lan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, ip, port }),
         signal: AbortSignal.timeout(6000)
     });
-    if (!res.ok) throw new Error('Local print server erreur ' + res.status);
+    if (!res.ok) throw new Error('LAN print erreur ' + res.status);
 }
 
-// ── Wrapper principal (remplace printViaPrintNode) ──
+// ── Wrapper principal — PrintNode d'abord, fallback local ──
 async function printViaPrintNode(content, type = 'kitchen') {
-    try {
-        if (type === 'cash') {
-            await _printUSB(content);
-        } else {
-            await _printLAN(content);
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
+
+    // 1 — Essayer PrintNode (online)
+    if (cfg.apiKey && printerId) {
+        try {
+            const { base64 } = _encodeEscPos(content);
+            const res = await fetch('https://api.printnode.com/printjobs', {
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ printerId: parseInt(printerId), title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse', contentType: 'raw_base64', content: base64, source: 'Kiosk' }),
+                signal: AbortSignal.timeout(1000)
+            });
+            if (res.ok) return; // PrintNode OK
+        } catch(e) {
+            console.warn('PrintNode indisponible, fallback local:', e.message);
         }
+    }
+
+    // 2 — Fallback local print server (offline)
+    try {
+        if (type === 'cash') { await _printUSB(content); }
+        else                 { await _printLAN(content); }
     } catch(e) {
-        console.warn(`Print [${type}] échoué:`, e.message);
-        // Queue locale si LAN indisponible (retry au prochain call)
+        console.warn('Print local [' + type + '] echoue:', e.message);
         if (type === 'kitchen') {
             const { base64 } = _encodeEscPos(content);
-            const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+            const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
             const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
-            queue.push({ base64, ip: cfg.kitchenPrinterIP, port: cfg.kitchenPrinterPort || 9100, ts: Date.now() });
+            queue.push({ base64, ip: cfg2.kitchenPrinterIP, port: cfg2.kitchenPrinterPort || 9100, ts: Date.now() });
             localStorage.setItem('_pq', JSON.stringify(queue));
             if (!_syncInterval) _startSyncPolling();
         }
     }
 }
 
-// ── Flush LAN queue mli yrj3 réseau ──
+// ── Flush LAN queue ──
 async function _flushPrintJobs() {
     const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
     if (!jobs.length) return;
     const remaining = [];
     for (const job of jobs) {
         try {
-            const res = await fetch('http://localhost:3001/print', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch('http://localhost:3001/print/lan', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content_base64: job.base64, ip: job.ip, port: job.port }),
                 signal: AbortSignal.timeout(6000)
             });
             if (!res.ok) remaining.push(job);
-        } catch(e) {
-            remaining.push(job);
-        }
+        } catch(e) { remaining.push(job); }
     }
     localStorage.setItem('_pq', JSON.stringify(remaining));
 }
-
 
 // ── SUBMIT ORDER ──
 
