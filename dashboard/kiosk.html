@@ -644,10 +644,9 @@
     <!-- Addition USB -->
     <div style="margin-bottom:28px;">
       <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;">🧾 Imprimante Addition (USB)</label>
-      <button onclick="_selectUSBPrinter()" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:white;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;">
-        🔌 Sélectionner port USB…
-      </button>
-      <p id="psUSBStatus" style="font-size:11px;color:var(--muted);margin-top:6px;">—</p>
+      <input id="psUSBName" type="text" placeholder="XP-80C (copy 2)"
+        style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;">
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;">Isem printer kif katban f Windows (Device Manager)</p>
     </div>
 
     <!-- Actions -->
@@ -894,20 +893,20 @@ function openPrintSettingsModal() {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     document.getElementById('psCuisineIP').value   = cfg.kitchenPrinterIP   || '';
     document.getElementById('psCuisinePort').value = cfg.kitchenPrinterPort || 9100;
-    const usbStatus = document.getElementById('psUSBStatus');
-    navigator.serial?.getPorts().then(ports => {
-        usbStatus.textContent = ports.length ? `✅ ${ports.length} port(s) USB autorisé(s)` : 'Aucun port USB sélectionné';
-    }).catch(() => { usbStatus.textContent = 'Web Serial non supporté sur ce navigateur'; });
+    document.getElementById('psUSBName').value     = cfg.usbPrinterName     || 'XP-80C (copy 2)';
     document.getElementById('printSettingsModal').style.display = 'flex';
 }
 
 function _savePrintSettings() {
-    const ip   = document.getElementById('psCuisineIP').value.trim();
-    const port = parseInt(document.getElementById('psCuisinePort').value) || 9100;
-    if (!ip) { showToast('⚠️ Entre l\'IP de l\'imprimante cuisine'); return; }
+    const ip          = document.getElementById('psCuisineIP').value.trim();
+    const port        = parseInt(document.getElementById('psCuisinePort').value) || 9100;
+    const usbName     = document.getElementById('psUSBName').value.trim();
+    if (!ip)      { showToast('⚠️ Entre l\'IP de l\'imprimante cuisine'); return; }
+    if (!usbName) { showToast('⚠️ Entre le nom de l\'imprimante addition'); return; }
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
     cfg.kitchenPrinterIP   = ip;
     cfg.kitchenPrinterPort = port;
+    cfg.usbPrinterName     = usbName;
     localStorage.setItem('papaya_print_config', JSON.stringify(cfg));
     document.getElementById('printSettingsModal').style.display = 'none';
     showToast('✅ Config imprimantes enregistrée !');
@@ -1388,30 +1387,19 @@ function _encodeEscPos(content) {
     return { uint8, base64: btoa(bin) };
 }
 
-// ── Addition → USB (Web Serial) ──
+// ── Addition → USB via local print server ──
 async function _printUSB(content) {
-    if (!navigator.serial) {
-        console.warn('Web Serial API non supportée');
-        return;
-    }
-    const { uint8 } = _encodeEscPos(content);
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const printerName = cfg.usbPrinterName || 'XP-80C (copy 2)';
+    const { base64 } = _encodeEscPos(content);
 
-    // Récupérer port déjà autorisé ou en demander un nouveau
-    if (!_usbSerialPort) {
-        const ports = await navigator.serial.getPorts();
-        _usbSerialPort = ports[0] || null;
-    }
-    if (!_usbSerialPort) {
-        _usbSerialPort = await navigator.serial.requestPort();
-    }
-
-    if (!_usbSerialPort.readable || _usbSerialPort.readable.locked === false) {
-        await _usbSerialPort.open({ baudRate: 9600 }).catch(() => {});
-    }
-
-    const writer = _usbSerialPort.writable.getWriter();
-    await writer.write(uint8);
-    writer.releaseLock();
+    const res = await fetch('http://localhost:3001/print/usb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
+        signal: AbortSignal.timeout(6000)
+    });
+    if (!res.ok) throw new Error('USB print erreur ' + res.status);
 }
 
 // ── Cuisine → LAN TCP via local print server (localhost:3001) ──
