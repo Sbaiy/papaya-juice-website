@@ -919,19 +919,17 @@ async function _testLANPrinter() {
     if (!ip) { showToast('⚠️ Entre l\'IP d\'abord'); return; }
     showToast('⏳ Test connexion…');
     try {
-        const token = localStorage.getItem('papaya_token');
-        // Envoyer un ticket de test vide (juste un saut de ligne)
         const testContent = '\n  TEST CONNEXION OK\n\n\n';
         const { base64 } = _encodeEscPos(testContent);
-        const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
+        const res = await fetch('http://localhost:3001/print', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content_base64: base64, ip, port }),
             signal: AbortSignal.timeout(6000)
         });
         if (res.ok) showToast('✅ Imprimante cuisine connectée !');
         else showToast('❌ Erreur: ' + res.status);
-    } catch(e) { showToast('❌ Connexion échouée: ' + e.message); }
+    } catch(e) { showToast('❌ Print server machi actif — check node print-server.js'); }
 }
 
 async function _selectUSBPrinter() {
@@ -1416,10 +1414,10 @@ async function _printUSB(content) {
     writer.releaseLock();
 }
 
-// ── Cuisine → LAN TCP via backend ──
+// ── Cuisine → LAN TCP via local print server (localhost:3001) ──
 async function _printLAN(content) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const ip = cfg.kitchenPrinterIP;
+    const ip   = cfg.kitchenPrinterIP;
     const port = cfg.kitchenPrinterPort || 9100;
 
     if (!ip) {
@@ -1428,15 +1426,15 @@ async function _printLAN(content) {
     }
 
     const { base64 } = _encodeEscPos(content);
-    const token = localStorage.getItem('papaya_token');
 
-    const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
+    // Local print server — bla internet, nfs PC
+    const res = await fetch('http://localhost:3001/print', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, ip, port }),
         signal: AbortSignal.timeout(6000)
     });
-    if (!res.ok) throw new Error('LAN print erreur ' + res.status);
+    if (!res.ok) throw new Error('Local print server erreur ' + res.status);
 }
 
 // ── Wrapper principal (remplace printViaPrintNode) ──
@@ -1465,13 +1463,12 @@ async function printViaPrintNode(content, type = 'kitchen') {
 async function _flushPrintJobs() {
     const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
     if (!jobs.length) return;
-    const token = localStorage.getItem('papaya_token');
     const remaining = [];
     for (const job of jobs) {
         try {
-            const res = await fetch(BACKEND_URL + '/api/print/kitchen', {
+            const res = await fetch('http://localhost:3001/print', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content_base64: job.base64, ip: job.ip, port: job.port }),
                 signal: AbortSignal.timeout(6000)
             });
