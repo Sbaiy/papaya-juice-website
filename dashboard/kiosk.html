@@ -1890,7 +1890,8 @@ async function _printAdditionTicket(order, newItems) {
         const total = parseFloat(order.total || 0).toFixed(2);
         // Générer le ticket avec le même format que le ticket original
         // mais avec header ADDITION
-        const ticketContent = generateAdditionTicket(allCartItems, tableVal, total, order.id, newItems);
+        // FIX: yakhd ticket_number (counter local) machi ID Supabase
+        const ticketContent = generateAdditionTicket(allCartItems, tableVal, total, order.ticket_number || order.id, newItems);
         await printViaPrintNode(ticketContent, 'cash');
     } catch(e) { console.warn('Impression addition:', e.message); }
 }
@@ -1900,6 +1901,7 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
+    // FIX: ticket_number (1,2,3...) machi ID Supabase (94, 750...)
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
     const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `N° ${table.replace('T','')}`;
     const supplement = newItems.reduce((s,i) => s + parseFloat(i.price||0)*(i.qty||1), 0).toFixed(2);
