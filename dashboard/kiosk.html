@@ -1587,19 +1587,21 @@ async function submitOrder() {
     const btnOrder = document.getElementById('btnOrder');
     btnOrder.disabled = true; btnOrder.textContent = 'Envoi…';
     try {
+        // ── Snapshot + counter local + vider panier ──
+        const cartSnapshot = [...cart];
+        _localOrderCounter++;
+        localStorage.setItem('papaya_order_counter', _localOrderCounter);
+        const localId = _localOrderCounter;
+
         const orderPayload = {
             table_number: tableVal,
             items: cart.map(({product,qty,customPrice,extras}) => ({id:product.id,title:product.title,price:parseFloat(customPrice??getKioskPrice(product)),qty,category:product.category||'',extras:extras||[]})),
             total: cart.reduce((s,i) => s+parseFloat(i.customPrice??getKioskPrice(i.product))*i.qty, 0),
             status: 'pending',
             source: 'kiosk',
+            ticket_number: localId,
             serveur: document.getElementById('userName').textContent.trim() || 'Kiosk'
         };
-        // ── Snapshot + counter local + vider panier ──
-        const cartSnapshot = [...cart];
-        _localOrderCounter++;
-        localStorage.setItem('papaya_order_counter', _localOrderCounter);
-        const localId = _localOrderCounter;
 
         showToast('✅ Commande envoyée !');
         clearCart();
@@ -1796,7 +1798,10 @@ function renderHistOrders() {
         const items = rawItems.map(i=>`${i.qty}x ${i.title}`).join(', ');
         const time = o.created_at ? new Date(o.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
         const payment = o.payment_method ? `<span style="font-size:11px;color:var(--muted);">${o.payment_method}</span>` : '';
-        const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+        // FIX: yachri ticket_number (counter local 1,2,3...) idha mawjoud, wla ID backend
+        const idShort = o.ticket_number
+            ? String(o.ticket_number).padStart(4,'0')
+            : String(o.id||'').slice(-6).padStart(6,'0');
         const orderJson = encodeURIComponent(JSON.stringify(o));
         const caissierName = o.caissier || o.serveur || o.created_by || '';
         const caissierBadge = caissierName ? `<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;">👤 ${caissierName}</span>` : '';
@@ -1837,7 +1842,9 @@ function cancelModifMode() {
 
 async function openModifierModal(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
-    const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+    const idShort = o.ticket_number
+        ? String(o.ticket_number).padStart(4,'0')
+        : String(o.id||'').slice(-6).padStart(6,'0');
 
     // Activer le mode ajout
     _modifMode = {
