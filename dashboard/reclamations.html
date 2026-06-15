@@ -295,11 +295,7 @@ async function loadAll() {
   btn.textContent = '⏳ Chargement…';
   refreshBtn.classList.add('spinning');
   try {
-    const { data, error } = await db
-      .from('reclamations')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
+    const data = await API.reclamations.getAll();
     allReclamations = data || [];
     updateStats();
     applyFilters();
@@ -319,15 +315,7 @@ async function loadReclamations() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning');
   try {
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    const { data, error } = await db
-      .from('reclamations')
-      .select('*')
-      .gte('created_at', since.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) throw error;
+    const data = await API.reclamations.getAll({ days: 30, limit: 100 });
     allReclamations = data || [];
     updateStats();
     applyFilters();
@@ -447,7 +435,7 @@ function renderReclamations(list) {
 /* ── MARK AS READ ── */
 async function markAsRead(id) {
   try {
-    const { data } = await db.from('reclamations').update({ read: true }).eq('id', id).select().single();
+    const data = await API.reclamations.update(id, { read: true });
     const rec = allReclamations.find(r => r.id === id);
     if (rec) rec.read = true;
     updateStats();
@@ -473,7 +461,7 @@ function closeConfirm() {
 async function deleteReclamation(id) {
   closeConfirm();
   try {
-    await db.from('reclamations').delete().eq('id', id);
+    await API.reclamations.delete(id);
     allReclamations = allReclamations.filter(r => r.id !== id);
     updateStats();
     applyFilters();

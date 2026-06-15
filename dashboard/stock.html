@@ -505,17 +505,19 @@ async function loadAll() {
 }
 
 async function loadDesignations() {
-  const { data, error } = await db.from('stock_designations').select('*').order('nom', { ascending: true });
-  if (error) { showToast('Erreur chargement stock: ' + error.message, 'error'); return; }
-  allDesignations = data || [];
-  renderStock(allDesignations);
+  try {
+    allDesignations = await API.stock.getDesignations() || [];
+    renderStock(allDesignations);
+  } catch (err) {
+    showToast('Erreur chargement stock: ' + err.message, 'error');
+  }
 }
 
 async function loadMouvements() {
-  const { data, error } = await db.from('stock_mouvements').select('*').order('created_at', { ascending: false }).limit(200);
-  if (error) return;
-  allMouvements = data || [];
-  renderMvt(allMouvements);
+  try {
+    allMouvements = await API.stock.getMouvements(200) || [];
+    renderMvt(allMouvements);
+  } catch (err) { /* silencieux */ }
 }
 
 // ── Render stock table ──
@@ -712,23 +714,17 @@ async function saveDesignation() {
 
   const payload = { nom, sku, unite, stock_actuel: stock, prix_achat: prix, seuil_alerte: seuil };
 
-  let error;
-  if (id) {
-    const res = await db.from('stock_designations').update(payload).eq('id', id);
-    error = res.error;
-  } else {
-    // Enregistrer mouvement initial si stock > 0
-    const res = await db.from('stock_designations').insert([payload]).select().single();
-    error = res.error;
-    if (!error && stock > 0) {
-      await db.from('stock_mouvements').insert([{
-        designation_id: res.data.id, type: 'entree',
-        quantite: stock, stock_avant: 0, stock_apres: stock, note: 'Stock initial'
-      }]);
+  try {
+    if (id) {
+      await API.stock.updateDesignation(id, payload);
+    } else {
+      await API.stock.createDesignation(payload);
     }
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
   }
 
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
   showToast(id ? 'Désignation modifiée !' : 'Désignation ajoutée !');
   closeModal('designation');
   loadAll();
@@ -746,23 +742,12 @@ async function saveMouvement() {
   const desig = allDesignations.find(d => d.id === desigId);
   if (!desig) { showToast('Désignation introuvable', 'error'); return; }
 
-  const stockAvant = parseFloat(desig.stock_actuel) || 0;
-  let stockApres;
-  if      (type === 'entree')     stockApres = stockAvant + qty;
-  else if (type === 'sortie')     stockApres = Math.max(0, stockAvant - qty);
-  else if (type === 'reset')      stockApres = qty;
-  else if (type === 'ajustement') stockApres = qty;
-
-  // Update stock
-  const { error: e1 } = await db.from('stock_designations').update({ stock_actuel: stockApres }).eq('id', desigId);
-  if (e1) { showToast('Erreur: ' + e1.message, 'error'); return; }
-
-  // Log mouvement
-  const qtyLog = type === 'sortie' ? -qty : qty;
-  await db.from('stock_mouvements').insert([{
-    designation_id: desigId, type,
-    quantite: qtyLog, stock_avant: stockAvant, stock_apres: stockApres, note
-  }]);
+  try {
+    await API.stock.createMouvement({ designation_id: desigId, type, quantite: qty, note });
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
+  }
 
   showToast('Mouvement enregistré !');
   closeModal('designation');
@@ -781,9 +766,12 @@ function confirmDelete(id, nom) {
 
 async function doDelete() {
   if (!deleteTarget) return;
-  await db.from('stock_mouvements').delete().eq('designation_id', deleteTarget);
-  const { error } = await db.from('stock_designations').delete().eq('id', deleteTarget);
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  try {
+    await API.stock.deleteDesignation(deleteTarget);
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
+  }
   showToast('Désignation supprimée !');
   closeModal('confirm');
   deleteTarget = null;
@@ -799,14 +787,12 @@ function confirmResetGlobal() {
 }
 
 async function doResetGlobal() {
-  const { error } = await db.from('stock_designations').update({ stock_actuel: 0 }).neq('id', 0);
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
-  // Log
-  const inserts = allDesignations.map(d => ({
-    designation_id: d.id, type: 'reset',
-    quantite: 0, stock_avant: parseFloat(d.stock_actuel)||0, stock_apres: 0, note: 'Reset global'
-  }));
-  if (inserts.length) await db.from('stock_mouvements').insert(inserts);
+  try {
+    await API.stock.resetGlobal();
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
+  }
   showToast('Reset global effectué !');
   closeModal('confirm');
   loadAll();

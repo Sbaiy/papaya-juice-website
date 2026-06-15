@@ -7,6 +7,7 @@
   <title>Recettes - Papaya Juice</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../api.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -235,10 +236,10 @@ function showToast(msg, type = 'success') {
 
 // ── Load everything ──
 async function loadAll() {
-  const [{ data: prods }, { data: desigs }, { data: recettes }] = await Promise.all([
-    db.from('products').select('id, title, price, category, image').order('sort_order', { ascending: true }),
-    db.from('stock_designations').select('id, nom, unite').order('nom'),
-    db.from('recettes').select('*')
+  const [prods, desigs, recettes] = await Promise.all([
+    API.menu.getAll(),
+    API.stock.getDesignations(),
+    API.recettes.getAll()
   ]);
 
   allProducts     = prods     || [];
@@ -333,13 +334,17 @@ async function addIngredient(productId) {
   const existing = (allRecettes[productId] || []).find(r => r.designation_id === desigId);
   if (existing) { showToast('Cette matière existe déjà — supprimer dabak', 'error'); return; }
 
-  const { data, error } = await db.from('recettes').insert([{
-    product_id: productId,
-    designation_id: desigId,
-    quantite: qty
-  }]).select().single();
-
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  let data;
+  try {
+    data = await API.recettes.create({
+      product_id: productId,
+      designation_id: desigId,
+      quantite: qty
+    });
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
+  }
 
   // Update local state
   if (!allRecettes[productId]) allRecettes[productId] = [];
@@ -358,8 +363,12 @@ async function addIngredient(productId) {
 
 // ── Delete ingredient ──
 async function deleteIngredient(recetteId, productId) {
-  const { error } = await db.from('recettes').delete().eq('id', recetteId);
-  if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+  try {
+    await API.recettes.delete(recetteId);
+  } catch (err) {
+    showToast('Erreur: ' + err.message, 'error');
+    return;
+  }
 
   allRecettes[productId] = (allRecettes[productId] || []).filter(r => r.id !== recetteId);
   refreshIngredients(productId);
