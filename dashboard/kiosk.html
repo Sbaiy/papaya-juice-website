@@ -657,7 +657,6 @@
 </div>
 
 
-<div id="clotureModal" class="modal-overlay" style="display:none; z-index:4000;">
     <div class="modal-content">
         <h3 style="margin-bottom:10px;">🔒 Clôture de Caisse</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Voulez-vous vraiment clôturer la caisse pour aujourd'hui ? Un ticket récapitulatif sera imprimé.</p>
@@ -2605,7 +2604,7 @@ function _startSyncPolling() {
             // Wifi rj3 ✅
             if (_isOffline) { _isOffline = false; await _resubscribeBroadcast(); }
             const sent = await _oqFlush();
-            await _flushPrintJobs(); // flush tickets en attente aussi
+            // _flushPrintJobs hoqnaha — tickets dyal offline deja khrejou via local print server
             if (sent > 0) _showOnlineBanner(sent);
             _syncBusy = false;
         } catch(e) { _syncBusy = false; }
@@ -2621,7 +2620,8 @@ window.addEventListener('online', async () => {
 
     // 2. Envoyer les commandes sauvegardées offline
     const sent = await _oqFlush();
-    await _flushPrintJobs();
+    // Clear print queue — tickets deja khrejou via local (makhsshoumch ytb3atou mra thanya)
+    localStorage.removeItem('_pq');
 
     if (sent > 0) { _showOnlineBanner(sent); }
 
