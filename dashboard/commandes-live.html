@@ -827,7 +827,10 @@ function buildCard(order) {
   const serveur = order.serveur || order.server || order.waiter || '';
   const tableNum = order.table_number || order.table || '';
   const note = order.note || order.notes || '';
-  const orderNum = order.order_number || order.numero || ('#' + String(order.id).slice(-6));
+  // FIX: yakhd ticket_number (counter local 1,2,3...) machi ID Supabase
+  const orderNum = order.ticket_number
+    ? ('#' + String(order.ticket_number).padStart(4,'0'))
+    : (order.order_number || order.numero || ('#' + String(order.id).slice(-6)));
 
   // Source badge
   let sourceBadge = '';
