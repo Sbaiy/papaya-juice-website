@@ -259,16 +259,27 @@
 </header>
 
 <!-- ═══ Notifications Panel ═══ -->
-<div id="notifOverlay" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:998;"></div>
-<div id="notifPanel" style="display:none;position:fixed;top:70px;right:18px;width:380px;max-width:calc(100vw - 36px);max-height:75vh;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);z-index:999;flex-direction:column;overflow:hidden;">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #eee;">
-    <strong style="font-size:16px;color:#111;">Notifications</strong>
-    <button onclick="markAllRead()" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">Tout marquer comme lu</button>
+<div id="notifOverlay" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:998;"></div>
+<div id="notifPanel" style="display:none;position:fixed;top:70px;right:18px;width:390px;max-width:calc(100vw - 36px);max-height:75vh;background:linear-gradient(160deg, rgba(34,48,36,.92), rgba(20,30,22,.94));backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(249,115,22,.28);border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);z-index:999;flex-direction:column;overflow:hidden;animation:notifIn .22s ease;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:34px;height:34px;border-radius:12px;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+      <strong style="font-size:16px;color:#fff;font-weight:800;">Notifications</strong>
+    </div>
+    <button onclick="markAllRead()" style="background:var(--orange);color:#fff;border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(249,115,22,.35);">Tout marquer comme lu</button>
   </div>
-  <div id="notifList" style="overflow-y:auto;flex:1;padding:8px 0;">
-    <div style="padding:24px;text-align:center;color:#999;font-size:13px;">Chargement…</div>
+  <div id="notifList" style="overflow-y:auto;flex:1;padding:8px;">
+    <div style="padding:30px;text-align:center;color:rgba(255,255,255,.4);font-size:13px;">Chargement…</div>
   </div>
 </div>
+<style>
+  @keyframes notifIn { from { opacity:0; transform:translateY(-10px) scale(.98); } to { opacity:1; transform:none; } }
+  #notifList::-webkit-scrollbar { width:6px; }
+  #notifList::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:3px; }
+  .notif-item:hover { background:rgba(249,115,22,.10) !important; border-color:rgba(249,115,22,.3) !important; }
+</style>
 
 <div class="masquer-bar">
   <button class="masquer-btn" id="masquerBtn">
@@ -536,18 +547,18 @@ function renderNotifList() {
   const list = document.getElementById('notifList');
   if (!list) return;
   if (!_notifData.length) {
-    list.innerHTML = `<div style="padding:24px;text-align:center;color:#999;font-size:13px;">Aucune notification</div>`;
+    list.innerHTML = `<div style="padding:36px 24px;text-align:center;color:rgba(255,255,255,.4);font-size:13px;">Aucune notification</div>`;
     return;
   }
   list.innerHTML = _notifData.map(n => `
-    <div onclick="markRead(${n.id})" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #f3f3f3;cursor:pointer;background:${n.lu ? '#fff' : '#f0f7ff'};">
-      <div style="font-size:20px;flex-shrink:0;">${notifIcon(n.type)}</div>
+    <div class="notif-item" onclick="markRead(${n.id})" style="display:flex;gap:12px;padding:14px;margin-bottom:6px;border-radius:14px;border:1px solid ${n.lu ? 'rgba(255,255,255,.06)' : 'rgba(249,115,22,.25)'};cursor:pointer;transition:background .15s, border-color .15s;background:${n.lu ? 'rgba(255,255,255,.03)' : 'rgba(249,115,22,.08)'};">
+      <div style="font-size:20px;flex-shrink:0;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;">${notifIcon(n.type)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13px;margin-bottom:2px;color:#111;">${n.title}</div>
-        <div style="font-size:12px;color:#666;line-height:1.4;">${n.message || ''}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:4px;">${timeAgo(n.created_at)}</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:3px;color:#fff;">${n.title}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.45;">${n.message || ''}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:5px;">${timeAgo(n.created_at)}</div>
       </div>
-      ${n.lu ? '' : '<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:5px;"></div>'}
+      ${n.lu ? '' : '<div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:6px;box-shadow:0 0 0 3px rgba(249,115,22,.2);"></div>'}
     </div>
   `).join('');
 }
