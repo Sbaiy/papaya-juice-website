@@ -1624,8 +1624,9 @@ async function submitOrder() {
                 }));
                 const finalTotal = createdOrder ? parseFloat(createdOrder.total||0).toFixed(2) : orderPayload.total.toFixed(2);
 
-                const kitchenTicket  = generateKitchenTicket(finalItems, tableVal, orderId);
-                const additionTicket = generateTextTicket(finalItems, tableVal, finalTotal, orderId);
+                // FIX COUNTER: localId (1,2,3...) machi ID backend bach numero yb9a mn 1 b3d cloture
+                const kitchenTicket  = generateKitchenTicket(finalItems, tableVal, localId);
+                const additionTicket = generateTextTicket(finalItems, tableVal, finalTotal, localId);
                 printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
                 printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
 
@@ -2143,6 +2144,9 @@ async function validerCloture() {
         await printViaPrintNode(ticketZ, 'cash');
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
         localStorage.removeItem('papaya_kiosk_login_time');
+        // FIX: reset counter bach awal ticket b3d cloture yb9a #0001
+        _localOrderCounter = 0;
+        localStorage.setItem('papaya_order_counter', '0');
         showToast('✅ Clôture réussie ! Déconnexion...');
         setTimeout(() => { if(typeof API!=='undefined') API.Auth.logout(); else { sessionStorage.clear(); location.href='/dashboard'; } }, 2000);
     } catch(err) { showToast('❌ Erreur clôture: '+err.message); }
