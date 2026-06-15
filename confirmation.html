@@ -380,10 +380,13 @@ const tableNum    = urlParams.get('table') || '';
 const qrToken     = urlParams.get('t')     || '';   // token QR pour redirection
 const total       = parseFloat(urlParams.get('total') || '0');
 const orderSource = urlParams.get('source') || '';
+const ticketNum   = urlParams.get('ticket_number') || ''; // counter local (1,2,3...)
 let   itemsParsed = [];
 try { itemsParsed = JSON.parse(urlParams.get('items') || '[]'); } catch(e){}
 
-document.getElementById('orderNumDisplay').textContent = orderId ? '#' + orderId : '#—';
+// FIX: yachri ticket_number (ex: #0003) machi ID Supabase (ex: #105)
+const displayNum = ticketNum ? '#' + String(ticketNum).padStart(4,'0') : (orderId ? '#' + orderId : '#—');
+document.getElementById('orderNumDisplay').textContent = displayNum;
 if (tableNum) {
   document.getElementById('subtitleText').textContent =
     'Merci! Votre commande de la table ' + tableNum + ' est en cours de préparation';

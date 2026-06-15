@@ -1324,7 +1324,8 @@ async function submitOrder() {
             total: total.toFixed(2),
             items: JSON.stringify(items),
             t:     _rawToken,
-            source: 'menu'
+            source: 'menu',
+            ticket_number: data && data.ticket_number ? data.ticket_number : ''
         });
         window.location.href = 'confirmation.html?' + qp.toString();
 
