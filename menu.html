@@ -9,6 +9,7 @@
 <title>Our Menu</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/api.js"></script>
 
 <style>
 :root { --primary: #ff6200; --dark-bg: #141d16; --white: #ffffff; }
@@ -1883,16 +1884,14 @@ async function submitReclamation() {
             const data = await res.json();
             if (data.secure_url) imageUrls.push(data.secure_url);
         }
-        const { data: insertedData, error } = await _supabase.from('reclamations').insert([{
+        const insertedData = await API.reclamations.create({
             name: document.getElementById('reclName').value.trim() || null,
             message,
             table_number: detectedTable || null,
             image_url:   imageUrls[0] || null,
             image_url_2: imageUrls[1] || null,
-            image_url_3: imageUrls[2] || null,
-            created_at: new Date().toISOString()
-        }]).select().single();
-        if (error) throw error;
+            image_url_3: imageUrls[2] || null
+        });
         // Broadcast pour que reclamations.html reçoive en temps réel
         try {
             await _broadcastOrder('new_reclamation', insertedData);

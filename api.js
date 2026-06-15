@@ -146,6 +146,52 @@ const PersonnelAPI = {
 };
 
 // ════════════════════════════════════════
+//  STOCK
+// ════════════════════════════════════════
+const StockAPI = {
+  getDesignations: () => apiFetch('/stock/designations'),
+  createDesignation: (d) => apiFetch('/stock/designations', {
+    method: 'POST', body: JSON.stringify(d)
+  }),
+  updateDesignation: (id, updates) => apiFetch(`/stock/designations/${id}`, {
+    method: 'PUT', body: JSON.stringify(updates)
+  }),
+  deleteDesignation: (id) => apiFetch(`/stock/designations/${id}`, { method: 'DELETE' }),
+  resetGlobal: () => apiFetch('/stock/designations/reset-global', { method: 'POST' }),
+
+  getMouvements: (limit) => apiFetch(`/stock/mouvements${limit ? '?limit=' + limit : ''}`),
+  createMouvement: (m) => apiFetch('/stock/mouvements', {
+    method: 'POST', body: JSON.stringify(m)
+  }),
+};
+
+// ════════════════════════════════════════
+//  RECETTES
+// ════════════════════════════════════════
+const RecettesAPI = {
+  getAll: (productId) => apiFetch(`/recettes${productId ? '?product_id=' + productId : ''}`),
+  create: (r) => apiFetch('/recettes', { method: 'POST', body: JSON.stringify(r) }),
+  delete: (id) => apiFetch(`/recettes/${id}`, { method: 'DELETE' }),
+};
+
+// ════════════════════════════════════════
+//  RECLAMATIONS
+// ════════════════════════════════════════
+const ReclamationsAPI = {
+  // GET : auth requis (dashboard). Query optionnel { days, limit }
+  getAll: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiFetch(`/reclamations${q ? '?' + q : ''}`);
+  },
+  // POST : public (client depuis le menu)
+  create: (r) => apiFetch('/reclamations', { method: 'POST', body: JSON.stringify(r) }),
+  update: (id, updates) => apiFetch(`/reclamations/${id}`, {
+    method: 'PUT', body: JSON.stringify(updates)
+  }),
+  delete: (id) => apiFetch(`/reclamations/${id}`, { method: 'DELETE' }),
+};
+
+// ════════════════════════════════════════
 //  Global export
 // ════════════════════════════════════════
 window.API = {
@@ -155,6 +201,9 @@ window.API = {
   menu: MenuAPI,
   orders: OrdersAPI,
   personnel: PersonnelAPI,
+  stock: StockAPI,
+  recettes: RecettesAPI,
+  reclamations: ReclamationsAPI,
 };
 
 console.log('🍹 Papaya Juice API helper chargé — backend:', API_BASE);
