@@ -10,82 +10,95 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d1117; --panel: #161b22; --card: #1c2128;
-      --border: rgba(255,255,255,0.07);
-      --orange: #f97316; --orange2: #ea6c0a;
-      --text: #e6edf3; --muted: #8b949e;
-      --green: #3fb950; --red: #f85149;
-      --glass: rgba(22,27,34,0.85);
-      --blur: blur(20px);
+      --bg:        #1b2e1e;
+      --orange:    #f97316;
+      --orange2:   #ea6a0a;
+      --glass:     rgba(255,255,255,0.06);
+      --glass-hov: rgba(255,255,255,0.10);
+      --border:    rgba(255,255,255,0.10);
+      --border-hov:rgba(249,115,22,0.35);
+      --shadow:    0 8px 32px rgba(0,0,0,0.35);
+      --white:     #ffffff;
+      --text:      #ffffff;
+      --muted:     rgba(255,255,255,0.50);
+      --blur:      blur(18px);
+      --card:      rgba(255,255,255,0.06);
+      --green: #22c55e; --red: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
 
-    /* NAV */
-    nav { background: var(--glass); border-bottom: 1px solid var(--border); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; backdrop-filter: var(--blur); }
-    .nav-logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--orange); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-    .nav-logo img { width: 28px; height: 28px; border-radius: 50%; }
-    .nav-back { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); transition: all .15s; }
-    .nav-back:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+    /* TOPBAR (comme les autres pages) */
+    .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; }
+    .brand-name { font-size: 17px; font-weight: 800; color: var(--orange); }
+    .nav-back { display: flex; align-items: center; gap: 6px; color: white; font-size: 13px; font-weight: 600; text-decoration: none; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); transition: all .15s; }
+    .nav-back:hover { border-color: var(--border-hov); background: var(--glass-hov); }
 
     /* MAIN */
-    main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
-    .page-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; margin-bottom: 6px; }
-    .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    main { max-width: 760px; margin: 0 auto; padding: 28px 18px; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: white; margin-bottom: 6px; }
+    .page-title span { color: var(--orange); font-style: italic; }
+    .page-sub { font-size: 13px; color: var(--muted); }
 
     /* STATS */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-    .stat-value { font-size: 20px; font-weight: 700; color: var(--orange); }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); transition: transform .22s, border-color .22s, background .22s; }
+    .stat-card:hover { transform: translateY(-4px); border-color: var(--border-hov); background: var(--glass-hov); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .stat-value { font-size: 22px; font-weight: 800; color: var(--orange); }
 
     /* FILTERS */
     .filters-bar {
-      background: var(--card);
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 18px;
+      border-radius: 18px;
+      padding: 18px;
       margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: flex-end;
+      box-shadow: var(--shadow);
     }
     .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
     .filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
     .filter-select, .filter-input {
-      background: var(--bg);
+      background: rgba(255,255,255,0.06);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 12px;
       color: var(--text);
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 13px;
-      padding: 8px 12px;
+      padding: 10px 13px;
       outline: none;
       transition: border-color .15s;
       width: 100%;
     }
     .filter-select:focus, .filter-input:focus { border-color: rgba(249,115,22,.5); }
-    .filter-select option { background: var(--card); }
-    /* Style the date input calendar icon */
+    .filter-select option { background: #1b2e1e; }
     .filter-input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(0.6);
+      filter: invert(0.7);
       cursor: pointer;
     }
     .btn-reset {
       background: transparent;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 999px;
       color: var(--muted);
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 12px;
-      padding: 8px 14px;
+      padding: 10px 16px;
       cursor: pointer;
       transition: all .15s;
       white-space: nowrap;
       align-self: flex-end;
     }
-    .btn-reset:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .btn-reset:hover { color: var(--text); border-color: var(--border-hov); }
 
     /* RESULTS COUNT */
     .results-info {
@@ -97,8 +110,8 @@
     .results-info span { color: var(--orange); font-weight: 600; }
 
     /* CLOTURES LIST */
-    .cloture-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: border-color .15s; }
-    .cloture-card:hover { border-color: rgba(249,115,22,.3); }
+    .cloture-card { background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 18px; padding: 18px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); transition: transform .22s, border-color .22s, background .22s; }
+    .cloture-card:hover { transform: translateY(-3px); border-color: var(--border-hov); background: var(--glass-hov); }
     .cloture-num { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
     .cloture-date { font-size: 13px; font-weight: 600; color: var(--text); }
     .cloture-caissier { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
@@ -143,17 +156,19 @@
 </head>
 <body>
 
-<nav>
-  <a href="/dashboard" class="nav-logo">
-    <img src="/logo.png" alt="logo">
-    Papaya Juice
-  </a>
+<header class="topbar">
+  <div class="nav-brand">
+    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="logo"></div>
+    <span class="brand-name">Papaya Juice</span>
+  </div>
   <a href="/dashboard" class="nav-back">← Tableau de bord</a>
-</nav>
+</header>
 
 <main>
-  <div class="page-title">📊 Historique des Clôtures</div>
-  <div class="page-sub">Toutes les clôtures de caisse enregistrées</div>
+  <div class="page-header">
+    <h1 class="page-title">Historique des <span>Clôtures</span></h1>
+    <div class="page-sub">Toutes les clôtures de caisse enregistrées</div>
+  </div>
 
   <div class="stats-row">
     <div class="stat-card">
