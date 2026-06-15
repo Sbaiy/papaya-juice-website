@@ -597,6 +597,46 @@ function updateStats() {
   document.getElementById('statRupture').textContent  = rupture;
   document.getElementById('statValeur').textContent   = valeur.toFixed(2) + ' DH';
   document.getElementById('statCritiques').textContent = faible + rupture;
+  // ── توليد notifications للستوك الضعيف/المنقطع ──
+  syncStockNotifications();
+}
+
+// ── Sync notifications stock (faible / rupture) ──
+async function syncStockNotifications() {
+  try {
+    for (const d of allDesignations) {
+      const stock = parseFloat(d.stock_actuel) || 0;
+      const seuil = d.seuil_alerte ?? 10;
+      let type = null, title = '', message = '';
+
+      if (stock <= 0) {
+        type = 'stock_rupture';
+        title = 'Rupture de stock';
+        message = `${d.nom} est en rupture (0 ${d.unite || ''})`;
+      } else if (stock <= seuil) {
+        type = 'stock_faible';
+        title = 'Stock faible';
+        message = `${d.nom} — ${stock} ${d.unite || ''} restant (seuil ${seuil})`;
+      }
+      if (!type) continue;
+
+      const refKey = `${type}_${d.id}`;
+
+      // منع التكرار : ماكنخلقوش إلا كاين ديجا نفس التنبيه غير مقروء
+      const { data: existing } = await db
+        .from('notifications')
+        .select('id')
+        .eq('ref_key', refKey)
+        .eq('lu', false)
+        .limit(1);
+
+      if (existing && existing.length) continue;
+
+      await db.from('notifications').insert([{ type, title, message, ref_key: refKey }]);
+    }
+  } catch (e) {
+    console.warn('syncStockNotifications:', e.message);
+  }
 }
 
 // ── Filters ──
