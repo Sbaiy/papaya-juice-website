@@ -1206,8 +1206,8 @@ function renderCart() {
     // Mode ajout — mettre à jour le banner et le bouton
     const banner = document.getElementById('modifBanner');
     if (_modifMode) {
-        const idShort = String(_modifMode.orderId||'').slice(-6).padStart(6,'0');
-        document.getElementById('modifBannerText').textContent = `➕ Ajout #${idShort} — Table ${_modifMode.tableNumber||'?'}`;
+        // FIX: yakhd orderNumber (ticket_number) machi orderId (ID Supabase)
+        document.getElementById('modifBannerText').textContent = `➕ Ajout #${_modifMode.orderNumber||'?'} — Table ${_modifMode.tableNumber||'?'}`;
         banner.style.display = 'flex';
         btnOrder.textContent = 'Confirmer l\'ajout';
         btnOrder.style.background = 'var(--orange)';
@@ -2252,7 +2252,10 @@ function _nopShowPopup() {
             }
             return line;
         }).join('<br>');
-        const idShort = String(o.id || '').slice(-6).padStart(6, '0');
+        // FIX: ticket_number (counter local) machi ID Supabase
+        const idShort = o.ticket_number
+            ? String(o.ticket_number).padStart(4,'0')
+            : String(o.id || '').slice(-6).padStart(6, '0');
         const tableDisplay = !o.table_number ? 'Sans table'
             : o.table_number === 'emporter' ? 'À Emporter'
             : o.table_number === 'comptoir' ? 'Comptoir'
