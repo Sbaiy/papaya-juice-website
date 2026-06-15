@@ -1509,8 +1509,11 @@ async function ocpImprimer() {
     _pendingPrintCart = [];
 }
 
+let _submitBusy = false; // FIX double-click guard
 async function submitOrder() {
     if (!cart.length) return;
+    if (_submitBusy) return; // double-click — ignore
+    _submitBusy = true;
 
     // ── MODE AJOUT SUR COMMANDE EXISTANTE ──
     if (_modifMode) {
@@ -1547,10 +1550,19 @@ async function submitOrder() {
                 _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation', new_items: newItems });
             }
 
-            // 3. Imprimer ticket cuisine des nouveaux articles + addition supplément (fire & forget)
+            // 3. Imprimer ticket cuisine des nouveaux articles SEULEMENT (pas les anciens)
+            //    + addition complète avec le bon total (b3d response backend — prix sahi)
             const tableVal = _modifMode.tableNumber || 'Comptoir';
-            const kitchenTicket = generateKitchenTicket(cart, tableVal, _modifMode.orderId);
+            // FIX: newItems ghir (machi cart kolha) bach ticket cuisine ma yrepetich articles qdim
+            const newCartItems = newItems.map(i => ({
+                product: { title: i.title, price: parseFloat(i.price||0), category: i.category||'' },
+                qty: i.qty || 1,
+                customPrice: parseFloat(i.price||0),
+                extras: i.extras || []
+            }));
+            const kitchenTicket = generateKitchenTicket(newCartItems, tableVal, _modifMode.orderId);
             printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+            // FIX: addition kaytb3 b3d ma backend rdd lorder b total sahi (prix modifié inclus)
             _printAdditionTicket(updatedOrder, newItems).catch(e => console.warn('Addition print:', e));
 
             // 4. Mettre à jour histAllOrders si ouvert
@@ -1564,6 +1576,8 @@ async function submitOrder() {
             showToast('❌ Erreur: ' + err.message);
             btnOrder.disabled = false;
             btnOrder.textContent = 'Confirmer l\'ajout';
+        } finally {
+            _submitBusy = false; // reset guard
         }
         return;
     }
@@ -1581,45 +1595,63 @@ async function submitOrder() {
             source: 'kiosk',
             serveur: document.getElementById('userName').textContent.trim() || 'Kiosk'
         };
-        // ── Snapshot + counter local + vider panier IMMÉDIATEMENT ──
+        // ── Snapshot + counter local + vider panier ──
         const cartSnapshot = [...cart];
-        const ticketTotal = orderPayload.total.toFixed(2);
         _localOrderCounter++;
         localStorage.setItem('papaya_order_counter', _localOrderCounter);
         const localId = _localOrderCounter;
-
-        // Imprimer IMMÉDIATEMENT avec l'ID local
-        const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, localId);
-        const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, localId);
-        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
 
         showToast('✅ Commande envoyée !');
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
         btnOrder.disabled = false;
 
-        // ── En arrière-plan : créer order + broadcast ──
+        // ── En arrière-plan : créer order + imprimer tickets B3D response (prix sahi) ──
         (async () => {
             try {
                 const createdOrder = await API.orders.create(orderPayload);
-                const orderId = createdOrder && createdOrder.id ? createdOrder.id : null;
+                const orderId = createdOrder && createdOrder.id ? createdOrder.id : localId;
+
+                // FIX PRIX: tickets kaykhrejou B3D backend bach prix modifier (customPrice) yban sahi
+                const rawItems = createdOrder && createdOrder.items
+                    ? (typeof createdOrder.items === 'string' ? JSON.parse(createdOrder.items) : createdOrder.items)
+                    : cartSnapshot.map(i => ({ title: i.product.title, price: parseFloat(i.customPrice ?? getKioskPrice(i.product)), qty: i.qty, category: i.product.category||'', extras: i.extras||[] }));
+                const finalItems = rawItems.map(i => ({
+                    product: { title: i.title||i.name||'', price: parseFloat(i.price||0), category: i.category||'' },
+                    qty: i.qty || 1,
+                    customPrice: parseFloat(i.price||0),
+                    extras: i.extras || []
+                }));
+                const finalTotal = createdOrder ? parseFloat(createdOrder.total||0).toFixed(2) : orderPayload.total.toFixed(2);
+
+                const kitchenTicket  = generateKitchenTicket(finalItems, tableVal, orderId);
+                const additionTicket = generateTextTicket(finalItems, tableVal, finalTotal, orderId);
+                printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+                printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
 
                 // Backend crée direct en 'preparing' si source=kiosk — juste broadcast
                 if (createdOrder) {
                     _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
                 }
             } catch(e) {
-                // ملي كيفشل الإرسال — حفظ فـ offline queue
-                _oqPush(orderPayload, false);
+                // OFFLINE FALLBACK: print bl prix local + save queue
+                const ticketTotal = orderPayload.total.toFixed(2);
+                const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, localId);
+                const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, localId);
+                printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print offline:', e));
+                printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print offline:', e));
+
+                _oqPush(orderPayload, true); // printed:true — tickets kherjou offline
                 _isOffline = true;
                 _showOfflineBanner();
-                _startSyncPolling(); // démarre polling — s'arrête automatiquement mli queue vide
+                _startSyncPolling();
             }
+            _submitBusy = false; // reset guard — b3d ma kolchi daz (success aw offline)
         })();
     } catch(err) {
         showToast('❌ Erreur: ' + err.message);
         btnOrder.disabled = false;
+        _submitBusy = false; // reset guard f cas d'erreur sync
     }
     btnOrder.textContent = 'Envoyer la commande';
 }
