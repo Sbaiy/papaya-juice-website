@@ -1537,33 +1537,31 @@ async function submitOrder() {
             if (!addRes.ok) { const e = await addRes.json(); throw new Error(e.error || 'Erreur serveur'); }
             const updatedOrder = await addRes.json();
 
-            // 2. Mettre en préparation
-            try {
-                const statusRes = await fetch(BACKEND_URL + '/api/orders/' + _modifMode.orderId + '/status', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ status: 'preparing' })
-                });
-                const finalOrder = statusRes.ok ? await statusRes.json() : updatedOrder;
-                _broadcastOrder('update_order', { ...finalOrder, status: 'en_preparation', new_items: newItems });
-            } catch(e) {
-                _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation', new_items: newItems });
-            }
-
-            // 3. Imprimer ticket cuisine des nouveaux articles SEULEMENT (pas les anciens)
-            //    + addition complète avec le bon total (b3d response backend — prix sahi)
+            // 2. Imprimer IMMÉDIATEMENT (bla tntsna step status — zero retard)
+            //    FIX TICKET#: yakhd orderNumber (ticket_number) machi orderId (ID Supabase)
             const tableVal = _modifMode.tableNumber || 'Comptoir';
-            // FIX: newItems ghir (machi cart kolha) bach ticket cuisine ma yrepetich articles qdim
+            const ticketId = _modifMode.orderNumber || String(_modifMode.orderId).slice(-4).padStart(4,'0');
             const newCartItems = newItems.map(i => ({
                 product: { title: i.title, price: parseFloat(i.price||0), category: i.category||'' },
                 qty: i.qty || 1,
                 customPrice: parseFloat(i.price||0),
                 extras: i.extras || []
             }));
-            const kitchenTicket = generateKitchenTicket(newCartItems, tableVal, _modifMode.orderId);
+            // ticket cuisine — newItems ghir + ticketId sahi
+            const kitchenTicket = generateKitchenTicket(newCartItems, tableVal, ticketId);
             printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-            // FIX: addition kaytb3 b3d ma backend rdd lorder b total sahi (prix modifié inclus)
-            _printAdditionTicket(updatedOrder, newItems).catch(e => console.warn('Addition print:', e));
+            // addition — bl updatedOrder li ja mn backend (total sahi)
+            _printAdditionTicket({ ...updatedOrder, ticket_number: _modifMode.orderNumber }, newItems)
+                .catch(e => console.warn('Addition print:', e));
+
+            // 3. Mettre en préparation (fire & forget — machi await bach ma ykon retard)
+            fetch(BACKEND_URL + '/api/orders/' + _modifMode.orderId + '/status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status: 'preparing' })
+            }).then(r => r.ok ? r.json() : updatedOrder)
+              .then(finalOrder => _broadcastOrder('update_order', { ...finalOrder, status: 'en_preparation', new_items: newItems }))
+              .catch(() => _broadcastOrder('update_order', { ...updatedOrder, status: 'en_preparation', new_items: newItems }));
 
             // 4. Mettre à jour histAllOrders si ouvert
             const idx = histAllOrders.findIndex(x => x.id === updatedOrder.id);
