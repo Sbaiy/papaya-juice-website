@@ -1886,7 +1886,7 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
 async function printAdditionOrder(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
     try {
-        const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'').slice(-6).padStart(6,'0');
         const now = new Date().toLocaleString('fr-FR');
         const W = 48;
         const ESC = '\x1B', GS = '\x1D';
@@ -1935,7 +1935,7 @@ async function reprintOrder(encodedOrder) {
             const nameStr = name.substring(0, maxName).padEnd(maxName, ' ');
             return `${qtyStr} ${nameStr} ${price}`;
         };
-        const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'').slice(-6).padStart(6,'0');
         const tbl = o.table_number || '';
         const barLeft = tbl === 'comptoir' ? 'COMPTOIR'
             : tbl === 'emporter' ? 'À EMPORTER'
@@ -2894,7 +2894,7 @@ function openTableDetailPopup(tKey, orders, occupiedCount) {
         `;
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${String(order.id||'').slice(-6).padStart(3,'0')}</span>
+                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||'').slice(-6).padStart(3,'0')}</span>
             </div>
             <div style="margin-bottom:10px;">${itemsHtml || '<span style="color:var(--muted);font-size:12px;">Aucun article</span>'}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2970,7 +2970,7 @@ function openTdOrderPicker(orders) {
     overlay.appendChild(title);
 
     orders.forEach(order => {
-        const idShort = '#' + String(order.id||'').slice(-6).padStart(3,'0');
+        const idShort = '#' + (order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||'').slice(-6).padStart(3,'0'));
         const items = order.items || order.cart || [];
         const preview = Array.isArray(items) ? items.slice(0,2).map(i=>(i.name||i.title||'')).join(', ') : '';
         const total = parseFloat(order.total||0).toFixed(2) + ' DH';
