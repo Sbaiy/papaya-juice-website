@@ -1699,7 +1699,7 @@ function renderHistOrders() {
         // FIX: yachri ticket_number (counter local 1,2,3...) idha mawjoud, wla ID backend
         const idShort = o.ticket_number
             ? String(o.ticket_number).padStart(4,'0')
-            : String(o.id||'').slice(-6).padStart(6,'0');
+            : String(o.id||'');
         const orderJson = encodeURIComponent(JSON.stringify(o));
         const caissierName = o.caissier || o.serveur || o.created_by || '';
         const caissierBadge = caissierName ? `<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;">👤 ${caissierName}</span>` : '';
@@ -1742,7 +1742,7 @@ async function openModifierModal(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
     const idShort = o.ticket_number
         ? String(o.ticket_number).padStart(4,'0')
-        : String(o.id||'').slice(-6).padStart(6,'0');
+        : String(o.id||'');
 
     // Activer le mode ajout
     _modifMode = {
@@ -1886,7 +1886,7 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
 async function printAdditionOrder(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
     try {
-        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'').slice(-6).padStart(6,'0');
+        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'');
         const now = new Date().toLocaleString('fr-FR');
         const W = 48;
         const ESC = '\x1B', GS = '\x1D';
@@ -1935,7 +1935,7 @@ async function reprintOrder(encodedOrder) {
             const nameStr = name.substring(0, maxName).padEnd(maxName, ' ');
             return `${qtyStr} ${nameStr} ${price}`;
         };
-        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'').slice(-6).padStart(6,'0');
+        const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'');
         const tbl = o.table_number || '';
         const barLeft = tbl === 'comptoir' ? 'COMPTOIR'
             : tbl === 'emporter' ? 'À EMPORTER'
@@ -2201,7 +2201,7 @@ function _nopShowPopup() {
         // FIX: ticket_number (counter local) machi ID Supabase
         const idShort = o.ticket_number
             ? String(o.ticket_number).padStart(4,'0')
-            : String(o.id || '').slice(-6).padStart(6, '0');
+            : String(o.id || '');
         const tableDisplay = !o.table_number ? 'Sans table'
             : o.table_number === 'emporter' ? 'À Emporter'
             : o.table_number === 'comptoir' ? 'Comptoir'
@@ -2299,8 +2299,9 @@ async function printSingleOrder(o) {
         const tableVal = o.table_number || 'comptoir';
         const total = parseFloat(o.total || 0).toFixed(2);
         // Imprimer ticket cuisine + addition
-        const kitchenTkt = generateKitchenTicket(cartLike, tableVal, o.id);
-        const additionTkt = generateTextTicket(cartLike, tableVal, total, o.id);
+        const ticketId = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : o.id;
+        const kitchenTkt = generateKitchenTicket(cartLike, tableVal, ticketId);
+        const additionTkt = generateTextTicket(cartLike, tableVal, total, ticketId);
         await printViaPrintNode(kitchenTkt, 'kitchen');
         await printViaPrintNode(additionTkt, 'cash');
         // Mettre status en_preparation
@@ -2369,11 +2370,12 @@ async function printAndDismissNewOrders() {
             const cartLike = rawItems.map(i => ({ product: { title: i.title, price: parseFloat(i.price || 0), category: i.category || '' }, qty: i.qty }));
             const tableVal = o.table_number || 'comptoir';
             const total = parseFloat(o.total || 0).toFixed(2);
+            const ticketId = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : o.id;
             // BON DE CUISINE → cuisine
-            const kitchenTkt = generateKitchenTicket(cartLike, tableVal, o.id);
+            const kitchenTkt = generateKitchenTicket(cartLike, tableVal, ticketId);
             await printViaPrintNode(kitchenTkt, 'kitchen');
             // ADDITION → caisse
-            const additionTkt = generateTextTicket(cartLike, tableVal, total, o.id);
+            const additionTkt = generateTextTicket(cartLike, tableVal, total, ticketId);
             await printViaPrintNode(additionTkt, 'cash');
         } catch(e) {
             console.warn('Erreur impression commande', o.id, e);
@@ -2894,7 +2896,7 @@ function openTableDetailPopup(tKey, orders, occupiedCount) {
         `;
         card.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||'').slice(-6).padStart(3,'0')}</span>
+                <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);">#${order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||'')}</span>
             </div>
             <div style="margin-bottom:10px;">${itemsHtml || '<span style="color:var(--muted);font-size:12px;">Aucun article</span>'}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2970,7 +2972,7 @@ function openTdOrderPicker(orders) {
     overlay.appendChild(title);
 
     orders.forEach(order => {
-        const idShort = '#' + (order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||'').slice(-6).padStart(3,'0'));
+        const idShort = '#' + (order.ticket_number ? String(order.ticket_number).padStart(4,'0') : String(order.id||''));
         const items = order.items || order.cart || [];
         const preview = Array.isArray(items) ? items.slice(0,2).map(i=>(i.name||i.title||'')).join(', ') : '';
         const total = parseFloat(order.total||0).toFixed(2) + ' DH';
