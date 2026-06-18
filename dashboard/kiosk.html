@@ -620,41 +620,6 @@
 </div>
 
 <!-- ── MODAL CLOTURE ── -->
-<!-- ── PRINT SETTINGS MODAL ── -->
-<div id="printSettingsModal" class="modal-overlay" style="display:none;z-index:5000;">
-  <div style="background:linear-gradient(145deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);border:1px solid rgba(255,255,255,0.15);border-radius:28px;width:400px;max-width:95vw;padding:28px;box-shadow:0 32px 80px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.18);backdrop-filter:blur(40px) saturate(1.8);-webkit-backdrop-filter:blur(40px) saturate(1.8);">
-    <h3 style="margin-bottom:6px;font-size:16px;font-weight:700;">🖨️ Configuration Imprimantes</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:24px;">Addition → USB &nbsp;·&nbsp; Cuisine → LAN</p>
-
-    <!-- Cuisine LAN -->
-    <div style="margin-bottom:20px;">
-      <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;">🍳 Imprimante Cuisine (LAN)</label>
-      <div style="display:flex;gap:8px;">
-        <input id="psCuisineIP" type="text" placeholder="192.168.1.X" maxlength="15"
-          style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;">
-        <input id="psCuisinePort" type="number" placeholder="9100" maxlength="5" value="9100"
-          style="width:80px;padding:10px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;text-align:center;">
-      </div>
-      <button onclick="_testLANPrinter()" style="margin-top:8px;padding:7px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        Tester la connexion
-      </button>
-    </div>
-
-    <!-- Addition USB -->
-    <div style="margin-bottom:28px;">
-      <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:8px;">🧾 Imprimante Addition (USB)</label>
-      <input id="psUSBName" type="text" placeholder="XP-80C (copy 2)"
-        style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;">
-      <p style="font-size:11px;color:var(--muted);margin-top:6px;">Isem printer kif katban f Windows (Device Manager)</p>
-    </div>
-
-    <!-- Actions -->
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button onclick="document.getElementById('printSettingsModal').style.display='none'" class="btn-cancel">Annuler</button>
-      <button onclick="_savePrintSettings()" class="btn-confirm">💾 Enregistrer</button>
-    </div>
-  </div>
-</div>
 
 
 <div id="clotureModal" class="modal-overlay" style="display:none; z-index:5000;">
@@ -889,63 +854,6 @@ function doLogout() {
 }
 
 // ── CLOTURE MODAL ──
-function openPrintSettingsModal() {
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    document.getElementById('psCuisineIP').value   = cfg.kitchenPrinterIP   || '';
-    document.getElementById('psCuisinePort').value = cfg.kitchenPrinterPort || 9100;
-    document.getElementById('psUSBName').value     = cfg.usbPrinterName     || 'XP-80C (copy 2)';
-    document.getElementById('printSettingsModal').style.display = 'flex';
-}
-
-function _savePrintSettings() {
-    const ip          = document.getElementById('psCuisineIP').value.trim();
-    const port        = parseInt(document.getElementById('psCuisinePort').value) || 9100;
-    const usbName     = document.getElementById('psUSBName').value.trim();
-    if (!ip)      { showToast('⚠️ Entre l\'IP de l\'imprimante cuisine'); return; }
-    if (!usbName) { showToast('⚠️ Entre le nom de l\'imprimante addition'); return; }
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    cfg.kitchenPrinterIP   = ip;
-    cfg.kitchenPrinterPort = port;
-    cfg.usbPrinterName     = usbName;
-    localStorage.setItem('papaya_print_config', JSON.stringify(cfg));
-    document.getElementById('printSettingsModal').style.display = 'none';
-    showToast('✅ Config imprimantes enregistrée !');
-}
-
-async function _testLANPrinter() {
-    const ip   = document.getElementById('psCuisineIP').value.trim();
-    const port = parseInt(document.getElementById('psCuisinePort').value) || 9100;
-    if (!ip) { showToast('⚠️ Entre l\'IP d\'abord'); return; }
-    showToast('⏳ Test connexion…');
-    try {
-        const testContent = '\n  TEST CONNEXION OK\n\n\n';
-        const { base64 } = _encodeEscPos(testContent);
-        const res = await fetch('http://localhost:3001/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content_base64: base64, ip, port }),
-            signal: AbortSignal.timeout(6000)
-        });
-        if (res.ok) showToast('✅ Imprimante cuisine connectée !');
-        else showToast('❌ Erreur: ' + res.status);
-    } catch(e) { showToast('❌ Print server machi actif — check node print-server.js'); }
-}
-
-async function _selectUSBPrinter() {
-    if (!navigator.serial) {
-        showToast('⚠️ Web Serial non supporté — utilise Chrome/Edge');
-        return;
-    }
-    try {
-        _usbSerialPort = await navigator.serial.requestPort();
-        document.getElementById('psUSBStatus').textContent = '✅ Port USB sélectionné et autorisé';
-        showToast('✅ Imprimante USB sélectionnée !');
-    } catch(e) {
-        if (e.name !== 'NotFoundError') showToast('❌ ' + e.message);
-    }
-}
-
-
 function openClotureModal()  { document.getElementById('clotureModal').style.display = 'flex'; }
 function closeClotureModal() { document.getElementById('clotureModal').style.display = 'none'; }
 
@@ -1090,6 +998,11 @@ function renderProducts() {
 
 // ── CART ──
 function addToCart(productId) {
+    // FIX: ila l modal dyal extras déjà 7el, khassna nbloquiw click jdid —
+    // bla hadshi _eselProduct kayt-overwrite w l produit l khta yzad b ghalt (bug "haja akhra" f ticket)
+    const eselModal = document.getElementById('extrasSelModal');
+    if (eselModal && eselModal.classList.contains('open')) return;
+
     const product = allProducts.find(p => p.id === productId);
     if (!product) return;
     // Use preloaded cache — zero lag
@@ -1227,18 +1140,19 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
     const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `Table N° ${table.replace('T','')}`;
-    const W = 42;
+    const W = 48;
     const sep  = '='.repeat(W);
     const sep2 = '-'.repeat(W);
     const center = (txt) => ' '.repeat(Math.max(0, Math.floor((W - txt.length) / 2))) + txt;
 
-    // Ligne article: qty + nom + prix collé à droite
+    // Ligne article: prefix '>> ' + qty + nom + prix collé à droite — total = W exact
+    const PREFIX = '  >> ';
     const itemLine = (qty, name, price) => {
         const qtyStr   = `${qty}x`;
         const priceStr = `${price} DH`;
-        const maxName  = W - qtyStr.length - 1 - priceStr.length - 1;
+        const maxName  = W - PREFIX.length - qtyStr.length - 1 - priceStr.length - 1;
         const nameStr  = name.substring(0, maxName).padEnd(maxName, ' ');
-        return `${qtyStr} ${nameStr} ${priceStr}`;
+        return `${PREFIX}${qtyStr} ${nameStr} ${priceStr}`;
     };
 
     let lines = [
@@ -1257,7 +1171,7 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
         const unitPrice = parseFloat(i.customPrice ?? getKioskPrice(i.product)) || 0;
         const lineTotal = unitPrice * i.qty;
         total += lineTotal;
-        lines.push('  >> ' + itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
+        lines.push(itemLine(i.qty, i.product.title, lineTotal.toFixed(2)));
         // Print extras below the item
         if (i.extras && i.extras.length > 0) {
             i.extras.forEach(e => {
@@ -1282,18 +1196,26 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
     const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
-    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `N° ${table.replace('T','')}`;
-    const mode = (table === 'emporter') ? 'À Emporter' : table === 'terrasse' ? 'Terrasse' : 'Sur Place';
 
-    const W = 42; // largeur ticket 80mm = 42 caractères
+    const W = 48; // largeur ticket = 48 caractères
     const sep1 = '-'.repeat(W);
     const sep2 = '='.repeat(W);
+    const ESC = '\x1B', GS = '\x1D';
 
     // Header centré
     const center = (txt) => {
         const pad = Math.max(0, Math.floor((W - txt.length) / 2));
         return ' '.repeat(pad) + txt;
     };
+
+    // Bar du haut: table/mode (gauche) + numéro ticket (droite), en reverse vidéo
+    const barLeft = table === 'comptoir' ? 'COMPTOIR'
+        : table === 'emporter' ? 'À EMPORTER'
+        : table === 'terrasse' ? 'TERRASSE'
+        : `TABLE N°${table.replace('T','')}`;
+    const barRight = `#${ticketNum}`;
+    const barPad   = Math.max(1, W - barLeft.length - barRight.length);
+    const barLine  = barLeft + ' '.repeat(barPad) + barRight;
 
     // Ligne article: qty + nom + prix collé à droite
     const itemLine = (qty, name, price) => {
@@ -1317,11 +1239,11 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
         }
     });
 
-    // Total aligné à droite
-    const totalLabel = 'TOTAL A PAYER:';
-    const totalStr   = `${total} DH`;
-    const totalPad   = Math.max(1, W - totalLabel.length - totalStr.length);
-    const totalLine  = totalLabel + ' '.repeat(totalPad) + totalStr;
+    // Total — gros caractères (double largeur, comme le titre)
+    const totalLabel = 'TOTAL';
+    const totalStr    = `${total} DH`;
+    const totalPad    = Math.max(1, Math.floor(W/2) - totalLabel.length - totalStr.length);
+    const totalLine   = ESC + '\x21\x30' + totalLabel + ' '.repeat(totalPad) + totalStr + ESC + '\x21\x00';
 
     // En-tête colonne aligné
     const qteHeader   = 'Qte';
@@ -1331,21 +1253,20 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
 
     // Générer le texte brut directement (pour ESC/POS propre)
     const plainTicket = [
+        // Bar reverse vidéo: fond noir / texte blanc (nécessite support GS B sur l'imprimante)
+        GS + '\x42\x01' + barLine + GS + '\x42\x00',
+        '',
         // ESC/POS double-width+bold pour le titre (suivi d'un saut de ligne)
-        '\x1B\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + '\x1B\x21\x00\n',
+        ESC + '\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + ESC + '\x21\x00\n',
         center("L'excellence du Gout"),
         sep1,
-        `Ticket N: #${ticketNum}`,
         `Date: ${dateStr} - ${timeStr}`,
-        `Table: ${tableDisplay}`,
         `Serveur: ${userName}`,
         sep1,
         headerLine,
         '',
         itemsRows.trimEnd(),
         sep1,
-        `Mode: ${mode}`,
-        sep2,
         totalLine,
         sep2,
         center('Merci de votre visite !'),
@@ -1360,9 +1281,9 @@ function generateTextTicket(cartItems, table, total, orderId=null) {
 
 // ════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════
-//  PRINT SYSTEM — Hybrid
-//  Online  → PrintNode (cloud)
-//  Offline → Local print server (localhost:3001)
+//  PRINT SYSTEM — Local uniquement
+//  Cuisine + Addition → imprimantes Windows installées sur le PC
+//  via node print-server.js (localhost:3001)
 // ════════════════════════════════════════════════════════
 
 let _usbSerialPort = null;
@@ -1388,82 +1309,60 @@ function _encodeEscPos(content) {
     return { uint8, base64: btoa(bin) };
 }
 
-// ── Addition → USB via local print server ──
-async function _printUSB(content) {
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerName = cfg.usbPrinterName || 'XP-80C (copy 2)';
+// ── Print local générique — par nom d'imprimante Windows (RAW) ──
+async function _printLocal(content, printerName) {
+    if (!printerName) throw new Error('Imprimante non configurée');
     const { base64 } = _encodeEscPos(content);
     const res = await fetch('http://localhost:3001/print/usb', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
         signal: AbortSignal.timeout(6000)
     });
-    if (!res.ok) throw new Error('USB print erreur ' + res.status);
+    if (!res.ok) throw new Error('Print erreur ' + res.status);
 }
 
-// ── Cuisine → LAN via local print server ──
-async function _printLAN(content) {
+// ── Addition → imprimante Windows configurée ──
+async function _printUSB(content) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const ip   = cfg.kitchenPrinterIP;
-    const port = cfg.kitchenPrinterPort || 9100;
-    if (!ip) { console.warn('IP imprimante cuisine non configurée'); return; }
-    const { base64 } = _encodeEscPos(content);
-    const res = await fetch('http://localhost:3001/print/lan', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content_base64: base64, ip, port }),
-        signal: AbortSignal.timeout(6000)
-    });
-    if (!res.ok) throw new Error('LAN print erreur ' + res.status);
+    await _printLocal(content, cfg.usbPrinterName);
 }
 
-// ── Wrapper principal — PrintNode d'abord, fallback local ──
+// ── Cuisine → imprimante Windows configurée (avant: TCP/LAN par IP) ──
+async function _printKitchen(content) {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    await _printLocal(content, cfg.kitchenPrinterName);
+}
+
+// ── Wrapper principal — local uniquement (PrintNode retiré, source du double-print) ──
 async function printViaPrintNode(content, type = 'kitchen') {
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerId = type === 'kitchen' ? cfg.kitchenPrinter : cfg.cashPrinter;
-
-    // 1 — Essayer PrintNode (online)
-    if (cfg.apiKey && printerId) {
-        try {
-            const { base64 } = _encodeEscPos(content);
-            const res = await fetch('https://api.printnode.com/printjobs', {
-                method: 'POST',
-                headers: { 'Authorization': 'Basic ' + btoa(cfg.apiKey + ':'), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ printerId: parseInt(printerId), title: type === 'kitchen' ? 'Commande Cuisine' : 'Ticket Caisse', contentType: 'raw_base64', content: base64, source: 'Kiosk' }),
-                signal: AbortSignal.timeout(1000)
-            });
-            if (res.ok) return; // PrintNode OK
-        } catch(e) {
-            console.warn('PrintNode indisponible, fallback local:', e.message);
-        }
-    }
-
-    // 2 — Fallback local print server (offline)
+    // PrintNode supprimé : timeout 1s trop court → fallback local se déclenchait
+    // même quand PrintNode avait déjà imprimé → 2 tickets physiques pour 1 commande.
     try {
         if (type === 'cash') { await _printUSB(content); }
-        else                 { await _printLAN(content); }
+        else                 { await _printKitchen(content); }
     } catch(e) {
         console.warn('Print local [' + type + '] echoue:', e.message);
         if (type === 'kitchen') {
             const { base64 } = _encodeEscPos(content);
             const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
             const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
-            queue.push({ base64, ip: cfg2.kitchenPrinterIP, port: cfg2.kitchenPrinterPort || 9100, ts: Date.now() });
+            queue.push({ base64, printerName: cfg2.kitchenPrinterName, ts: Date.now() });
             localStorage.setItem('_pq', JSON.stringify(queue));
             if (!_syncInterval) _startSyncPolling();
         }
     }
 }
 
-// ── Flush LAN queue ──
+// ── Flush queue cuisine (retry imprimante Windows) ──
 async function _flushPrintJobs() {
     const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
     if (!jobs.length) return;
     const remaining = [];
     for (const job of jobs) {
         try {
-            const res = await fetch('http://localhost:3001/print/lan', {
+            const res = await fetch('http://localhost:3001/print/usb', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content_base64: job.base64, ip: job.ip, port: job.port }),
+                body: JSON.stringify({ content_base64: job.base64, printer_name: job.printerName }),
                 signal: AbortSignal.timeout(6000)
             });
             if (!res.ok) remaining.push(job);
@@ -1605,6 +1504,8 @@ async function submitOrder() {
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
         btnOrder.disabled = false;
+        _submitBusy = false; // FIX: reset ghi hna (machi f l akhir dyal print) — bach commande tania
+                              // ma tbqach mblock ila l précédente mazal kat-print f background
 
         // ── En arrière-plan : créer order + imprimer tickets B3D response (prix sahi) ──
         (async () => {
@@ -1647,7 +1548,6 @@ async function submitOrder() {
                 _showOfflineBanner();
                 _startSyncPolling();
             }
-            _submitBusy = false; // reset guard — b3d ma kolchi daz (success aw offline)
         })();
     } catch(err) {
         showToast('❌ Erreur: ' + err.message);
@@ -1874,7 +1774,7 @@ async function openModifierModal(encodedOrder) {
 // Imprimer addition (ticket caisse) pour les nouveaux articles
 async function _printAdditionTicket(order, newItems) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config')||'{}');
-    if (!cfg.apiKey || !cfg.cashPrinter) return;
+    if (!cfg.usbPrinterName) return;
     try {
         // Récupérer tous les items (anciens + nouveaux)
         const existingItems = typeof order.items === 'string' ? JSON.parse(order.items || '[]') : (order.items || []);
@@ -1901,17 +1801,26 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     // FIX: ticket_number (1,2,3...) machi ID Supabase (94, 750...)
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
-    const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `N° ${table.replace('T','')}`;
     const supplement = newItems.reduce((s,i) => s + parseFloat(i.price||0)*(i.qty||1), 0).toFixed(2);
 
-    const W = 42;
+    const W = 48;
     const sep1 = '-'.repeat(W);
     const sep2 = '='.repeat(W);
+    const ESC = '\x1B', GS = '\x1D';
 
     const center = (txt) => {
         const pad = Math.max(0, Math.floor((W - txt.length) / 2));
         return ' '.repeat(pad) + txt;
     };
+
+    // Bar du haut: table/mode (gauche) + numéro ticket (droite), en reverse vidéo
+    const barLeft = table === 'comptoir' ? 'COMPTOIR'
+        : table === 'emporter' ? 'À EMPORTER'
+        : table === 'terrasse' ? 'TERRASSE'
+        : `TABLE N°${table.replace('T','')}`;
+    const barRight = `#${ticketNum}`;
+    const barPad   = Math.max(1, W - barLeft.length - barRight.length);
+    const barLine  = barLeft + ' '.repeat(barPad) + barRight;
 
     const itemLine = (qty, name, price, isNew) => {
         const qtyStr   = `${qty}x`;
@@ -1931,10 +1840,11 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
         itemsRows += itemLine(i.qty, i.product.title, price, isNew) + '\n';
     });
 
-    const totalLabel = 'TOTAL A PAYER:';
-    const totalStr   = `${total} DH`;
-    const totalPad   = Math.max(1, W - totalLabel.length - totalStr.length);
-    const totalLine  = totalLabel + ' '.repeat(totalPad) + totalStr;
+    // Total — gros caractères (double largeur, comme le ticket principal)
+    const totalLabel = 'TOTAL';
+    const totalStr    = `${total} DH`;
+    const totalPad    = Math.max(1, Math.floor(W/2) - totalLabel.length - totalStr.length);
+    const totalLine   = ESC + '\x21\x30' + totalLabel + ' '.repeat(totalPad) + totalStr + ESC + '\x21\x00';
 
     const suppLabel  = 'SUPPLEMENT:';
     const suppStr    = `${supplement} DH`;
@@ -1947,12 +1857,13 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const headerLine  = ` ${qteHeader} ${artHeader} ${totalHeader}`;
 
     const plainTicket = [
-        '\x1B\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + '\x1B\x21\x00\n',
-        center('ADDITION'),
+        // Bar reverse vidéo: fond noir / texte blanc (nécessite support GS B sur l'imprimante)
+        GS + '\x42\x01' + barLine + GS + '\x42\x00',
+        '',
+        ESC + '\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + ESC + '\x21\x00\n',
+        center('AJOUT ARTICLES'),
         sep1,
-        `Ticket N: #${ticketNum}`,
         `Date: ${dateStr} - ${timeStr}`,
-        `Table: ${tableDisplay}`,
         `Serveur: ${userName}`,
         sep1,
         headerLine,
@@ -1977,17 +1888,35 @@ async function printAdditionOrder(encodedOrder) {
     try {
         const idShort = String(o.id||'').slice(-6).padStart(6,'0');
         const now = new Date().toLocaleString('fr-FR');
-        const sep = '--------------------------------\n';
-        let ticket = `\n       PAPAYA JUICE\n         ADDITION\n${sep}`;
-        ticket += `Commande #${idShort}  Table: ${o.table_number||'?'}\n`;
+        const W = 48;
+        const ESC = '\x1B', GS = '\x1D';
+        const sep = '-'.repeat(W) + '\n';
+        const itemLine = (qty, name, price) => {
+            const qtyStr  = `${qty}x`;
+            const maxName = W - qtyStr.length - 1 - price.length - 1;
+            const nameStr = name.substring(0, maxName).padEnd(maxName, ' ');
+            return `${qtyStr} ${nameStr} ${price}`;
+        };
+        const tbl = o.table_number || '';
+        const barLeft = tbl === 'comptoir' ? 'COMPTOIR'
+            : tbl === 'emporter' ? 'À EMPORTER'
+            : tbl === 'terrasse' ? 'TERRASSE'
+            : tbl ? `TABLE N°${String(tbl).replace('T','')}` : 'TABLE ?';
+        const barRight = `#${idShort}`;
+        const barPad   = Math.max(1, W - barLeft.length - barRight.length);
+        let ticket = GS + '\x42\x01' + barLeft + ' '.repeat(barPad) + barRight + GS + '\x42\x00' + '\n\n';
+        ticket += ESC + '\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + ESC + '\x21\x00\n';
+        ticket += `${' '.repeat(Math.max(0,Math.floor((W-8)/2)))}ADDITION\n${sep}`;
         ticket += `${now}\n${sep}`;
         const allItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
         allItems.forEach(i => {
-            const name = (i.title||i.name||'').substring(0,20).padEnd(20,' ');
             const price = (parseFloat(i.price||0)*(i.qty||1)).toFixed(2).padStart(8,' ');
-            ticket += `${i.qty||1}x ${name} ${price}\n`;
+            ticket += itemLine(i.qty||1, i.title||i.name||'', price) + '\n';
         });
-        ticket += `${sep}À PAYER:            ${parseFloat(o.total||0).toFixed(2)} DH\n`;
+        const totalLabel = 'TOTAL';
+        const totalStr    = `${parseFloat(o.total||0).toFixed(2)} DH`;
+        const totalPad    = Math.max(1, Math.floor(W/2) - totalLabel.length - totalStr.length);
+        ticket += `${sep}` + ESC + '\x21\x30' + totalLabel + ' '.repeat(totalPad) + totalStr + ESC + '\x21\x00' + '\n';
         await _printUSB(ticket);
         showToast('✅ Addition imprimée !');
     } catch(e) { showToast('❌ Erreur impression: '+e.message); }
@@ -1997,17 +1926,36 @@ async function reprintOrder(encodedOrder) {
     const o = JSON.parse(decodeURIComponent(encodedOrder));
     try {
         const now = new Date(o.created_at||Date.now()).toLocaleString('fr-FR');
-        const sep = '--------------------------------\n';
-        let ticket = `\n       PAPAYA JUICE\n      RÉIMPRESSION\n${sep}`;
-        ticket += `Commande #${String(o.id||'').slice(-6).padStart(6,'0')}  Table: ${o.table_number||'?'}\n`;
+        const W = 48;
+        const ESC = '\x1B', GS = '\x1D';
+        const sep = '-'.repeat(W) + '\n';
+        const itemLine = (qty, name, price) => {
+            const qtyStr  = `${qty}x`;
+            const maxName = W - qtyStr.length - 1 - price.length - 1;
+            const nameStr = name.substring(0, maxName).padEnd(maxName, ' ');
+            return `${qtyStr} ${nameStr} ${price}`;
+        };
+        const idShort = String(o.id||'').slice(-6).padStart(6,'0');
+        const tbl = o.table_number || '';
+        const barLeft = tbl === 'comptoir' ? 'COMPTOIR'
+            : tbl === 'emporter' ? 'À EMPORTER'
+            : tbl === 'terrasse' ? 'TERRASSE'
+            : tbl ? `TABLE N°${String(tbl).replace('T','')}` : 'TABLE ?';
+        const barRight = `#${idShort}`;
+        const barPad   = Math.max(1, W - barLeft.length - barRight.length);
+        let ticket = GS + '\x42\x01' + barLeft + ' '.repeat(barPad) + barRight + GS + '\x42\x00' + '\n\n';
+        ticket += ESC + '\x21\x30' + (()=>{ const t='PAPAYA JUICE'; const pad=Math.max(0,Math.floor((Math.floor(W/2)-t.length)/2)); return ' '.repeat(pad)+t; })() + ESC + '\x21\x00\n';
+        ticket += `${' '.repeat(Math.max(0,Math.floor((W-13)/2)))}RÉIMPRESSION\n${sep}`;
         ticket += `${now}\n${sep}`;
         const reimpItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
         reimpItems.forEach(i => {
-            const name = (i.title||i.name||'').substring(0,20).padEnd(20,' ');
             const price = (parseFloat(i.price||0)*(i.qty||1)).toFixed(2).padStart(8,' ');
-            ticket += `${i.qty||1}x ${name} ${price}\n`;
+            ticket += itemLine(i.qty||1, i.title||i.name||'', price) + '\n';
         });
-        ticket += `${sep}TOTAL:              ${parseFloat(o.total||0).toFixed(2)} DH\n`;
+        const totalLabel = 'TOTAL';
+        const totalStr    = `${parseFloat(o.total||0).toFixed(2)} DH`;
+        const totalPad    = Math.max(1, Math.floor(W/2) - totalLabel.length - totalStr.length);
+        ticket += `${sep}` + ESC + '\x21\x30' + totalLabel + ' '.repeat(totalPad) + totalStr + ESC + '\x21\x00' + '\n';
         await _printUSB(ticket);
         showToast('✅ Ticket réimprimé !');
     } catch(e) { showToast('❌ Erreur impression: '+e.message); }
@@ -2051,8 +1999,8 @@ async function validerCloture() {
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         const userName = document.getElementById('userName').textContent || 'Serveur';
-        const sep  = '--------------------------------\n';
-        const sep2 = '================================\n';
+        const sep  = '------------------------------------------------\n';
+        const sep2 = '================================================\n';
 
         // ── Grouper tous les articles par catégorie ──
         const categoryMap = {};
@@ -2092,8 +2040,8 @@ async function validerCloture() {
         ticketZ += `A         : ${dateStr} ${timeStr}\n`;
         ticketZ += sep;
 
-        // W=42: Article=28, Qte=4, space=1, TOTAL=9 => 42 chars exact
-        const C_ART = 28, C_QTY = 4, C_TOT = 9;
+        // W=48: Article=34, Qte=4, space=1, TOTAL=9 => 48 chars exact
+        const C_ART = 34, C_QTY = 4, C_TOT = 9;
         const artLine = (name, qty, total) =>
             pad(name, C_ART) + padL(String(qty), C_QTY) + ' ' + padL(String(total), C_TOT);
 
@@ -2120,13 +2068,13 @@ async function validerCloture() {
         });
 
         ticketZ += sep2;
-        ticketZ += `TOTAL NET: ${padL(grandTotal.toFixed(2) + ' DH', 20)}\n`;
+        ticketZ += `TOTAL NET: ${padL(grandTotal.toFixed(2) + ' DH', 37)}\n`;
         ticketZ += sep2;
-        ticketZ += `ESPECES : ${padL(grandTotal.toFixed(2) + ' DH', 21)}\n`;
+        ticketZ += `ESPECES : ${padL(grandTotal.toFixed(2) + ' DH', 38)}\n`;
         ticketZ += sep;
         ticketZ += `CAISSIER : ${userName}\n`;
         ticketZ += sep;
-        ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 19)}\n`;
+        ticketZ += `SUR PLACE : ${padL(grandTotal.toFixed(2) + ' DH', 36)}\n`;
         ticketZ += sep;
 
         // ── Enregistrer la clôture en DB d'abord pour obtenir l'ID réel ──
@@ -2574,9 +2522,8 @@ async function _oqFlush() {
                     _broadcastOrder('new_order', { ...created, status: 'en_preparation' }).catch(() => {});
                 }
                 // ── Tickets: mli printed:true → tickets khrejou offline déjà ──
-                // Mandirou print mra thanya, walakin nflushiw PrintNode queue
-                // (pour que les tickets déjà en queue partent via cloud aussi)
-                // Tickets: printed flag ignoré — printViaPrintNode gère le fallback
+                // Mandirou print mra thanya — _flushPrintJobs (kitchen) kayretry b rasso
+                // mli local print server yrja3 disponible.
             }
         } catch(e) {
             remaining.push(item);

@@ -155,91 +155,42 @@
 
   <div style="margin:32px 0 24px;">
     <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;">🖨️ Paramètres Impression</h1>
-    <p style="font-size:14px;color:var(--muted);">Système hybride — PrintNode (online) + Local (offline)</p>
+    <p style="font-size:14px;color:var(--muted);">Imprimantes locales — connectées au PC du kiosk</p>
   </div>
 
-  <div class="note-box">
-    🔄 <strong>Online (WiFi OK)</strong> → tickets via PrintNode cloud<br>
-    📴 <strong>Offline (WiFi coupé)</strong> → tickets via print server local (localhost:3001)
-  </div>
-
-  <!-- ══ PRINTNODE ══ -->
+  <!-- ══ IMPRIMANTES LOCALES ══ -->
   <div class="card">
-    <div class="card-title">☁️ PrintNode — Online</div>
-    <div class="card-sub">Utilisé quand le WiFi est disponible</div>
+    <div class="card-title">🖨️ Imprimantes du PC</div>
+    <div class="card-sub">node print-server.js — localhost:3001</div>
 
-    <div class="form-row" style="align-items:flex-end;">
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">API Key</label>
-        <input class="form-input" id="apiKey" type="password" placeholder="••••••••••••••••"
-          oninput="resetPNStatus()">
-      </div>
-      <button class="btn-primary" onclick="connectPrintNode()" style="flex-shrink:0;height:44px;">
-        Connecter
+    <div class="form-row" style="align-items:flex-end;margin-bottom:8px;">
+      <button class="btn-primary" onclick="scanLocalPrinters()" style="height:44px;">
+        🔄 Scanner les imprimantes
       </button>
+      <span id="scanStatus" style="font-size:12px;color:var(--muted);">—</span>
     </div>
 
-    <div style="margin-top:14px;margin-bottom:20px;">
-      <span class="status-badge" id="connectionStatus">
-        <div class="status-dot"></div><span>Non connecté</span>
-      </span>
-    </div>
+    <div id="localPrintersList"></div>
 
-    <!-- Printers list -->
-    <div id="printersList"></div>
-
-    <!-- Selects (cachés jusqu'à connexion) -->
-    <div id="selectsSection" style="display:none;margin-top:20px;">
+    <div id="localSelectsSection" style="display:none;margin-top:20px;">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">🍳 Imprimante Cuisine</label>
-          <select class="form-input" id="kitchenPrinter">
+          <select class="form-input" id="kitchenPrinterName">
             <option value="">— Sélectionner —</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">🧾 Imprimante Addition</label>
-          <select class="form-input" id="cashPrinter">
+          <select class="form-input" id="usbPrinterName">
             <option value="">— Sélectionner —</option>
           </select>
         </div>
       </div>
       <div class="form-row" style="margin-top:12px;">
-        <button class="btn-test" onclick="testPrint('kitchen')">🧪 Test Cuisine</button>
-        <button class="btn-test" onclick="testPrint('cash')">🧪 Test Addition</button>
+        <button class="btn-test" onclick="testLocal('kitchen')">🧪 Test Cuisine</button>
+        <button class="btn-test" onclick="testLocal('cash')">🧪 Test Addition</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ══ LOCAL OFFLINE ══ -->
-  <div class="card">
-    <div class="card-title">📴 Local — Offline</div>
-    <div class="card-sub">Fallback automatique quand PrintNode est inaccessible · node print-server.js</div>
-
-    <div class="form-row" style="margin-bottom:16px;">
-      <div class="form-group" style="flex:2;">
-        <label class="form-label">🍳 IP Imprimante Cuisine (LAN)</label>
-        <input class="form-input" id="cuisineIP" type="text" placeholder="192.168.123.100">
-      </div>
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Port</label>
-        <input class="form-input" id="cuisinePort" type="number" placeholder="9100">
-      </div>
-    </div>
-
-    <div class="form-group" style="margin-bottom:16px;">
-      <label class="form-label">🧾 Nom Windows Imprimante Addition (USB)</label>
-      <input class="form-input" id="usbName" type="text" placeholder="XP-80C (copy 2)">
-      <span class="form-hint" style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">
-        Gestionnaire de périphériques → Files d'attente à l'impression
-      </span>
-    </div>
-
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-      <button class="btn-test" onclick="testLAN()">🔌 Tester Cuisine LAN</button>
-      <span id="statusLAN" style="font-size:12px;color:var(--muted);">—</span>
-      <button class="btn-test" onclick="testUSB()">🔌 Tester Addition USB</button>
-      <span id="statusUSB" style="font-size:12px;color:var(--muted);">—</span>
     </div>
   </div>
 
@@ -253,139 +204,63 @@
 <script>
 const CFG_KEY = 'papaya_print_config';
 const PRINT_SERVER = 'http://localhost:3001';
-let printers = [];
+let localPrinters = [];
 
 function loadCfg() { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); }
 function saveCfgRaw(o) { localStorage.setItem(CFG_KEY, JSON.stringify(o)); }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const cfg = loadCfg();
-  if (cfg.apiKey) {
-    document.getElementById('apiKey').value = cfg.apiKey;
-    connectPrintNode(true);
-  }
-  document.getElementById('cuisineIP').value   = cfg.kitchenPrinterIP   || '';
-  document.getElementById('cuisinePort').value = cfg.kitchenPrinterPort || 9100;
-  document.getElementById('usbName').value     = cfg.usbPrinterName     || '';
+  scanLocalPrinters();
 });
 
-function resetPNStatus() {
-  const s = document.getElementById('connectionStatus');
-  s.className = 'status-badge';
-  s.innerHTML = '<div class="status-dot"></div><span>Non connecté</span>';
-  document.getElementById('printersList').innerHTML = '';
-  document.getElementById('selectsSection').style.display = 'none';
-}
-
-async function connectPrintNode(silent = false) {
-  const key = document.getElementById('apiKey').value.trim();
-  if (!key) { toast('Entre l\'API Key d\'abord', 'err'); return; }
-
-  const statusEl = document.getElementById('connectionStatus');
-  statusEl.className = 'status-badge';
-  statusEl.innerHTML = '<div class="spin"></div><span>Connexion…</span>';
-
+async function scanLocalPrinters() {
+  const statusEl = document.getElementById('scanStatus');
+  statusEl.textContent = '⏳ Scan…';
   try {
-    const res = await fetch('https://api.printnode.com/printers', {
-      headers: { 'Authorization': 'Basic ' + btoa(key + ':') },
-      signal: AbortSignal.timeout(6000)
-    });
-    if (!res.ok) throw new Error('API Key incorrecte');
+    const res = await fetch(PRINT_SERVER + '/printers', { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error('Erreur ' + res.status);
     const data = await res.json();
-    printers = Array.isArray(data) ? data : [];
-
-    statusEl.className = 'status-badge connected';
-    statusEl.innerHTML = `<div class="status-dot"></div><span>✅ Connecté — ${printers.length} imprimante(s)</span>`;
-
-    renderPrinters();
-    if (!silent) toast('PrintNode connecté !', 'ok');
+    localPrinters = Array.isArray(data.printers) ? data.printers : [];
+    statusEl.textContent = `✅ ${localPrinters.length} imprimante(s) trouvée(s)`;
+    renderLocalPrinters();
   } catch(e) {
-    statusEl.className = 'status-badge disconnected';
-    statusEl.innerHTML = `<div class="status-dot"></div><span>❌ ${e.message}</span>`;
-    if (!silent) toast('Erreur: ' + e.message, 'err');
+    statusEl.textContent = '❌ Print server inaccessible';
+    toast('Vérifie que node print-server.js tourne sur ce PC', 'err');
   }
 }
 
-function renderPrinters() {
+function renderLocalPrinters() {
   const cfg = loadCfg();
   const opts = '<option value="">— Sélectionner —</option>' +
-    printers.map(p => `<option value="${p.id}">${p.name} (ID: ${p.id})</option>`).join('');
+    localPrinters.map(p => `<option value="${p}">${p}</option>`).join('');
 
-  const ks = document.getElementById('kitchenPrinter');
-  const cs = document.getElementById('cashPrinter');
+  const ks = document.getElementById('kitchenPrinterName');
+  const cs = document.getElementById('usbPrinterName');
   ks.innerHTML = opts;
   cs.innerHTML = opts;
-  if (cfg.kitchenPrinter) ks.value = cfg.kitchenPrinter;
-  if (cfg.cashPrinter)    cs.value = cfg.cashPrinter;
+  if (cfg.kitchenPrinterName) ks.value = cfg.kitchenPrinterName;
+  if (cfg.usbPrinterName)     cs.value = cfg.usbPrinterName;
 
-  const listEl = document.getElementById('printersList');
-  if (!printers.length) {
-    listEl.innerHTML = '<p style="font-size:12px;color:var(--muted);">⚠️ Aucune imprimante — vérifiez que le client PrintNode est lancé sur le PC.</p>';
+  const listEl = document.getElementById('localPrintersList');
+  if (!localPrinters.length) {
+    listEl.innerHTML = '<p style="font-size:12px;color:var(--muted);">⚠️ Aucune imprimante trouvée — vérifiez node print-server.js et les imprimantes installées sur ce PC.</p>';
   } else {
-    listEl.innerHTML = `<div class="printer-list">${printers.map(p => `
+    listEl.innerHTML = `<div class="printer-list">${localPrinters.map(p => `
       <div class="printer-item">
-        <div>
-          <div class="printer-name">🖨️ ${p.name}</div>
-          <div class="printer-id">ID: ${p.id} · ${p.computer?.name || 'PC local'}</div>
-        </div>
-        <button class="btn-test" onclick="quickTest(${p.id},'${p.name.replace(/'/g,"\\'")}')">Test</button>
+        <div class="printer-name">🖨️ ${p}</div>
       </div>`).join('')}</div>`;
   }
-  document.getElementById('selectsSection').style.display = 'block';
+  document.getElementById('localSelectsSection').style.display = 'block';
 }
 
-async function quickTest(id, name) {
-  const key = document.getElementById('apiKey').value.trim() || loadCfg().apiKey;
+async function testLocal(role) {
+  const name = document.getElementById(role === 'kitchen' ? 'kitchenPrinterName' : 'usbPrinterName').value;
+  if (!name) { toast('Sélectionne l\'imprimante d\'abord', 'err'); return; }
   try {
     toast('Test…', 'info');
-    const content = `\n  PAPAYA JUICE\n  TEST: ${name}\n--------------------------------\n  Imprimante OK !\n\n\n`;
-    const b64 = btoa(unescape(encodeURIComponent(content)));
-    const res = await fetch('https://api.printnode.com/printjobs', {
-      method: 'POST',
-      headers: { 'Authorization': 'Basic ' + btoa(key + ':'), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ printerId: parseInt(id), title: 'Test', contentType: 'raw_base64', content: b64, source: 'Papaya' })
-    });
-    if (res.ok) toast(`✅ ${name} — OK !`, 'ok');
-    else toast('❌ Erreur impression', 'err');
-  } catch(e) { toast('❌ ' + e.message, 'err'); }
-}
-
-async function testPrint(role) {
-  const key = document.getElementById('apiKey').value.trim() || loadCfg().apiKey;
-  const id  = document.getElementById(role === 'kitchen' ? 'kitchenPrinter' : 'cashPrinter').value;
-  if (!id) { toast('Sélectionne l\'imprimante d\'abord', 'err'); return; }
-  await quickTest(parseInt(id), role === 'kitchen' ? 'Cuisine' : 'Addition');
-}
-
-async function testLAN() {
-  const ip = document.getElementById('cuisineIP').value.trim();
-  const port = parseInt(document.getElementById('cuisinePort').value) || 9100;
-  const el = document.getElementById('statusLAN');
-  if (!ip) { toast('Entre l\'IP d\'abord', 'err'); return; }
-  el.textContent = '⏳ Test…';
-  try {
     const ESC = '\x1B', GS = '\x1D';
-    const t = ESC + '@' + '\n  TEST CUISINE OK\n\n\n' + ESC + 'd\x03' + GS + 'V\x41\x03';
-    const bytes = []; for (let i=0;i<t.length;i++) bytes.push(t.charCodeAt(i)&0xFF);
-    const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-    const res = await fetch(PRINT_SERVER + '/print/lan', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ content_base64: b64, ip, port }),
-      signal: AbortSignal.timeout(6000)
-    });
-    el.textContent = res.ok ? '✅ Connectée !' : '❌ Erreur ' + res.status;
-    el.style.color = res.ok ? '#86efac' : '#fca5a5';
-  } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
-}
-
-async function testUSB() {
-  const name = document.getElementById('usbName').value.trim();
-  const el = document.getElementById('statusUSB');
-  if (!name) { toast('Entre le nom d\'abord', 'err'); return; }
-  el.textContent = '⏳ Test…';
-  try {
-    const ESC = '\x1B', GS = '\x1D';
-    const t = ESC + '@' + '\n  TEST ADDITION OK\n\n\n' + ESC + 'd\x03' + GS + 'V\x41\x03';
+    const label = role === 'kitchen' ? 'CUISINE' : 'ADDITION';
+    const t = ESC + '@' + `\n  TEST ${label} OK\n\n\n` + ESC + 'd\x03' + GS + 'V\x41\x03';
     const bytes = []; for (let i=0;i<t.length;i++) bytes.push(t.charCodeAt(i)&0xFF);
     const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
     const res = await fetch(PRINT_SERVER + '/print/usb', {
@@ -393,22 +268,23 @@ async function testUSB() {
       body: JSON.stringify({ content_base64: b64, printer_name: name }),
       signal: AbortSignal.timeout(8000)
     });
-    el.textContent = res.ok ? '✅ Imprimée !' : '❌ Erreur ' + res.status;
-    el.style.color = res.ok ? '#86efac' : '#fca5a5';
-  } catch(e) { el.textContent = '❌ Print server machi actif'; el.style.color = '#fca5a5'; }
+    if (res.ok) toast(`✅ ${name} — OK !`, 'ok');
+    else toast('❌ Erreur ' + res.status, 'err');
+  } catch(e) { toast('❌ Print server inaccessible', 'err'); }
 }
 
 function saveConfig() {
-  const apiKey  = document.getElementById('apiKey').value.trim();
-  const kitchen = document.getElementById('kitchenPrinter')?.value || '';
-  const cash    = document.getElementById('cashPrinter')?.value    || '';
-  const ip      = document.getElementById('cuisineIP').value.trim();
-  const port    = parseInt(document.getElementById('cuisinePort').value) || 9100;
-  const usbName = document.getElementById('usbName').value.trim();
+  const kitchen = document.getElementById('kitchenPrinterName').value;
+  const usb     = document.getElementById('usbPrinterName').value;
 
-  if (!ip || !usbName) { toast('⚠️ Config locale incomplète (IP + nom USB)', 'err'); return; }
+  if (!kitchen || !usb) { toast('⚠️ Choisis les deux imprimantes', 'err'); return; }
 
-  saveCfgRaw({ apiKey, kitchenPrinter: kitchen, cashPrinter: cash, kitchenPrinterIP: ip, kitchenPrinterPort: port, usbPrinterName: usbName });
+  const cfg = loadCfg();
+  cfg.kitchenPrinterName = kitchen;
+  cfg.usbPrinterName     = usb;
+  delete cfg.apiKey; delete cfg.kitchenPrinter; delete cfg.cashPrinter;
+  delete cfg.kitchenPrinterIP; delete cfg.kitchenPrinterPort;
+  saveCfgRaw(cfg);
   toast('✅ Configuration enregistrée !', 'ok');
 }
 
