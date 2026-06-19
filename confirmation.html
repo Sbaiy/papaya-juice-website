@@ -423,25 +423,28 @@ document.getElementById('totalDisplay').textContent = total.toFixed(2) + ' DH';
 /* ═══════════════════════════
    NAVIGATION — Nouvelle commande avec token QR
 ═══════════════════════════ */
-function newOrder() {
+async function newOrder() {
   // Si on a le token QR, on redirige avec → menu garde la table détectée
   if (qrToken) {
     window.location.href = 'menu.html?t=' + encodeURIComponent(qrToken);
   } else if (tableNum) {
-    // Fallback: reconstruire le token depuis le numéro de table
-    window.location.href = 'menu.html?t=' + encodeURIComponent(_makeTableToken(tableNum));
+    // Fallback: demander le token au SERVEUR (le secret reste server-side, jamais exposé)
+    try {
+      const res = await fetch('/api/generate-qr-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: String(tableNum) })
+      });
+      const data = await res.json();
+      if (data && data.token) {
+        window.location.href = 'menu.html?t=' + encodeURIComponent(data.token);
+        return;
+      }
+    } catch (e) { /* réseau KO */ }
+    window.location.href = 'menu.html'; // fallback ultime
   } else {
     window.location.href = 'menu.html';
   }
-}
-
-/* Token helper — identique à qr-tables.html */
-const _QR_SECRET = 'PapayaJuice2025!';
-function _makeTableToken(tableNum) {
-  const raw = tableNum + ':' + _QR_SECRET;
-  let sum = 0;
-  for (let c of raw) sum = (sum * 31 + c.charCodeAt(0)) % 99991;
-  return btoa(tableNum + ':' + sum);
 }
 
 /* ═══════════════════════════
