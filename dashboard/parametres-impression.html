@@ -225,6 +225,13 @@
         </select>
       </div>
     </div>
+
+    <div class="form-group" style="margin-top:4px;">
+      <label class="form-label">🧮 Clôture (PrintNode)</label>
+      <select class="form-input" id="pnCloture">
+        <option value="">— Sélectionner —</option>
+      </select>
+    </div>
   </div>
 
   <div class="actions-row">
@@ -264,7 +271,7 @@ async function loadPrintNodePrinters() {
     if (!res.ok) throw new Error('PrintNode ' + res.status);
     const printers = await res.json();
     const cfg = loadCfg();
-    ['pnKitchen', 'pnCash'].forEach(selId => {
+    ['pnKitchen', 'pnCash', 'pnCloture'].forEach(selId => {
       const sel = document.getElementById(selId);
       sel.innerHTML = '<option value="">— Sélectionner —</option>';
       printers.forEach(p => {
@@ -276,6 +283,7 @@ async function loadPrintNodePrinters() {
     });
     if (cfg.kitchenPrinter) document.getElementById('pnKitchen').value = cfg.kitchenPrinter;
     if (cfg.cashPrinter)    document.getElementById('pnCash').value    = cfg.cashPrinter;
+    if (cfg.cloturePrinter) document.getElementById('pnCloture').value = cfg.cloturePrinter;
     statusEl.textContent = `✅ ${printers.length} imprimante(s)`;
   } catch(e) {
     statusEl.textContent = '❌ ' + e.message;
@@ -349,6 +357,7 @@ function saveConfig() {
   const pnKey     = document.getElementById('pnApiKey').value.trim();
   const pnKitchen = document.getElementById('pnKitchen').value;
   const pnCash    = document.getElementById('pnCash').value;
+  const pnCloture = document.getElementById('pnCloture').value;
 
   // Khass 3la l-aql l-local WLA PrintNode kاملين
   const localOK = kitchen && usb;
@@ -366,6 +375,7 @@ function saveConfig() {
   if (pnKey)     cfg.apiKey         = pnKey;        else delete cfg.apiKey;
   if (pnKitchen) cfg.kitchenPrinter = pnKitchen;    else delete cfg.kitchenPrinter;
   if (pnCash)    cfg.cashPrinter    = pnCash;        else delete cfg.cashPrinter;
+  if (pnCloture) cfg.cloturePrinter = pnCloture;    else delete cfg.cloturePrinter;
   // Nettoyage ancien LAN
   delete cfg.kitchenPrinterIP; delete cfg.kitchenPrinterPort;
   saveCfgRaw(cfg);
@@ -381,5 +391,6 @@ function toast(msg, type='info') {
 }
 function logout() { sessionStorage.clear(); location.href = '/'; }
 </script>
+  <script src="/i18n.js"></script>
 </body>
 </html>

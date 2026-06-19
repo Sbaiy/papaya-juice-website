@@ -394,8 +394,9 @@ async function imprimerCloture(id, num, btn) {
     ticket += `COMMANDES: ${padL(String(c.nbr_commandes), 22)}\n`;
     ticket += sep;
 
-    // ── PrintNode si configuré ──
-    if (cfg.apiKey && cfg.cashPrinter) {
+    // ── PrintNode si configuré (imprimante clôture dédiée, sinon addition) ──
+    const cloturePrinterId = cfg.cloturePrinter || cfg.cashPrinter;
+    if (cfg.apiKey && cloturePrinterId) {
       const ESC = '\x1B', GS = '\x1D';
       const INIT       = ESC + '@';
       const ALIGN_LEFT = ESC + 'a' + '\x00';
@@ -416,7 +417,7 @@ async function imprimerCloture(id, num, btn) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          printerId: parseInt(cfg.cashPrinter),
+          printerId: parseInt(cloturePrinterId),
           title: 'Clôture #' + (c.id || num),
           contentType: 'raw_base64',
           content: base64,
@@ -445,5 +446,6 @@ async function imprimerCloture(id, num, btn) {
 loadClotures();
 </script>
 
+  <script src="/i18n.js"></script>
 </body>
 </html>
