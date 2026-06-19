@@ -1490,10 +1490,13 @@ async function submitOrder() {
 
     // ── MODE AJOUT SUR COMMANDE EXISTANTE ──
     if (_modifMode) {
+        // 🔒 SNAPSHOT الهدف + الـ articles فاش كتدوس → ما يتبدّلوش وسط الطريق
+        const modifTarget = _modifMode;                 // الطلب المستهدف (مقفول)
+        const cartSnapshot = cart.map(({product,qty,customPrice,extras}) => ({ product, qty, customPrice, extras }));
         const btnOrder = document.getElementById('btnOrder');
         btnOrder.disabled = true; btnOrder.textContent = 'Envoi…';
         try {
-            const newItems = cart.map(({product,qty,customPrice,extras}) => ({
+            const newItems = cartSnapshot.map(({product,qty,customPrice,extras}) => ({
                 id: product.id, title: product.title,
                 price: parseFloat(customPrice ?? getKioskPrice(product)), qty,
                 category: product.category || '',
@@ -1502,7 +1505,7 @@ async function submitOrder() {
             const token = localStorage.getItem('papaya_token');
 
             // 1. Ajouter les articles
-            const addRes = await fetch(BACKEND_URL + '/api/orders/' + _modifMode.orderId + '/add-items', {
+            const addRes = await fetch(BACKEND_URL + '/api/orders/' + modifTarget.orderId + '/add-items', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ items: newItems })
@@ -1512,8 +1515,8 @@ async function submitOrder() {
 
             // 2. Imprimer IMMÉDIATEMENT (bla tntsna step status — zero retard)
             //    FIX TICKET#: yakhd orderNumber (ticket_number) machi orderId (ID Supabase)
-            const tableVal = _modifMode.tableNumber || 'Comptoir';
-            const ticketId = _modifMode.orderNumber || String(_modifMode.orderId).slice(-4).padStart(4,'0');
+            const tableVal = modifTarget.tableNumber || 'Comptoir';
+            const ticketId = modifTarget.orderNumber || String(modifTarget.orderId).slice(-4).padStart(4,'0');
             const newCartItems = newItems.map(i => ({
                 product: { title: i.title, price: parseFloat(i.price||0), category: i.category||'' },
                 qty: i.qty || 1,
@@ -1524,11 +1527,14 @@ async function submitOrder() {
             const kitchenTicket = generateKitchenTicket(newCartItems, tableVal, ticketId);
             printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
             // addition — bl updatedOrder li ja mn backend (total sahi)
-            _printAdditionTicket({ ...updatedOrder, ticket_number: _modifMode.orderNumber }, newItems)
+            _printAdditionTicket({ ...updatedOrder, ticket_number: modifTarget.orderNumber }, newItems)
                 .catch(e => console.warn('Addition print:', e));
 
+            // ✅ نجح → نخرجو mن mode ajout 9بل أي حاجة أخرى (باش الطلب الجاي ما يتلصقش)
+            cancelModifMode();
+
             // 3. Mettre en préparation (fire & forget — machi await bach ma ykon retard)
-            fetch(BACKEND_URL + '/api/orders/' + _modifMode.orderId + '/status', {
+            fetch(BACKEND_URL + '/api/orders/' + modifTarget.orderId + '/status', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ status: 'preparing' })
@@ -1542,11 +1548,13 @@ async function submitOrder() {
             _histUpdateUI && _histUpdateUI();
 
             showToast('✅ Commande modifiée + en préparation !');
-            cancelModifMode();
         } catch(err) {
-            showToast('❌ Erreur: ' + err.message);
+            // ❌ فشل → نخرجو mن mode ajout (باش الطلب الجاي ما يتلصقش بالقديم)
+            //    الـ articles كنخليوهم ف الـ panier → الكاسير يعاود يدوس "Envoyer" = طلب جديد نظيف.
+            _modifMode = null;
+            renderCart(); // button kayرجع "Envoyer la commande" (الـ articles باقيين)
+            showToast('❌ Échec ajout. Articles gardés — clique "Envoyer" pour les envoyer en nouvelle commande.');
             btnOrder.disabled = false;
-            btnOrder.textContent = 'Confirmer l\'ajout';
         } finally {
             _submitBusy = false; // reset guard
         }
