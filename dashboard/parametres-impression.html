@@ -194,6 +194,39 @@
     </div>
   </div>
 
+  <!-- ══ PRINTNODE (CLOUD — fach kayn WiFi) ══ -->
+  <div class="card" style="margin-top:20px;">
+    <div class="card-title">☁️ PrintNode (Cloud)</div>
+    <div class="card-sub">Kayخدّem fach kayn WiFi — local houwa l-fallback fach t9ta3</div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">🔑 Clé API PrintNode</label>
+      <input class="form-input" id="pnApiKey" type="text" placeholder="ex: AbcD1234..." autocomplete="off">
+    </div>
+
+    <div class="form-row" style="align-items:flex-end;margin-bottom:8px;">
+      <button class="btn-primary" onclick="loadPrintNodePrinters()" style="height:44px;">
+        🔄 Charger imprimantes PrintNode
+      </button>
+      <span id="pnStatus" style="font-size:12px;color:var(--muted);">—</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🍳 Cuisine (PrintNode)</label>
+        <select class="form-input" id="pnKitchen">
+          <option value="">— Sélectionner —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🧾 Addition (PrintNode)</label>
+        <select class="form-input" id="pnCash">
+          <option value="">— Sélectionner —</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <div class="actions-row">
     <button class="btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
   </div>
@@ -211,7 +244,44 @@ function saveCfgRaw(o) { localStorage.setItem(CFG_KEY, JSON.stringify(o)); }
 
 window.addEventListener('DOMContentLoaded', () => {
   scanLocalPrinters();
+  // Charger config PrintNode déjà enregistrée
+  const cfg = loadCfg();
+  if (cfg.apiKey) document.getElementById('pnApiKey').value = cfg.apiKey;
+  if (cfg.apiKey) loadPrintNodePrinters();
 });
+
+// ── Charger la liste des imprimantes depuis PrintNode (cloud) ──
+async function loadPrintNodePrinters() {
+  const apiKey = document.getElementById('pnApiKey').value.trim();
+  const statusEl = document.getElementById('pnStatus');
+  if (!apiKey) { statusEl.textContent = '⚠️ Mets la clé API d\'abord'; return; }
+  statusEl.textContent = '⏳ Chargement…';
+  try {
+    const res = await fetch('https://api.printnode.com/printers', {
+      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':') },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) throw new Error('PrintNode ' + res.status);
+    const printers = await res.json();
+    const cfg = loadCfg();
+    ['pnKitchen', 'pnCash'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = '<option value="">— Sélectionner —</option>';
+      printers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (#${p.id})`;
+        sel.appendChild(opt);
+      });
+    });
+    if (cfg.kitchenPrinter) document.getElementById('pnKitchen').value = cfg.kitchenPrinter;
+    if (cfg.cashPrinter)    document.getElementById('pnCash').value    = cfg.cashPrinter;
+    statusEl.textContent = `✅ ${printers.length} imprimante(s)`;
+  } catch(e) {
+    statusEl.textContent = '❌ ' + e.message;
+    toast('Clé API invalide ou pas de connexion', 'err');
+  }
+}
 
 async function scanLocalPrinters() {
   const statusEl = document.getElementById('scanStatus');
@@ -276,13 +346,27 @@ async function testLocal(role) {
 function saveConfig() {
   const kitchen = document.getElementById('kitchenPrinterName').value;
   const usb     = document.getElementById('usbPrinterName').value;
+  const pnKey     = document.getElementById('pnApiKey').value.trim();
+  const pnKitchen = document.getElementById('pnKitchen').value;
+  const pnCash    = document.getElementById('pnCash').value;
 
-  if (!kitchen || !usb) { toast('⚠️ Choisis les deux imprimantes', 'err'); return; }
+  // Khass 3la l-aql l-local WLA PrintNode kاملين
+  const localOK = kitchen && usb;
+  const cloudOK = pnKey && pnKitchen && pnCash;
+  if (!localOK && !cloudOK) {
+    toast('⚠️ Khass l-imprimantes locales WLA PrintNode (l-aql wحda)', 'err');
+    return;
+  }
 
   const cfg = loadCfg();
+  // Local (fallback)
   cfg.kitchenPrinterName = kitchen;
   cfg.usbPrinterName     = usb;
-  delete cfg.apiKey; delete cfg.kitchenPrinter; delete cfg.cashPrinter;
+  // PrintNode (cloud — primary fach kayn WiFi)
+  if (pnKey)     cfg.apiKey         = pnKey;        else delete cfg.apiKey;
+  if (pnKitchen) cfg.kitchenPrinter = pnKitchen;    else delete cfg.kitchenPrinter;
+  if (pnCash)    cfg.cashPrinter    = pnCash;        else delete cfg.cashPrinter;
+  // Nettoyage ancien LAN
   delete cfg.kitchenPrinterIP; delete cfg.kitchenPrinterPort;
   saveCfgRaw(cfg);
   toast('✅ Configuration enregistrée !', 'ok');

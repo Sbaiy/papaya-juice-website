@@ -1333,10 +1333,27 @@ async function _printKitchen(content) {
     await _printLocal(content, cfg.kitchenPrinterName);
 }
 
-// ── Wrapper principal — local uniquement (PrintNode retiré, source du double-print) ──
+// ── Wrapper principal — HYBRID : PrintNode (online) → fallback Local (offline) ──
+//   • Online + PrintNode configuré → PrintNode SEUL. Succès → return → JAMAIS local → ZERO double.
+//   • Fallback local kayt-déclenché GHIR ila PrintNode ضرب error réel (machi 3la timeout court).
+//   • Timeout PrintNode = 12s : succès véritable kayحل 9bel bezzaf → ماشي double.
 async function printViaPrintNode(content, type = 'kitchen') {
-    // PrintNode supprimé : timeout 1s trop court → fallback local se déclenchait
-    // même quand PrintNode avait déjà imprimé → 2 tickets physiques pour 1 commande.
+    const cfg       = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const printerId = type === 'cash' ? cfg.cashPrinter : cfg.kitchenPrinter;
+    const canCloud  = navigator.onLine && cfg.apiKey && printerId;
+
+    // 1) PRIMARY — PrintNode cloud (WiFi up)
+    if (canCloud) {
+        try {
+            await _printNodeCloud(content, parseInt(printerId), cfg.apiKey, type);
+            return; // ✅ طبع via cloud → ما ندير local → ZERO double
+        } catch (e) {
+            console.warn('PrintNode KO → fallback local:', e.message);
+            // kaykmel l-local taht (PrintNode ضرب error réel, ماشي طبع)
+        }
+    }
+
+    // 2) FALLBACK — local print server (offline wla PrintNode ضرب)
     try {
         if (type === 'cash') { await _printUSB(content); }
         else                 { await _printKitchen(content); }
@@ -1351,6 +1368,27 @@ async function printViaPrintNode(content, type = 'kitchen') {
             if (!_syncInterval) _startSyncPolling();
         }
     }
+}
+
+// ── PrintNode cloud — kayصيفط نفس RAW base64 (ESC/POS) دیال l-local ──
+async function _printNodeCloud(content, printerId, apiKey, type) {
+    const { base64 } = _encodeEscPos(content);
+    const res = await fetch('https://api.printnode.com/printjobs', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Basic ' + btoa(apiKey + ':'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            printerId: printerId,
+            title: 'Papaya ' + (type === 'cash' ? 'Addition' : 'Cuisine'),
+            contentType: 'raw_base64',
+            content: base64,
+            source: 'Kiosk Papaya'
+        }),
+        signal: AbortSignal.timeout(12000)  // 12s : succès véritable kayحل 9bel → ماشي double
+    });
+    if (!res.ok) throw new Error('PrintNode ' + res.status);
 }
 
 // ── Flush queue cuisine (retry imprimante Windows) ──
@@ -1370,6 +1408,11 @@ async function _flushPrintJobs() {
     }
     localStorage.setItem('_pq', JSON.stringify(remaining));
 }
+
+// ── FIX: retry automatique dyal tickets cuisine li tع9o (kanت _flushPrintJobs 3emmrها ما t3ytet) ──
+setInterval(() => {
+    if (JSON.parse(localStorage.getItem('_pq') || '[]').length) _flushPrintJobs();
+}, 10000);
 
 // ── SUBMIT ORDER ──
 
