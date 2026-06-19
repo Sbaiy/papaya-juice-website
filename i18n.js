@@ -182,6 +182,23 @@
     ["Lun","الإثنين","Mon"],["Mar","الثلاثاء","Tue"],["Mer","الأربعاء","Wed"],["Jeu","الخميس","Thu"],
     ["Ven","الجمعة","Fri"],["Sam","السبت","Sat"],["Dim","الأحد","Sun"],
     ["Salaire","راتب","Salary"],["Salaires","الرواتب","Salaries"],["Dépense","مصروف","Expense"],["Dépenses","المصاريف","Expenses"],
+    // ── confirmation (suivi commande) ──
+    ["✓ Commande confirmée","✓ تم تأكيد الطلب","✓ Order confirmed"],
+    ["En attente – Le serveur ira en cuisine pour prendre la commande","في الانتظار – النادل غادي يمشي للمطبخ ياخد الطلب","Pending – The waiter will go to the kitchen to take the order"],
+    ["Votre commande sera apportée à votre table","طلبك غادي يتجاب لطاولتك","Your order will be brought to your table"],
+    ["○ Enjoy!","○ بالصحة!","○ Enjoy!"],
+    ["Activez les notifications pour être alerté même si vous fermez cette page","فعّل الإشعارات باش تتنبّه حتى لو سدّيتي هاد الصفحة","Enable notifications to be alerted even if you close this page"],
+    ["En attente de","في انتظار","Awaiting"],["paiement","الدفع","payment"],
+    ["Le restaurant vous contactera bientôt pour confirmer la commande","المطعم غادي يتواصل معاك قريب باش يأكّد الطلب","The restaurant will contact you soon to confirm the order"],
+    // ── menu client (panier + réclamation) ──
+    ["Mon","","My"],["Message *","الرسالة *","Message *"],
+    ["Commande envoyée !","تم إرسال الطلب !","Order sent !"],
+    ["En attente de traitement…","في انتظار المعالجة…","Awaiting processing…"],
+    ["Ex: 5, Terrasse, Comptoir…","مثال: 5، تيراس، الكاونتر…","E.g. 5, Terrace, Counter…"],
+    ["Allergies, préférences…","حساسية، تفضيلات…","Allergies, preferences…"],
+    ["Votre nom…","اسمك…","Your name…"],
+    ["Décrivez votre réclamation…","وصف الشكاية ديالك…","Describe your complaint…"],
+    ["Loading…","جاري التحميل…","Loading…"],["Retour","رجوع","Back"],
   ];
 
   const LANGS = [{c:'ar',l:'العربية',f:'🇲🇦'},{c:'en',l:'English',f:'🇬🇧'},{c:'fr',l:'Français',f:'🇫🇷'}];
