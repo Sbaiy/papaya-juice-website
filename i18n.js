@@ -143,6 +143,45 @@
     ["Rupture de stock","نفاد المخزون","Out of stock"],["Stock faible","مخزون منخفض","Low stock"],
     ["est en rupture","نافد","is out of stock"],["restant","متبقّي","remaining"],["seuil","الحد","threshold"],
     ["Aucune notification","لا توجد إشعارات","No notifications"],
+    // ── titres / prefixes split ──
+    ["Gérer les","تدبير","Manage"],["Gestion du","تدبير","Management of"],
+    // ── catégories (form) ──
+    ["Ajouter, modifier et organiser les catégories du menu","إضافة، تعديل وتنظيم تصنيفات القائمة","Add, edit and organize menu categories"],
+    ["Nom (Français)","الاسم (فرنسية)","Name (French)"],["Nom (English)","الاسم (إنجليزية)","Name (English)"],
+    ["Nombre max d'articles","أقصى عدد للمواد","Max number of items"],["🔗 URL","🔗 رابط","🔗 URL"],
+    ["+ Ajouter","+ إضافة","+ Add"],["IMAGE","صورة","IMAGE"],
+    ["NOM (FR)","الاسم (FR)","NAME (FR)"],["NOM (EN)","الاسم (EN)","NAME (EN)"],["NOM (AR)","الاسم (AR)","NAME (AR)"],
+    ["MAX ARTICLES","أقصى عدد","MAX ITEMS"],["Ex: Boissons Chaudes","مثال: مشروبات ساخنة","E.g. Hot Drinks"],
+    ["E.g. Hot Drinks","مثال: مشروبات ساخنة","E.g. Hot Drinks"],["Rechercher...","بحث...","Search..."],
+    ["∞ (illimité)","∞ (غير محدود)","∞ (unlimited)"],
+    // ── menu client + admin ──
+    ["Loading menu…","جاري تحميل القائمة…","Loading menu…"],["Total commande","مجموع الطلب","Order total"],
+    ["Détecté depuis le QR code","تم الكشف من رمز QR","Detected from QR code"],
+    ["🪑 Numéro de table (optionnel)","🪑 رقم الطاولة (اختياري)","🪑 Table number (optional)"],
+    ["📝 Note / Remarque (optionnel)","📝 ملاحظة (اختياري)","📝 Note (optional)"],
+    ["💬 Réclamation","💬 شكاية","💬 Complaint"],
+    ["Votre avis nous aide à améliorer notre service","رأيك كيساعدنا نحسّنو الخدمة","Your feedback helps us improve our service"],
+    ["Nom (optionnel)","الاسم (اختياري)","Name (optional)"],
+    ["Photos (optionnel · max 3)","صور (اختياري · 3 كحد أقصى)","Photos (optional · max 3)"],
+    ["Appuyer pour ajouter","اضغط للإضافة","Tap to add"],
+    ["Menu Management","تدبير القائمة","Menu Management"],["+ Add New Item","+ إضافة عنصر جديد","+ Add New Item"],
+    ["Sélectionner une catégorie","اختر تصنيفاً","Select a category"],["+ Add Item","+ إضافة عنصر","+ Add Item"],
+    ["Item Name (e.g. Coca-Cola)","اسم العنصر (مثلا Coca-Cola)","Item Name (e.g. Coca-Cola)"],
+    ["Short Description (Optional)","وصف قصير (اختياري)","Short Description (Optional)"],
+    ["Prix Table / Normal (DH)","ثمن الطاولة / عادي (د.ه)","Table / Normal Price (DH)"],
+    ["Prix Kiosk (DH)","ثمن الكشك (د.ه)","Kiosk Price (DH)"],
+    ["CATEGORY","التصنيف","CATEGORY"],["NAME","الاسم","NAME"],["DESCRIPTION","الوصف","DESCRIPTION"],
+    ["PRIX TABLE","ثمن الطاولة","TABLE PRICE"],["PRIX KIOSK","ثمن الكشك","KIOSK PRICE"],
+    ["AVAIL.","متوفّر","AVAIL."],["EXTRAS","الإضافات","EXTRAS"],["CATÉGORIE","التصنيف","CATEGORY"],
+    // ── qr-tables ──
+    ["QR Codes","رموز QR","QR Codes"],["Unique QR code for each table","رمز QR فريد لكل طاولة","Unique QR code for each table"],
+    ["Chaque table aura son propre code QR unique","كل طاولة غادي يكون عندها رمز QR خاص بيها","Each table will have its own unique QR code"],
+    // ── personnel ──
+    ["Ajoutez et gérez le personnel : gérant, serveurs, cuisiniers, caissiers, comptables","أضف ودبّر الموظفين: مدير، نوادل، طباخين، صرّافين، محاسبين","Add and manage staff: manager, waiters, cooks, cashiers, accountants"],
+    ["Chaque salaire ajoute automatiquement une dépense catégorie SALARY.","كل راتب كيزيد تلقائياً مصروف من تصنيف SALARY.","Each salary automatically adds a SALARY category expense."],
+    ["Lun","الإثنين","Mon"],["Mar","الثلاثاء","Tue"],["Mer","الأربعاء","Wed"],["Jeu","الخميس","Thu"],
+    ["Ven","الجمعة","Fri"],["Sam","السبت","Sat"],["Dim","الأحد","Sun"],
+    ["Salaire","راتب","Salary"],["Salaires","الرواتب","Salaries"],["Dépense","مصروف","Expense"],["Dépenses","المصاريف","Expenses"],
   ];
 
   const LANGS = [{c:'ar',l:'العربية',f:'🇲🇦'},{c:'en',l:'English',f:'🇬🇧'},{c:'fr',l:'Français',f:'🇫🇷'}];
