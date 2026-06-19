@@ -1369,6 +1369,24 @@ async function printViaPrintNode(content, type = 'kitchen') {
         return;
     }
 
+    const cfgAll = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+
+    // ── CLÔTURE: PrintNode (imprimante dédiée choisie f réglages) d'abord ──
+    if (type === 'cloture') {
+        const clpId = cfgAll.cloturePrinter;
+        if (navigator.onLine && cfgAll.apiKey && clpId) {
+            try {
+                await _printNodeCloud(content, parseInt(clpId), cfgAll.apiKey, 'cloture');
+                return; // ✅ طبع 3la l-imprimante dyal cloture
+            } catch (e) {
+                console.warn('Cloture PrintNode KO → fallback local:', e.message);
+            }
+        }
+        // Fallback: l-imprimante cash local (باش الـ clôture ما تضيعش)
+        try { await _printUSB(content); } catch (e) { console.warn('Cloture local KO:', e.message); }
+        return;
+    }
+
     // 1) LOCAL FIRST — localhost (سريع + offline)
     try {
         if (type === 'cash') { await _printUSB(content); }
@@ -1412,7 +1430,7 @@ async function _printNodeCloud(content, printerId, apiKey, type) {
         },
         body: JSON.stringify({
             printerId: printerId,
-            title: 'Papaya ' + (type === 'cash' ? 'Addition' : 'Cuisine'),
+            title: 'Papaya ' + (type === 'cash' ? 'Addition' : type === 'cloture' ? 'Clôture' : 'Cuisine'),
             contentType: 'raw_base64',
             content: base64,
             source: 'Kiosk Papaya'
@@ -2178,7 +2196,7 @@ async function validerCloture() {
         const fallbackId = Math.floor(Date.now() / 1000) % 10000;
         ticketZ = ticketZ.replace('__CLOTURE_ID__', realClotureId !== null ? realClotureId : fallbackId);
 
-        await printViaPrintNode(ticketZ, 'cash');
+        await printViaPrintNode(ticketZ, 'cloture');
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
         localStorage.removeItem('papaya_kiosk_login_time');
         // FIX: reset counter bach awal ticket b3d cloture yb9a #0001
