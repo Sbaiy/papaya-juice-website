@@ -199,6 +199,27 @@
     ["Votre nom…","اسمك…","Your name…"],
     ["Décrivez votre réclamation…","وصف الشكاية ديالك…","Describe your complaint…"],
     ["Loading…","جاري التحميل…","Loading…"],["Retour","رجوع","Back"],
+    ["Notre","","Our"],
+  ];
+
+  // ── نصوص ديناميكية (فيها أرقام/أسماء متغيرة) — regex ──
+  // {re, ar, en} : الاستبدال كيستعمل $1, $2...
+  const DYN = [
+    { re: /^(\d+)\s+produits?$/i,                          ar:'$1 منتج',                         en:'$1 products' },
+    { re: /^(\d+)\s+article\(s\)$/i,                       ar:'$1 مادة',                          en:'$1 item(s)' },
+    { re: /^🛒\s*Ajouter\s*\((\d+)\)\s*—\s*(.+)$/i,        ar:'🛒 أضف ($1) — $2',                 en:'🛒 Add ($1) — $2' },
+    { re: /^Ajouter\s*\((\d+)\)\s*—\s*(.+)$/i,             ar:'أضف ($1) — $2',                    en:'Add ($1) — $2' },
+    { re: /^Ajouter au panier\s*—\s*(.+)$/i,               ar:'أضف إلى السلة — $1',               en:'Add to cart — $1' },
+    { re: /^Merci!\s*Votre commande de la table\s*(.+?)\s*est en cours de préparation$/i,
+                                                           ar:'شكراً! طلبك ديال الطاولة $1 قيد التحضير', en:'Thank you! Your table $1 order is being prepared' },
+    { re: /^Votre commande de la table\s*(.+?)\s*a été servie\.?\s*Bon appétit!?$/i,
+                                                           ar:'تم تقديم طلبك ديال الطاولة $1. بالصحة والراحة!', en:'Your table $1 order has been served. Enjoy!' },
+    { re: /^Table\s+(\S+)$/i,                              ar:'الطاولة $1',                       en:'Table $1' },
+    { re: /^🪑\s*Table\s+(\S+)$/i,                          ar:'🪑 الطاولة $1',                    en:'🪑 Table $1' },
+    { re: /^(\d+)\s+tables?\s+configur[ée]+s?$/i,          ar:'$1 طاولة مُعدّة',                  en:'$1 tables configured' },
+    { re: /^(\d+)\s+QR Codes?\s+g[ée]n[ée]r[ée]s?\s+automatiquement$/i, ar:'$1 رموز QR مُولّدة تلقائياً', en:'$1 QR codes generated automatically' },
+    { re: /^(\d+)\s+tables?\s+avec QR codes uniques$/i,    ar:'$1 طاولة برموز QR فريدة',          en:'$1 tables with unique QR codes' },
+    { re: /^(\d+)\s*\/\s*(\d+)\s+photos$/i,                ar:'$1 / $2 صور',                     en:'$1 / $2 photos' },
   ];
 
   const LANGS = [{c:'ar',l:'العربية',f:'🇲🇦'},{c:'en',l:'English',f:'🇬🇧'},{c:'fr',l:'Français',f:'🇫🇷'}];
@@ -211,7 +232,19 @@
   let cur = localStorage.getItem(STORE) || 'fr';
   const orig = new WeakMap();
   function O(n){ if(!orig.has(n)) orig.set(n,n.nodeValue); return orig.get(n); }
-  function T(txt,lang){ if(txt==null) return txt; var e=IDX[txt.trim()]; return e? txt.replace(txt.trim(), e[lang]) : txt; }
+  function T(txt,lang){
+    if(txt==null) return txt;
+    var k=txt.trim();
+    var e=IDX[k];
+    if(e) return txt.replace(k, e[lang]);
+    if(lang!=='fr'){
+      for(var i=0;i<DYN.length;i++){
+        var d=DYN[i];
+        if(d[lang] && d.re.test(k)) return txt.replace(k, k.replace(d.re, d[lang]));
+      }
+    }
+    return txt;
+  }
 
   function walk(root,lang){
     if(root.nodeType===3){ root.nodeValue=T(O(root),lang); return; }
