@@ -1333,40 +1333,71 @@ async function _printKitchen(content) {
     await _printLocal(content, cfg.kitchenPrinterName);
 }
 
-// ── Wrapper principal — HYBRID : PrintNode (online) → fallback Local (offline) ──
-//   • Online + PrintNode configuré → PrintNode SEUL. Succès → return → JAMAIS local → ZERO double.
-//   • Fallback local kayt-déclenché GHIR ila PrintNode ضرب error réel (machi 3la timeout court).
-//   • Timeout PrintNode = 12s : succès véritable kayحل 9bel bezzaf → ماشي double.
-async function printViaPrintNode(content, type = 'kitchen') {
-    const cfg       = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerId = type === 'cash' ? cfg.cashPrinter : cfg.kitchenPrinter;
-    const canCloud  = navigator.onLine && cfg.apiKey && printerId;
+// ════════════════════════════════════════════════════════
+//  ANTI-DOUBLE (dedup) — cross-tab via localStorage
+//  Nefs ticket (محتوى+نوع) → ما يطبعش مرتين ف نافذة قصيرة.
+//  Nafida 6s: kتقتل l-doubles l-automatiques (li كيوقعو ف <2s)،
+//  walakin kتسمح b reprint manuel (li l-cashier kيديرو b3d ما يشوف l-ticket).
+// ════════════════════════════════════════════════════════
+const _PRINT_DEDUP_MS = 6000;
+function _hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    return (h >>> 0).toString(36);
+}
+function _printDedupCheck(key) {
+    const now = Date.now();
+    let map = {};
+    try { map = JSON.parse(localStorage.getItem('_printDedup') || '{}'); } catch (e) {}
+    for (const k in map) if (now - map[k] > 60000) delete map[k]; // nettoyage
+    if (map[key] && (now - map[key]) < _PRINT_DEDUP_MS) return false; // déjà imprimé récemment
+    map[key] = now;
+    try { localStorage.setItem('_printDedup', JSON.stringify(map)); } catch (e) {}
+    return true;
+}
 
-    // 1) PRIMARY — PrintNode cloud (WiFi up)
-    if (canCloud) {
-        try {
-            await _printNodeCloud(content, parseInt(printerId), cfg.apiKey, type);
-            return; // ✅ طبع via cloud → ما ندير local → ZERO double
-        } catch (e) {
-            console.warn('PrintNode KO → fallback local:', e.message);
-            // kaykmel l-local taht (PrintNode ضرب error réel, ماشي طبع)
-        }
+// ── Wrapper principal — LOCAL d'abord (سريع + offline) → PrintNode fallback ──
+//   • Anti-double: dedup 3la محتوى l-ticket → ZERO double (مهما تعيّط مرتين)
+//   • Local FIRST: localhost سريع (server self-healing kayرجع 200 فوراً) + kيخدم offline
+//   • PrintNode: غير fallback ila l-local server طاح (نادر دابا — service robuste)
+//   • Non-bloquant: kيتعيّط b fire-and-forget mن submitOrder → UI فوري
+async function printViaPrintNode(content, type = 'kitchen') {
+    // 🚫 Anti-double
+    const dedupKey = type + ':' + _hashStr(content);
+    if (!_printDedupCheck(dedupKey)) {
+        console.warn('🚫 Double-print bloqué (dedup):', dedupKey);
+        return;
     }
 
-    // 2) FALLBACK — local print server (offline wla PrintNode ضرب)
+    // 1) LOCAL FIRST — localhost (سريع + offline)
     try {
         if (type === 'cash') { await _printUSB(content); }
         else                 { await _printKitchen(content); }
-    } catch(e) {
-        console.warn('Print local [' + type + '] echoue:', e.message);
-        if (type === 'kitchen') {
-            const { base64 } = _encodeEscPos(content);
-            const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-            const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
-            queue.push({ base64, printerName: cfg2.kitchenPrinterName, ts: Date.now() });
-            localStorage.setItem('_pq', JSON.stringify(queue));
-            if (!_syncInterval) _startSyncPolling();
+        return; // ✅ تصیفط للlocal → سالينا (l-server kayضمن l-livraison + retry self-healing)
+    } catch (eLocal) {
+        console.warn('Local KO → essai PrintNode:', eLocal.message);
+    }
+
+    // 2) FALLBACK — PrintNode cloud (ila l-local server طاح + online + configuré)
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    const printerId = type === 'cash' ? cfg.cashPrinter : cfg.kitchenPrinter;
+    if (navigator.onLine && cfg.apiKey && printerId) {
+        try {
+            await _printNodeCloud(content, parseInt(printerId), cfg.apiKey, type);
+            return;
+        } catch (eCloud) {
+            console.warn('PrintNode KO:', eCloud.message);
         }
+    }
+
+    // 3) Dernier recours — queue localStorage (cuisine) ila kolchi طاح
+    if (type === 'kitchen') {
+        const { base64 } = _encodeEscPos(content);
+        const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+        const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
+        queue.push({ base64, printerName: cfg2.kitchenPrinterName, ts: Date.now() });
+        localStorage.setItem('_pq', JSON.stringify(queue));
+        if (!_syncInterval) _startSyncPolling();
     }
 }
 
