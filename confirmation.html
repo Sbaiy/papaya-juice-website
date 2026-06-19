@@ -600,7 +600,10 @@ function applyStatus(status, prev, updatedAt) {
         try { _supabase.removeChannel(_broadcastChannel); } catch(e) {}
         window.close();
         // Fallback si window.close() bloqué par le navigateur
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:Poppins,sans-serif;font-size:18px;text-align:center;">🎉 Merci et bon appétit!<br><small style="opacity:.5;font-size:13px;margin-top:8px;display:block">Vous pouvez fermer cette page</small></div>';
+        document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:22px;color:#fff;font-family:Poppins,sans-serif;text-align:center;padding:24px;">'
+          + '<div style="font-size:22px;font-weight:700;">🎉 Merci et bon appétit!</div>'
+          + '<button onclick="newOrder()" style="background:#f97316;color:#fff;border:0;border-radius:14px;padding:14px 30px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 8px 22px rgba(249,115,22,.4);">🛒 Nouvelle commande</button>'
+          + '<small style="opacity:.5;font-size:13px;">Vous pouvez fermer cette page</small></div>';
       }
     }, 1000);
   }

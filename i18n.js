@@ -200,6 +200,9 @@
     ["Décrivez votre réclamation…","وصف الشكاية ديالك…","Describe your complaint…"],
     ["Loading…","جاري التحميل…","Loading…"],["Retour","رجوع","Back"],
     ["Notre","","Our"],
+    ["🎉 Merci et bon appétit!","🎉 شكراً وبالصحة والراحة!","🎉 Thank you and enjoy!"],
+    ["Vous pouvez fermer cette page","تقدر تسدّ هاد الصفحة","You can close this page"],
+    ["🛒 Nouvelle commande","🛒 طلب جديد","🛒 New order"],
   ];
 
   // ── نصوص ديناميكية (فيها أرقام/أسماء متغيرة) — regex ──
