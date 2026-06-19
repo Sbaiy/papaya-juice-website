@@ -130,6 +130,19 @@
     ["Ajouter à la commande","أضف إلى الطلب","Add to Order"],["Jus naturel","عصير طبيعي","Natural Juice"],
     ["Boissons","المشروبات","Drinks"],["Petits-déjeuners","الفطور","Breakfasts"],["Crêpes et pancakes","كريب وبانكيك","Crepes and Pancakes"],
     ["Jeux","الألعاب","Games"],["Bienvenue à","مرحباً بكم في","Welcome to"],
+    // ── dashboard / accueil ──
+    ["du restaurant","ديال المطعم","of the restaurant"],
+    ["Bienvenue à Papaya Juice!","مرحباً بكم في Papaya Juice!","Welcome to Papaya Juice!"],
+    ["Connectez-vous pour accéder au tableau de bord","سجّل الدخول للوصول إلى لوحة التحكم","Sign in to access the dashboard"],
+    ["Commandes du jour","طلبات اليوم","Today's orders"],["Aperçu du menu","نظرة على القائمة","Menu overview"],
+    ["Total des catégories","مجموع التصنيفات","Total categories"],["Plats actifs","الأطباق النشطة","Active dishes"],
+    ["Cuisine","المطبخ","Kitchen"],["Fidélité","الولاء","Loyalty"],["Code QR","رمز QR","QR code"],
+    ["sur","من","of"],
+    // ── notifications ──
+    ["Notifications","الإشعارات","Notifications"],["Tout marquer comme lu","تحديد الكل كمقروء","Mark all as read"],
+    ["Rupture de stock","نفاد المخزون","Out of stock"],["Stock faible","مخزون منخفض","Low stock"],
+    ["est en rupture","نافد","is out of stock"],["restant","متبقّي","remaining"],["seuil","الحد","threshold"],
+    ["Aucune notification","لا توجد إشعارات","No notifications"],
   ];
 
   const LANGS = [{c:'ar',l:'العربية',f:'🇲🇦'},{c:'en',l:'English',f:'🇬🇧'},{c:'fr',l:'Français',f:'🇫🇷'}];
@@ -160,7 +173,10 @@
   }
   function apply(lang){
     cur=lang; localStorage.setItem(STORE,lang);
-    document.documentElement.lang=lang; document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
+    document.documentElement.lang=lang;
+    // ما كنقلبوش التخطيط كامل لـ RTL (كيسبّب تداخل الأيقونات + قلب الوقت).
+    // كنخلّيو التخطيط ثابت — العربية كتبان مزيان بفضل bidi ديال المتصفّح.
+    document.documentElement.dir='ltr';
     walk(document.body,lang); upd();
   }
 
