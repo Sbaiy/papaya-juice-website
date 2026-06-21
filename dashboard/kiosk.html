@@ -1356,10 +1356,10 @@ function _printDedupCheck(key) {
     return true;
 }
 
-// ── Wrapper principal — LOCAL d'abord (سريع + offline) → PrintNode fallback ──
+// ── Wrapper principal — LOCAL UNIQUEMENT (print-server.js daiman khdam) ──
+//   PrintNode tneha kamlan: simplifie l-flow → ZERO ambiguïté 3la fin tickets kaykhrejou.
 //   • Anti-double: dedup 3la محتوى l-ticket → ZERO double (مهما تعيّط مرتين)
-//   • Local FIRST: localhost سريع (server self-healing kayرجع 200 فوراً) + kيخدم offline
-//   • PrintNode: غير fallback ila l-local server طاح (نادر دابا — service robuste)
+//   • Local: localhost سريع (server self-healing kayرجع 200 فوراً + queue + retry + auto-recovery)
 //   • Non-bloquant: kيتعيّط b fire-and-forget mن submitOrder → UI فوري
 async function printViaPrintNode(content, type = 'kitchen') {
     // 🚫 Anti-double
@@ -1369,46 +1369,16 @@ async function printViaPrintNode(content, type = 'kitchen') {
         return;
     }
 
-    const cfgAll = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-
-    // ── CLÔTURE: PrintNode (imprimante dédiée choisie f réglages) d'abord ──
-    if (type === 'cloture') {
-        const clpId = cfgAll.cloturePrinter;
-        if (navigator.onLine && cfgAll.apiKey && clpId) {
-            try {
-                await _printNodeCloud(content, parseInt(clpId), cfgAll.apiKey, 'cloture');
-                return; // ✅ طبع 3la l-imprimante dyal cloture
-            } catch (e) {
-                console.warn('Cloture PrintNode KO → fallback local:', e.message);
-            }
-        }
-        // Fallback: l-imprimante cash local (باش الـ clôture ما تضيعش)
-        try { await _printUSB(content); } catch (e) { console.warn('Cloture local KO:', e.message); }
-        return;
-    }
-
-    // 1) LOCAL FIRST — localhost (سريع + offline)
+    // LOCAL — l-tari9a l-wa7ida (print-server.js: queue + retry + auto-recovery)
     try {
-        if (type === 'cash') { await _printUSB(content); }
-        else                 { await _printKitchen(content); }
+        if (type === 'cash' || type === 'cloture') { await _printUSB(content); }
+        else                                        { await _printKitchen(content); }
         return; // ✅ تصیفط للlocal → سالينا (l-server kayضمن l-livraison + retry self-healing)
     } catch (eLocal) {
-        console.warn('Local KO → essai PrintNode:', eLocal.message);
+        console.warn('Print local KO:', eLocal.message);
     }
 
-    // 2) FALLBACK — PrintNode cloud (ila l-local server طاح + online + configuré)
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    const printerId = type === 'cash' ? cfg.cashPrinter : cfg.kitchenPrinter;
-    if (navigator.onLine && cfg.apiKey && printerId) {
-        try {
-            await _printNodeCloud(content, parseInt(printerId), cfg.apiKey, type);
-            return;
-        } catch (eCloud) {
-            console.warn('PrintNode KO:', eCloud.message);
-        }
-    }
-
-    // 3) Dernier recours — queue localStorage (cuisine) ila kolchi طاح
+    // Dernier recours — queue localStorage (cuisine) ila local server طاح b al kamil
     if (type === 'kitchen') {
         const { base64 } = _encodeEscPos(content);
         const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
@@ -1417,27 +1387,6 @@ async function printViaPrintNode(content, type = 'kitchen') {
         localStorage.setItem('_pq', JSON.stringify(queue));
         if (!_syncInterval) _startSyncPolling();
     }
-}
-
-// ── PrintNode cloud — kayصيفط نفس RAW base64 (ESC/POS) دیال l-local ──
-async function _printNodeCloud(content, printerId, apiKey, type) {
-    const { base64 } = _encodeEscPos(content);
-    const res = await fetch('https://api.printnode.com/printjobs', {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Basic ' + btoa(apiKey + ':'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            printerId: printerId,
-            title: 'Papaya ' + (type === 'cash' ? 'Addition' : type === 'cloture' ? 'Clôture' : 'Cuisine'),
-            contentType: 'raw_base64',
-            content: base64,
-            source: 'Kiosk Papaya'
-        }),
-        signal: AbortSignal.timeout(12000)  // 12s : succès véritable kayحل 9bel → ماشي double
-    });
-    if (!res.ok) throw new Error('PrintNode ' + res.status);
 }
 
 // ── Flush queue cuisine (retry imprimante Windows) ──
@@ -1600,6 +1549,26 @@ async function submitOrder() {
             serveur: document.getElementById('userName').textContent.trim() || 'Kiosk'
         };
 
+        // ── FIX VITESSE: tickets kaykhrejou DGHYA mn cartSnapshot (prix deja sahi cote client,
+        //    backend ma kaybadalch items/total — howa ghi storage). Ma kanstenawch API.orders.create()
+        //    bach n-imprimiw → kay-tsift response f ~0.5s bdal 1-2.5s.
+        //    FIX VITESSE 2: kanbniw w kantsiftou tickets (fetch ل-print-server) QBEL clearCart()/
+        //    renderProducts() (DOM lourd, kayakhud dozens ms) — bach l-fetch local ybda DGHYA fawran,
+        //    bla matnstnaw renders mab9awsh ghadi ydiro retard 3la print (fetch async aslan). ──
+        const finalItems = cartSnapshot.map(i => ({
+            product: { title: i.product.title, price: parseFloat(i.customPrice ?? getKioskPrice(i.product)), category: i.product.category||'' },
+            qty: i.qty,
+            customPrice: parseFloat(i.customPrice ?? getKioskPrice(i.product)),
+            extras: i.extras || []
+        }));
+        const finalTotal = orderPayload.total.toFixed(2);
+
+        // FIX COUNTER: localId (1,2,3...) machi ID backend bach numero yb9a mn 1 b3d cloture
+        const kitchenTicket  = generateKitchenTicket(finalItems, tableVal, localId);
+        const additionTicket = generateTextTicket(finalItems, tableVal, finalTotal, localId);
+        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
+        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
+
         showToast('✅ Commande envoyée !');
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
@@ -1607,43 +1576,19 @@ async function submitOrder() {
         _submitBusy = false; // FIX: reset ghi hna (machi f l akhir dyal print) — bach commande tania
                               // ma tbqach mblock ila l précédente mazal kat-print f background
 
-        // ── En arrière-plan : créer order + imprimer tickets B3D response (prix sahi) ──
+        // ── En arrière-plan : créer order côté backend (stock, ticket persistant, broadcast) ──
+        //    Tickets deja khrjou fou9 — hadshi ghi pour enregistrer/synchroniser, machi blocking.
         (async () => {
             try {
                 const createdOrder = await API.orders.create(orderPayload);
-                const orderId = createdOrder && createdOrder.id ? createdOrder.id : localId;
-
-                // FIX PRIX: tickets kaykhrejou B3D backend bach prix modifier (customPrice) yban sahi
-                const rawItems = createdOrder && createdOrder.items
-                    ? (typeof createdOrder.items === 'string' ? JSON.parse(createdOrder.items) : createdOrder.items)
-                    : cartSnapshot.map(i => ({ title: i.product.title, price: parseFloat(i.customPrice ?? getKioskPrice(i.product)), qty: i.qty, category: i.product.category||'', extras: i.extras||[] }));
-                const finalItems = rawItems.map(i => ({
-                    product: { title: i.title||i.name||'', price: parseFloat(i.price||0), category: i.category||'' },
-                    qty: i.qty || 1,
-                    customPrice: parseFloat(i.price||0),
-                    extras: i.extras || []
-                }));
-                const finalTotal = createdOrder ? parseFloat(createdOrder.total||0).toFixed(2) : orderPayload.total.toFixed(2);
-
-                // FIX COUNTER: localId (1,2,3...) machi ID backend bach numero yb9a mn 1 b3d cloture
-                const kitchenTicket  = generateKitchenTicket(finalItems, tableVal, localId);
-                const additionTicket = generateTextTicket(finalItems, tableVal, finalTotal, localId);
-                printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-                printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
-
                 // Backend crée direct en 'preparing' si source=kiosk — juste broadcast
                 if (createdOrder) {
                     _broadcastOrder('new_order', { ...createdOrder, status: 'en_preparation' });
                 }
             } catch(e) {
-                // OFFLINE FALLBACK: print bl prix local + save queue
-                const ticketTotal = orderPayload.total.toFixed(2);
-                const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, localId);
-                const additionTicket = generateTextTicket(cartSnapshot, tableVal, ticketTotal, localId);
-                printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print offline:', e));
-                printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print offline:', e));
-
-                _oqPush(orderPayload, true); // printed:true — tickets kherjou offline
+                // OFFLINE FALLBACK: order ma twjdch f backend → queue bach tt-sync mn b3d
+                // (tickets deja khrjou fou9 — printed:true bach makhrjouch mra thanya)
+                _oqPush(orderPayload, true);
                 _isOffline = true;
                 _showOfflineBanner();
                 _startSyncPolling();
