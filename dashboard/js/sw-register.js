@@ -1,5 +1,5 @@
 // === Papaya Kiosk · sw-register.js ===
-// Enregistrement du Service Worker (extrait, بلا تغيير)
+// Enregistrement du Service Worker
 
 // ── Service Worker — enregistrement + mise à jour auto ──
 if ('serviceWorker' in navigator) {

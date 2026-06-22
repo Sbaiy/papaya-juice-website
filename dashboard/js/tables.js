@@ -1,5 +1,5 @@
 // === Papaya Kiosk · tables.js ===
-// Plan des tables / détail table / encaissement (extrait, بلا تغيير)
+// Plan des tables / détail table / encaissement
 
 const PLAN_OCCUPIED_STATUSES = new Set(['pending','en_attente','preparing','en_preparation','ready','pret']);
 

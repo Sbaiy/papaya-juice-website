@@ -1,5 +1,5 @@
 // === Papaya Kiosk · api.js ===
-// API layer — apiFetch + Auth/Menu/Orders/Personnel (extrait de kiosk.html, اللوجيك بحال ما هو)
+// API layer — apiFetch + Auth/Menu/Orders/Personnel
 
 /**
  * ╔══════════════════════════════════════════╗

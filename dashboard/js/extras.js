@@ -1,5 +1,5 @@
 // === Papaya Kiosk · extras.js ===
-// Modal de sélection des extras (extrait, بلا تغيير)
+// Modal de sélection des extras
 
 // ── EXTRAS SELECTION STATE ──
 let _eselProduct = null;

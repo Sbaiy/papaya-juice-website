@@ -1,5 +1,5 @@
 // === Papaya Kiosk · kiosk-core.js ===
-// Coeur du kiosk — produits, panier, tickets, impression, PIN/auth, realtime, offline (extrait, بلا تغيير)
+// Coeur du kiosk — produits, panier, tickets, impression, PIN/auth, realtime, offline
 
 const BACKEND_URL = 'https://papaya-juice-backend-production.up.railway.app';
 const SECRET_PIN  = '1234';
@@ -579,6 +579,12 @@ async function _printKitchen(content) {
     await _printLocal(content, cfg.kitchenPrinterName);
 }
 
+// ── Clôture (local) → imprimante Clôture dédiée, sinon retombe sur l'Addition ──
+async function _printClotureLocal(content) {
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    await _printLocal(content, cfg.cloturePrinterName || cfg.usbPrinterName);
+}
+
 // ════════════════════════════════════════════════════════
 //  ANTI-DOUBLE (dedup) — cross-tab via localStorage
 //  Nefs ticket (محتوى+نوع) → ما يطبعش مرتين ف نافذة قصيرة.
@@ -625,7 +631,7 @@ async function printViaPrintNode(content, type = 'kitchen') {
             try { await _printNodeCloud(content, parseInt(clpId), cfg.apiKey, 'cloture'); return; }
             catch (e) { console.warn('Cloture PrintNode KO → fallback local:', e.message); }
         }
-        try { await _printUSB(content); } catch (e) { console.warn('Cloture local KO:', e.message); }
+        try { await _printClotureLocal(content); } catch (e) { console.warn('Cloture local KO:', e.message); }
         return;
     }
 
