@@ -188,8 +188,17 @@
         </div>
       </div>
       <div class="form-row" style="margin-top:12px;">
+        <div class="form-group">
+          <label class="form-label">🧮 Imprimante Clôture (local)</label>
+          <select class="form-input" id="cloturePrinterName">
+            <option value="">— Comme l'Addition —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px;">
         <button class="btn-test" onclick="testLocal('kitchen')">🧪 Test Cuisine</button>
         <button class="btn-test" onclick="testLocal('cash')">🧪 Test Addition</button>
+        <button class="btn-test" onclick="testLocal('cloture')">🧪 Test Clôture</button>
       </div>
     </div>
   </div>
@@ -320,10 +329,13 @@ function renderLocalPrinters() {
 
   const ks = document.getElementById('kitchenPrinterName');
   const cs = document.getElementById('usbPrinterName');
+  const cl = document.getElementById('cloturePrinterName');
   ks.innerHTML = opts;
   cs.innerHTML = opts;
+  if (cl) cl.innerHTML = '<option value="">— Comme l\'Addition —</option>' + localPrinters.map(p => `<option value="${p}">${p}</option>`).join('');
   if (cfg.kitchenPrinterName) ks.value = cfg.kitchenPrinterName;
   if (cfg.usbPrinterName)     cs.value = cfg.usbPrinterName;
+  if (cl && cfg.cloturePrinterName) cl.value = cfg.cloturePrinterName;
 
   const listEl = document.getElementById('localPrintersList');
   if (!localPrinters.length) {
@@ -338,7 +350,9 @@ function renderLocalPrinters() {
 }
 
 async function testLocal(role) {
-  const name = document.getElementById(role === 'kitchen' ? 'kitchenPrinterName' : 'usbPrinterName').value;
+  const _selId = role === 'kitchen' ? 'kitchenPrinterName' : role === 'cloture' ? 'cloturePrinterName' : 'usbPrinterName';
+  let name = document.getElementById(_selId).value;
+  if (role === 'cloture' && !name) name = document.getElementById('usbPrinterName').value; // fallback Addition
   if (!name) { toast('Sélectionne l\'imprimante d\'abord', 'err'); return; }
   try {
     toast('Test…', 'info');
@@ -402,6 +416,8 @@ function saveConfig() {
   // Local (fallback)
   cfg.kitchenPrinterName = kitchen;
   cfg.usbPrinterName     = usb;
+  const clotureLocal = (document.getElementById('cloturePrinterName')||{}).value || '';
+  if (clotureLocal) cfg.cloturePrinterName = clotureLocal; else delete cfg.cloturePrinterName;
   // PrintNode (cloud — primary fach kayn WiFi)
   if (pnKey)     cfg.apiKey         = pnKey;        else delete cfg.apiKey;
   if (pnKitchen) cfg.kitchenPrinter = pnKitchen;    else delete cfg.kitchenPrinter;
