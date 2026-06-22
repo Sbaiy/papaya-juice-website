@@ -1,0 +1,101 @@
+/* ============================================================
+   PAPAYA · THEME — Dark Green + Dark Orange (pro & smooth)
+   ------------------------------------------------------------
+   Design غير: كيعيد تعريف الألوان فقط (CSS variables) + لمسات
+   smooth. ماكيمسّ لا HTML لا JS. زيدو فـ آخر <head> ديال كل صفحة:
+      <link rel="stylesheet" href="theme.css">
+   (خاصو يجي MORA الـ <style> ديال الصفحة باش يطغى عليه.)
+   باش ترجع للوك القديم: حيّد داك السطر غير.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── Fonds : vert forêt profond ── */
+  --bg:            #0a140f;
+  --dark-bg:       #0a140f;
+  --page-bg:       #0a140f;
+  --panel:         #0f1d16;
+  --card:          #14271d;
+  --card-bg:       #14271d;
+  --card-hover:    #1b3327;
+  --cart-bg:       #0f1d16;
+  --input-bg:      #0c1812;
+
+  /* ── Accent principal : orange foncé ── */
+  --orange:        #e2701a;
+  --primary:       #e2701a;
+  --orange-light:  #f5853a;
+  --orange-dim:    rgba(226,112,26,.14);
+
+  /* ── Couleurs sémantiques (gardées distinctes) ── */
+  --green:         #2fbf71;   /* succès / positif */
+  --red:           #ef5350;   /* erreur */
+  --yellow:        #e6b54a;   /* avertissement */
+  --blue:          #4f8cff;
+  --purple:        #b070f0;
+
+  /* ── Texte ── */
+  --white:         #eef4f0;
+  --text:          #eef4f0;
+  --muted:         #93a89c;
+  --gray:          #93a89c;
+
+  /* ── Lignes & surfaces ── */
+  --border:         rgba(120,200,150,.12);
+  --border-color:   rgba(120,200,150,.12);
+  --border-hov:     rgba(226,112,26,.45);
+  --border-active:  #e2701a;
+
+  --glass:         rgba(15,29,22,.62);
+  --glass-hov:     rgba(27,51,39,.72);
+  --blur:          blur(14px);
+
+  --shadow:        0 20px 50px -22px rgba(0,0,0,.6);
+  --shadow-lg:     0 40px 90px -30px rgba(0,0,0,.78);
+  --radius:        14px;
+}
+
+/* ── Typo pro + lissage (sans toucher la structure) ── */
+body {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font-family: inherit; }
+
+/* ── Transitions smooth sur les éléments interactifs ── */
+button, a, input, select, textarea,
+[class*="btn"], [class*="card"], [class*="tab"], [class*="chip"], [class*="badge"] {
+  transition: background-color .22s ease, border-color .22s ease,
+              color .22s ease, box-shadow .25s ease, transform .18s ease;
+}
+
+/* ── Micro-interactions (douces, pro) ── */
+button:hover, [class*="btn"]:hover { transform: translateY(-1px); }
+button:active, [class*="btn"]:active { transform: translateY(0); }
+
+/* ── Focus visible (accessibilité) ── */
+:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Scrollbar assortie ── */
+* { scrollbar-width: thin; scrollbar-color: #2a4636 transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #244033; border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--orange); background-clip: content-box; }
+
+/* ── Sélection de texte ── */
+::selection { background: rgba(226,112,26,.32); color: #fff; }
+
+/* ── Respect reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  button:hover, [class*="btn"]:hover { transform: none; }
+}
