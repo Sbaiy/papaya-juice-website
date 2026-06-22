@@ -155,13 +155,13 @@
 
   <div style="margin:32px 0 24px;">
     <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;">🖨️ Paramètres Impression</h1>
-    <p style="font-size:14px;color:var(--muted);">Imprimantes locales — connectées au PC du kiosk</p>
+    <p style="font-size:14px;color:var(--muted);">Imprimantes locales (rapide, &lt;0.5s) · PrintNode en secours</p>
   </div>
 
   <!-- ══ IMPRIMANTES LOCALES ══ -->
   <div class="card">
-    <div class="card-title">🖨️ Imprimantes du PC</div>
-    <div class="card-sub">node print-server.js — localhost:3001</div>
+    <div class="card-title">🖨️ Imprimantes du PC — Principal (rapide)</div>
+    <div class="card-sub">node print-server.js — localhost:3001 · imprime en &lt;0.5s (priorité)</div>
 
     <div class="form-row" style="align-items:flex-end;margin-bottom:8px;">
       <button class="btn-primary" onclick="scanLocalPrinters()" style="height:44px;">
@@ -194,6 +194,52 @@
     </div>
   </div>
 
+  <!-- ══ PRINTNODE (CLOUD — fach kayn WiFi) ══ -->
+  <div class="card" style="margin-top:20px;">
+    <div class="card-title">☁️ PrintNode (Cloud) — Secours</div>
+    <div class="card-sub">Secours seulement: utilisé ila l-serveur local طاح (cloud ماشي &lt;0.5s).</div>
+
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">🔑 Clé API PrintNode</label>
+      <input class="form-input" id="pnApiKey" type="text" placeholder="ex: AbcD1234..." autocomplete="off">
+    </div>
+
+    <div class="form-row" style="align-items:flex-end;margin-bottom:8px;">
+      <button class="btn-primary" onclick="loadPrintNodePrinters()" style="height:44px;">
+        🔄 Charger imprimantes PrintNode
+      </button>
+      <span id="pnStatus" style="font-size:12px;color:var(--muted);">—</span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🍳 Cuisine (PrintNode)</label>
+        <select class="form-input" id="pnKitchen">
+          <option value="">— Sélectionner —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🧾 Addition (PrintNode)</label>
+        <select class="form-input" id="pnCash">
+          <option value="">— Sélectionner —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:4px;">
+      <label class="form-label">🧮 Clôture (PrintNode)</label>
+      <select class="form-input" id="pnCloture">
+        <option value="">— Sélectionner —</option>
+      </select>
+    </div>
+
+    <div class="form-row" style="margin-top:14px;">
+      <button class="btn-test" onclick="testPrintNode('kitchen')">🧪 Test Cuisine</button>
+      <button class="btn-test" onclick="testPrintNode('cash')">🧪 Test Addition</button>
+      <button class="btn-test" onclick="testPrintNode('cloture')">🧪 Test Clôture</button>
+    </div>
+  </div>
+
   <div class="actions-row">
     <button class="btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
   </div>
@@ -211,7 +257,45 @@ function saveCfgRaw(o) { localStorage.setItem(CFG_KEY, JSON.stringify(o)); }
 
 window.addEventListener('DOMContentLoaded', () => {
   scanLocalPrinters();
+  // Charger config PrintNode déjà enregistrée
+  const cfg = loadCfg();
+  if (cfg.apiKey) document.getElementById('pnApiKey').value = cfg.apiKey;
+  if (cfg.apiKey) loadPrintNodePrinters();
 });
+
+// ── Charger la liste des imprimantes depuis PrintNode (cloud) ──
+async function loadPrintNodePrinters() {
+  const apiKey = document.getElementById('pnApiKey').value.trim();
+  const statusEl = document.getElementById('pnStatus');
+  if (!apiKey) { statusEl.textContent = '⚠️ Mets la clé API d\'abord'; return; }
+  statusEl.textContent = '⏳ Chargement…';
+  try {
+    const res = await fetch('https://api.printnode.com/printers', {
+      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':') },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) throw new Error('PrintNode ' + res.status);
+    const printers = await res.json();
+    const cfg = loadCfg();
+    ['pnKitchen', 'pnCash', 'pnCloture'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = '<option value="">— Sélectionner —</option>';
+      printers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name} (#${p.id})`;
+        sel.appendChild(opt);
+      });
+    });
+    if (cfg.kitchenPrinter) document.getElementById('pnKitchen').value = cfg.kitchenPrinter;
+    if (cfg.cashPrinter)    document.getElementById('pnCash').value    = cfg.cashPrinter;
+    if (cfg.cloturePrinter) document.getElementById('pnCloture').value = cfg.cloturePrinter;
+    statusEl.textContent = `✅ ${printers.length} imprimante(s)`;
+  } catch(e) {
+    statusEl.textContent = '❌ ' + e.message;
+    toast('Clé API invalide ou pas de connexion', 'err');
+  }
+}
 
 async function scanLocalPrinters() {
   const statusEl = document.getElementById('scanStatus');
@@ -273,21 +357,58 @@ async function testLocal(role) {
   } catch(e) { toast('❌ Print server inaccessible', 'err'); }
 }
 
+// ── Test PrintNode (cloud) — kayصيفط ticket تجريبي l l-imprimante l-mokhtara ──
+async function testPrintNode(role) {
+  const apiKey = document.getElementById('pnApiKey').value.trim();
+  if (!apiKey) { toast('Mets la clé API d\'abord', 'err'); return; }
+  const selId = role === 'kitchen' ? 'pnKitchen' : role === 'cash' ? 'pnCash' : 'pnCloture';
+  const printerId = document.getElementById(selId).value;
+  if (!printerId) { toast('Sélectionne l\'imprimante PrintNode d\'abord', 'err'); return; }
+  const label = role === 'kitchen' ? 'CUISINE' : role === 'cash' ? 'ADDITION' : 'CLOTURE';
+  try {
+    toast('Test PrintNode…', 'info');
+    const ESC = '\x1B', GS = '\x1D';
+    const t = ESC + '@' + `\n  TEST ${label} (PrintNode)\n  OK\n\n\n` + ESC + 'd\x03' + GS + 'V\x41\x03';
+    const bytes = []; for (let i=0;i<t.length;i++) bytes.push(t.charCodeAt(i)&0xFF);
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+    const res = await fetch('https://api.printnode.com/printjobs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':'), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ printerId: parseInt(printerId), title: 'Papaya Test ' + label, contentType: 'raw_base64', content: b64, source: 'Réglages Papaya' }),
+      signal: AbortSignal.timeout(12000)
+    });
+    if (res.ok) toast(`✅ ${label} PrintNode — envoyé !`, 'ok');
+    else toast('❌ PrintNode erreur ' + res.status + ' (clé/imprimante?)', 'err');
+  } catch(e) { toast('❌ PrintNode inaccessible (WiFi?)', 'err'); }
+}
+
 function saveConfig() {
   const kitchen = document.getElementById('kitchenPrinterName').value;
   const usb     = document.getElementById('usbPrinterName').value;
+  const pnKey     = document.getElementById('pnApiKey').value.trim();
+  const pnKitchen = document.getElementById('pnKitchen').value;
+  const pnCash    = document.getElementById('pnCash').value;
+  const pnCloture = document.getElementById('pnCloture').value;
 
-  if (!kitchen || !usb) {
-    toast('⚠️ Khass tkhtar imprimante Cuisine w Addition', 'err');
+  // Khass 3la l-aql l-local WLA PrintNode kاملين
+  const localOK = kitchen && usb;
+  const cloudOK = pnKey && pnKitchen && pnCash;
+  if (!localOK && !cloudOK) {
+    toast('⚠️ Khass l-imprimantes locales WLA PrintNode (l-aql wحda)', 'err');
     return;
   }
 
   const cfg = loadCfg();
+  // Local (fallback)
   cfg.kitchenPrinterName = kitchen;
   cfg.usbPrinterName     = usb;
-  // Nettoyage ancien LAN + PrintNode (mab9awsh mستعملين)
+  // PrintNode (cloud — primary fach kayn WiFi)
+  if (pnKey)     cfg.apiKey         = pnKey;        else delete cfg.apiKey;
+  if (pnKitchen) cfg.kitchenPrinter = pnKitchen;    else delete cfg.kitchenPrinter;
+  if (pnCash)    cfg.cashPrinter    = pnCash;        else delete cfg.cashPrinter;
+  if (pnCloture) cfg.cloturePrinter = pnCloture;    else delete cfg.cloturePrinter;
+  // Nettoyage ancien LAN
   delete cfg.kitchenPrinterIP; delete cfg.kitchenPrinterPort;
-  delete cfg.apiKey; delete cfg.kitchenPrinter; delete cfg.cashPrinter; delete cfg.cloturePrinter;
   saveCfgRaw(cfg);
   toast('✅ Configuration enregistrée !', 'ok');
 }
