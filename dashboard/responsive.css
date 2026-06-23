@@ -7,8 +7,12 @@
   .main{ padding:16px 12px 40px !important; max-width:100% !important; }
   .page-header{ flex-direction:column !important; align-items:flex-start !important; gap:12px !important; }
   .page-title{ font-size:23px !important; }
-  .topbar{ height:auto !important; flex-wrap:wrap !important; padding:10px 12px !important; row-gap:8px; }
-  .topbar-right{ flex-wrap:wrap !important; gap:6px !important; }
+  /* Topbar mobile — مرتّب (صفوف نظيفة فـ الوسط بدل التبعثر) */
+  .topbar{ flex-direction:column !important; align-items:center !important; height:auto !important; gap:11px !important; padding:14px !important; }
+  .nav-brand{ justify-content:center !important; gap:10px !important; }
+  .topbar-center{ position:static !important; transform:none !important; order:2 !important; width:100%; }
+  .topbar-right{ width:100%; flex-wrap:wrap !important; justify-content:center !important; gap:9px !important; order:3 !important; }
+  #papaya-lang{ order:4 !important; margin:0 auto !important; justify-content:center !important; }
   /* Onglets → scroll horizontal */
   /* nav-tabs: wrap (ماشي scroll) باش الـ dropdown يهبط بلا ما يتقصّ */
   .nav-tabs{ flex-wrap:wrap !important; justify-content:center !important; overflow:visible !important; }
