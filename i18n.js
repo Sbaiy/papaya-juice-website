@@ -225,7 +225,7 @@
     { re: /^(\d+)\s*\/\s*(\d+)\s+photos$/i,                ar:'$1 / $2 صور',                     en:'$1 / $2 photos' },
   ];
 
-  const LANGS = [{c:'fr',l:'Français',f:'🇫🇷'},{c:'en',l:'English',f:'🇬🇧'},{c:'ar',l:'العربية',f:'🇲🇦'}];
+  const LANGS = [{c:'fr',l:'Français',cc:'fr'},{c:'en',l:'English',cc:'gb'},{c:'ar',l:'العربية',cc:'ma'}];
   const STORE = 'papaya_lang';
   const SKIP = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','OPTION']);
 
@@ -277,12 +277,11 @@
     var nav=document.querySelector('.topbar')||document.querySelector('header.topbar')||document.querySelector('.glass-header')||document.querySelector('.main-header')||document.querySelector('nav')||document.querySelector('header');
     var w=document.createElement('div'); w.id='papaya-lang';
     var s=document.createElement('style'); s.textContent=`
-      #papaya-lang{display:inline-flex;align-items:center;gap:6px;font-family:inherit;flex:0 0 auto}
-      #papaya-lang>button{display:flex;align-items:center;gap:6px;background:var(--glass,rgba(255,255,255,.06));color:var(--text,#fff);border:1px solid var(--border,rgba(255,255,255,.14));border-radius:11px;padding:6px 11px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .18s,background .18s,transform .15s,color .18s}
-      #papaya-lang>button .flag{font-size:18px;line-height:1}
-      #papaya-lang>button .code{font-size:12px;letter-spacing:.3px;opacity:.85}
+      #papaya-lang{display:inline-flex;align-items:center;gap:5px;font-family:inherit;flex:0 0 auto}
+      #papaya-lang>button{display:flex;align-items:center;justify-content:center;background:var(--glass,rgba(255,255,255,.06));border:1px solid var(--border,rgba(255,255,255,.16));border-radius:9px;padding:4px;cursor:pointer;line-height:0;transition:border-color .18s,transform .15s,box-shadow .18s}
+      #papaya-lang>button img{width:26px;height:18px;object-fit:cover;border-radius:3px;display:block}
       #papaya-lang>button:hover{border-color:var(--orange,#e2701a);transform:translateY(-1px)}
-      #papaya-lang>button.active{border-color:var(--orange,#e2701a);background:var(--orange-dim,rgba(226,112,26,.16));color:var(--orange-light,#f5933f)}`;
+      #papaya-lang>button.active{border-color:var(--orange,#e2701a);box-shadow:0 0 0 2px rgba(226,112,26,.45)}`;
     document.head.appendChild(s);
     if(nav){
       nav.style.alignItems='center'; if(!nav.style.gap) nav.style.gap='10px';
@@ -290,7 +289,7 @@
       nav.appendChild(w);
     } else { w.style.position='fixed'; w.style.top='14px'; w.style.insetInlineEnd='14px'; w.style.zIndex='99999'; document.body.appendChild(w); }
     row=w;
-    w.innerHTML=LANGS.map(function(x){return '<button data-lang="'+x.c+'" type="button" title="'+x.l+'"><span class="flag">'+x.f+'</span><span class="code">'+x.c.toUpperCase()+'</span></button>';}).join('');
+    w.innerHTML=LANGS.map(function(x){return '<button data-lang="'+x.c+'" type="button" title="'+x.l+'" aria-label="'+x.l+'"><img src="https://flagcdn.com/w40/'+x.cc+'.png" alt="'+x.l+'" loading="lazy"></button>';}).join('');
     w.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){apply(b.dataset.lang);});});
   }
   function upd(){ if(!row) return; row.querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.dataset.lang===cur);}); }
