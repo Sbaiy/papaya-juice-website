@@ -241,7 +241,7 @@ tr.indisponible .switch { opacity: 1 !important; }
 </head>
 <body>
 <script>
-if (sessionStorage.getItem('papaya_auth') !== '1') {
+if (!localStorage.getItem('papaya_token')) {
     window.location.replace('/dashboard');
 }
 // ── Vérification token expiré ──
@@ -269,7 +269,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') {
       sessionStorage.removeItem('papaya_user');
       window.location.replace('/dashboard');
     }
-  } catch(e) {}
+  } catch(e) { localStorage.removeItem('papaya_token'); window.location.replace('/dashboard'); }
 })();
 </script>
 

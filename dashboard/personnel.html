@@ -174,9 +174,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </head>
 <body>
 <script>
-if (sessionStorage.getItem('papaya_auth') !== '1') {
+if (!localStorage.getItem('papaya_token')) {
     window.location.replace('/dashboard');
 }
+(function(){var _t=localStorage.getItem('papaya_token');if(!_t)return;try{var _p=JSON.parse(atob(_t.split('.')[1]));if(_p.exp&&Date.now()/1000>_p.exp){localStorage.removeItem('papaya_token');localStorage.removeItem('papaya_user');sessionStorage.clear();alert('Session expir\u00e9e. Reconnectez-vous.');window.location.replace('/dashboard');}}catch(e){localStorage.removeItem('papaya_token');window.location.replace('/dashboard');}})();
 </script>
 
 <!-- TOPBAR -->

@@ -438,25 +438,9 @@ button,a,input,[class*="btn"],[class*="nav-item"],.product-card,.qty-btn,.pin-ke
 ::-webkit-scrollbar-track{ background:transparent; }
 :focus-visible{ outline:2px solid var(--orange); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } .product-card:hover,.nav-item:hover,.pin-key:hover,.btn-order:hover,.btn-add:hover{ transform:none; } }
-
-/* ── Responsive mobile (PC > 820px ماشي متأثر) ── */
-@media (max-width:820px){
-  html,body{ overflow:auto !important; height:auto !important; }
-  .layout{ flex-direction:column !important; height:auto !important; min-height:100vh; }
-  .sidebar{ width:100% !important; min-width:0 !important; border-right:none !important; border-bottom:1px solid var(--border) !important; }
-  .nav-list{ grid-template-columns:repeat(3,1fr) !important; }
-  .main{ width:100% !important; }
-  .content-area{ overflow:visible !important; }
-  .cart-sidebar{ width:100% !important; min-width:0 !important; border-left:none !important; border-top:1px solid var(--border) !important; }
-  .products-grid{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)) !important; }
-  .topbar{ flex-wrap:wrap !important; height:auto !important; padding:10px 12px !important; row-gap:8px; }
-}
-@media (max-width:480px){
-  .nav-list{ grid-template-columns:repeat(2,1fr) !important; }
-  .products-grid{ grid-template-columns:repeat(auto-fill,minmax(120px,1fr)) !important; }
-}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="theme.css">
 </head>
 <body>
 

@@ -462,7 +462,7 @@
 
 <script>
 // ── Auth check ──
-if (sessionStorage.getItem('papaya_auth') !== '1') { window.location.replace('/dashboard'); }
+if (!localStorage.getItem('papaya_token')) { window.location.replace('/dashboard'); }
 (function() {
   const token = localStorage.getItem('papaya_token');
   if (!token) return;
@@ -473,7 +473,7 @@ if (sessionStorage.getItem('papaya_auth') !== '1') { window.location.replace('/d
       ['papaya_auth','papaya_user'].forEach(k => sessionStorage.removeItem(k));
       alert('Session expirée.'); window.location.replace('/dashboard');
     }
-  } catch(e) {}
+  } catch(e) { localStorage.removeItem('papaya_token'); window.location.replace('/dashboard'); }
 })();
 
 // ── Supabase ──

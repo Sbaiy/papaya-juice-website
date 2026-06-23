@@ -274,9 +274,10 @@
 </main>
 
 <script>
-if (sessionStorage.getItem('papaya_auth') !== '1') {
+if (!localStorage.getItem('papaya_token')) {
   window.location.replace('/dashboard');
 }
+(function(){var _t=localStorage.getItem('papaya_token');if(!_t)return;try{var _p=JSON.parse(atob(_t.split('.')[1]));if(_p.exp&&Date.now()/1000>_p.exp){localStorage.removeItem('papaya_token');localStorage.removeItem('papaya_user');sessionStorage.clear();alert('Session expir\u00e9e. Reconnectez-vous.');window.location.replace('/dashboard');}}catch(e){localStorage.removeItem('papaya_token');window.location.replace('/dashboard');}})();
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsd3NodXVycnV2dG5xd2diamtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkzMjAsImV4cCI6MjA5NDg1NTMyMH0.PV4EpbydpLTS36OVyaqy9qANWRec7B9F-emlaS0qqRw";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
