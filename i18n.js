@@ -225,7 +225,7 @@
     { re: /^(\d+)\s*\/\s*(\d+)\s+photos$/i,                ar:'$1 / $2 صور',                     en:'$1 / $2 photos' },
   ];
 
-  const LANGS = [{c:'ar',l:'العربية',f:'🇲🇦'},{c:'en',l:'English',f:'🇬🇧'},{c:'fr',l:'Français',f:'🇫🇷'}];
+  const LANGS = [{c:'fr',l:'Français',f:'🇫🇷'},{c:'en',l:'English',f:'🇬🇧'},{c:'ar',l:'العربية',f:'🇲🇦'}];
   const STORE = 'papaya_lang';
   const SKIP = new Set(['SCRIPT','STYLE','NOSCRIPT','CODE','PRE','OPTION']);
 
@@ -272,34 +272,28 @@
     walk(document.body,lang); upd();
   }
 
-  let btn,menu;
+  let row;
   function build(){
     var nav=document.querySelector('.topbar')||document.querySelector('header.topbar')||document.querySelector('.glass-header')||document.querySelector('.main-header')||document.querySelector('nav')||document.querySelector('header');
     var w=document.createElement('div'); w.id='papaya-lang';
-    w.innerHTML='<button id="pl-btn" type="button" aria-label="Langue"></button><div id="pl-menu" role="menu"></div>';
     var s=document.createElement('style'); s.textContent=`
-      #papaya-lang{position:relative;display:inline-flex;align-items:center;font-family:inherit;flex:0 0 auto}
-      #pl-btn{display:flex;align-items:center;gap:7px;background:var(--glass,rgba(255,255,255,.08));color:var(--text,#fff);border:1px solid var(--border,rgba(255,255,255,.18));border-radius:999px;padding:7px 13px;font-size:14px;font-weight:700;cursor:pointer;line-height:1;white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-      #pl-btn:hover{border-color:var(--orange,#f59e0b)}
-      #pl-menu{position:absolute;inset-inline-end:0;top:calc(100% + 8px);background:var(--glass,#1c2620);border:1px solid var(--border,rgba(255,255,255,.18));border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.4);padding:6px;min-width:172px;display:none;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);z-index:99999}
-      #pl-menu.open{display:block}
-      #pl-menu button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:14px;color:var(--text,#fff);cursor:pointer;text-align:start;font-family:inherit}
-      #pl-menu button:hover{background:var(--glass-hov,rgba(255,255,255,.08))}
-      #pl-menu button.active{color:var(--orange,#f59e0b);font-weight:800}
-      #pl-menu button span:first-child{font-size:17px}`;
+      #papaya-lang{display:inline-flex;align-items:center;gap:6px;font-family:inherit;flex:0 0 auto}
+      #papaya-lang>button{display:flex;align-items:center;gap:6px;background:var(--glass,rgba(255,255,255,.06));color:var(--text,#fff);border:1px solid var(--border,rgba(255,255,255,.14));border-radius:11px;padding:6px 11px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .18s,background .18s,transform .15s,color .18s}
+      #papaya-lang>button .flag{font-size:18px;line-height:1}
+      #papaya-lang>button .code{font-size:12px;letter-spacing:.3px;opacity:.85}
+      #papaya-lang>button:hover{border-color:var(--orange,#e2701a);transform:translateY(-1px)}
+      #papaya-lang>button.active{border-color:var(--orange,#e2701a);background:var(--orange-dim,rgba(226,112,26,.16));color:var(--orange-light,#f5933f)}`;
     document.head.appendChild(s);
     if(nav){
       nav.style.alignItems='center'; if(!nav.style.gap) nav.style.gap='10px';
       var k=Array.from(nav.children); if(k.length){ nav.style.justifyContent='flex-start'; k[k.length-1].style.marginInlineStart='auto'; }
       nav.appendChild(w);
     } else { w.style.position='fixed'; w.style.top='14px'; w.style.insetInlineEnd='14px'; w.style.zIndex='99999'; document.body.appendChild(w); }
-    btn=w.querySelector('#pl-btn'); menu=w.querySelector('#pl-menu');
-    menu.innerHTML=LANGS.map(function(x){return '<button data-lang="'+x.c+'"><span>'+x.f+'</span><span>'+x.l+'</span></button>';}).join('');
-    btn.addEventListener('click',function(e){e.stopPropagation();menu.classList.toggle('open');});
-    menu.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){apply(b.dataset.lang);menu.classList.remove('open');});});
-    document.addEventListener('click',function(){menu.classList.remove('open');});
+    row=w;
+    w.innerHTML=LANGS.map(function(x){return '<button data-lang="'+x.c+'" type="button" title="'+x.l+'"><span class="flag">'+x.f+'</span><span class="code">'+x.c.toUpperCase()+'</span></button>';}).join('');
+    w.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){apply(b.dataset.lang);});});
   }
-  function upd(){ if(!btn) return; var l=LANGS.find(function(x){return x.c===cur;})||LANGS[2]; btn.innerHTML='<span>'+l.f+'</span><span>'+l.c.toUpperCase()+'</span>'; menu.querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.dataset.lang===cur);}); }
+  function upd(){ if(!row) return; row.querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.dataset.lang===cur);}); }
 
   function init(){
     build(); apply(cur);
