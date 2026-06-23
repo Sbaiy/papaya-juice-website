@@ -303,8 +303,7 @@ function toggleTerrasse() {
 
 // Quand on change de type de table, reset les customPrices pour recalculer avec le bon tarif
 function onTableTypeChange() {
-    cart.forEach(item => { delete item.customPrice; });
-    renderCart();
+    renderCart(); // ما نمسحش الأثمنة اليدوية (customPrice) ملي تبدّل الطاولة
 }
 
 // Click sur le prix dans le cart → input éditable
