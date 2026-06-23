@@ -10,8 +10,11 @@
   .topbar{ height:auto !important; flex-wrap:wrap !important; padding:10px 12px !important; row-gap:8px; }
   .topbar-right{ flex-wrap:wrap !important; gap:6px !important; }
   /* Onglets → scroll horizontal */
-  .nav-tabs,.filter-tabs{ overflow-x:auto !important; flex-wrap:nowrap !important; justify-content:flex-start !important; -webkit-overflow-scrolling:touch; }
-  .nav-tabs::-webkit-scrollbar,.filter-tabs::-webkit-scrollbar{ height:0; }
+  /* nav-tabs: wrap (ماشي scroll) باش الـ dropdown يهبط بلا ما يتقصّ */
+  .nav-tabs{ flex-wrap:wrap !important; justify-content:center !important; overflow:visible !important; }
+  /* filter-tabs: scroll أفقي (بلا dropdown، آمن) */
+  .filter-tabs{ overflow-x:auto !important; flex-wrap:nowrap !important; justify-content:flex-start !important; -webkit-overflow-scrolling:touch; }
+  .filter-tabs::-webkit-scrollbar{ height:0; }
   .nav-tab,.filter-tab{ flex:0 0 auto !important; }
   /* Grilles → 2 colonnes */
   .stats-grid,.stats-grid-4,.stats-grid-3,.stats-grid2,.stats-row,.quick-grid,.quick-grid-3,.breakdown-grid,.salary-grid,.salary-grid2,.qr-grid{ grid-template-columns:1fr 1fr !important; }
