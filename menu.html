@@ -692,6 +692,31 @@ h1.menu-title {
 
 
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&display=swap" rel="stylesheet">
+<style>
+/* ════ RESTYLE premium menu (design غير — نفس flow/JS/classes) ════ */
+.cat-card{ position:relative !important; padding:0 !important; height:155px !important; border-radius:24px !important; overflow:hidden !important; background:linear-gradient(155deg,#21402c,#0f1c14) !important; border:1px solid rgba(122,200,150,.12) !important; transition:transform .22s,box-shadow .28s,border-color .22s !important; }
+.cat-card:hover{ transform:translateY(-4px) !important; border-color:rgba(226,112,26,.5) !important; box-shadow:0 22px 44px -20px rgba(0,0,0,.8),0 8px 26px -12px rgba(226,112,26,.35) !important; }
+.cat-card-img-wrap{ position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; border-radius:0 !important; display:flex !important; align-items:center !important; justify-content:center !important; font-size:60px !important; background:radial-gradient(circle at 50% 38%,rgba(226,112,26,.16),transparent 68%) !important; }
+.cat-card-img-wrap img{ width:100% !important; height:100% !important; object-fit:cover !important; }
+.cat-card::after{ content:'' !important; position:absolute !important; inset:0 !important; background:linear-gradient(to top,rgba(6,14,9,.93) 6%,rgba(6,14,9,.25) 48%,transparent 80%) !important; z-index:1 !important; pointer-events:none !important; }
+.cat-card-name{ position:absolute !important; right:16px !important; left:16px !important; bottom:14px !important; z-index:2 !important; color:#fff !important; font-family:'Fraunces',serif !important; font-size:19px !important; font-weight:600 !important; text-align:right !important; }
+.cat-card-count{ position:absolute !important; top:12px !important; left:12px !important; bottom:auto !important; z-index:2 !important; font-size:11px !important; font-weight:800 !important; color:#fff !important; background:rgba(8,18,13,.5) !important; -webkit-backdrop-filter:blur(8px) !important; backdrop-filter:blur(8px) !important; border:1px solid rgba(255,255,255,.16) !important; padding:4px 10px !important; border-radius:999px !important; }
+
+.product-card{ background:linear-gradient(165deg,#13241a,#0e1a13) !important; border:1px solid rgba(122,200,150,.1) !important; border-radius:24px !important; padding:10px 10px 13px !important; transition:transform .22s,box-shadow .28s,border-color .22s !important; }
+.product-card:hover{ transform:translateY(-4px) !important; border-color:rgba(226,112,26,.42) !important; box-shadow:0 20px 40px -20px rgba(0,0,0,.78) !important; }
+.product-img-wrap{ height:124px !important; border-radius:18px !important; overflow:hidden !important; background:radial-gradient(circle at 50% 38%,rgba(226,112,26,.14),transparent 68%),linear-gradient(150deg,#21402c,#13241a) !important; }
+.product-img-wrap img{ width:100% !important; height:100% !important; object-fit:cover !important; border-radius:18px !important; }
+.product-info h3{ font-family:'Fraunces',serif !important; font-size:16px !important; font-weight:600 !important; margin:11px 3px 3px !important; line-height:1.2 !important; color:#eef4f0 !important; }
+.product-desc{ font-size:11.5px !important; color:#8aa295 !important; margin:0 3px !important; }
+.card-bottom-row{ margin-top:10px !important; padding:0 3px !important; align-items:center !important; }
+.product-price{ font-size:19px !important; font-weight:800 !important; color:#f5933f !important; background:none !important; border:none !important; padding:0 !important; letter-spacing:-.5px !important; }
+.add-btn{ width:40px !important; height:40px !important; border-radius:14px !important; background:linear-gradient(135deg,#f5933f,#e2701a) !important; color:#160a02 !important; box-shadow:0 10px 22px -8px rgba(226,112,26,.65) !important; transition:transform .15s,filter .15s !important; }
+.add-btn:hover{ transform:translateY(-2px) scale(1.04) !important; filter:brightness(1.07) !important; }
+
+.menu-title{ font-family:'Fraunces',serif !important; }
+@media (prefers-reduced-motion: reduce){ .cat-card,.product-card,.add-btn{ transition:none !important; } .cat-card:hover,.product-card:hover,.add-btn:hover{ transform:none !important; } }
+</style>
 </head>
 <body>
 
