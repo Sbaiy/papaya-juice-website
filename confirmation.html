@@ -205,6 +205,17 @@ body > * { position: relative; z-index: 1; }
   display:flex;align-items:center;justify-content:center;gap:10px;
 }
 .btn-new:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(229,57,53,.5)}
+
+/* ── Responsive mobile (PC ماشي متأثر) ── */
+@media (max-width:560px){
+  body{ padding:16px 12px 36px !important; }
+  .card,.success-card,.tracking-card{ max-width:100% !important; width:100% !important; }
+  .success-card{ padding:26px 16px 22px !important; }
+  .order-num-box{ padding:12px 22px !important; }
+  .track-btns{ flex-direction:column !important; }
+  .track-btns > *{ width:100% !important; }
+  .details-title,.status-title{ font-size:15px !important; }
+}
 </style>
 </head>
 <body>
