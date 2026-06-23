@@ -719,6 +719,13 @@ body{ background:
 .add-btn{ width:40px !important; height:40px !important; border-radius:14px !important; background:linear-gradient(135deg,#f5933f,#e2701a) !important; color:#160a02 !important; box-shadow:0 10px 22px -8px rgba(226,112,26,.6) !important; }
 .add-btn:hover{ transform:translateY(-2px) scale(1.04) !important; filter:brightness(1.07) !important; }
 .menu-title{ font-family:'Fraunces',serif !important; }
+/* ── Badge رقم الطاولة → تحت على اليسار، نفس سطر زر Retour ── */
+.table-banner{ top:auto !important; bottom:28px !important; left:20px !important; right:auto !important; transform:none !important; animation:none !important; }
+.back-btn{ left:140px !important; }
+@media (max-width:768px){
+  .table-banner{ bottom:22px !important; left:16px !important; }
+  .back-btn{ left:128px !important; }
+}
 @media (prefers-reduced-motion: reduce){ .cat-card,.product-card,.add-btn{ transition:none !important; } .cat-card:hover,.product-card:hover{ transform:none !important; } }
 /* ── الأعمدة (قوية): تيليفون 2 · tablet 3 · PC 5 ── */
 @media (max-width:600px){ .cats-grid,.menu-grid{ grid-template-columns:repeat(2,1fr) !important; } }
@@ -1312,6 +1319,8 @@ async function submitOrder() {
     if (!tableNum) {
         tableNum = document.getElementById('omTable').value.trim() || null;
     }
+    // FIX: préfixe "T" pour matcher le format kiosk + plan des tables (T50, pas 50)
+    if (tableNum) tableNum = 'T' + String(tableNum).replace(/^T/i, '');
 
     const note  = document.getElementById('omNote').value.trim();
     const items = Object.values(cart).map(({ product, qty }) => {
