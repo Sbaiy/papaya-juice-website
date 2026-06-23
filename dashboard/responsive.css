@@ -1,0 +1,33 @@
+/* ============================================================
+   PAPAYA · RESPONSIVE (mobile) — صفحات التسيير غير.
+   PC ماشي متأثر. kiosk / commandes-live / menu / confirmation
+   ماشي مربوطين بهاد الملف (بقاو بحال ما هما).
+   ============================================================ */
+@media (max-width: 860px){
+  .main{ padding:16px 12px 40px !important; max-width:100% !important; }
+  .page-header{ flex-direction:column !important; align-items:flex-start !important; gap:12px !important; }
+  .page-title{ font-size:23px !important; }
+  .topbar{ height:auto !important; flex-wrap:wrap !important; padding:10px 12px !important; row-gap:8px; }
+  .topbar-right{ flex-wrap:wrap !important; gap:6px !important; }
+  /* Onglets → scroll horizontal */
+  .nav-tabs,.filter-tabs{ overflow-x:auto !important; flex-wrap:nowrap !important; justify-content:flex-start !important; -webkit-overflow-scrolling:touch; }
+  .nav-tabs::-webkit-scrollbar,.filter-tabs::-webkit-scrollbar{ height:0; }
+  .nav-tab,.filter-tab{ flex:0 0 auto !important; }
+  /* Grilles → 2 colonnes */
+  .stats-grid,.stats-grid-4,.stats-grid-3,.stats-grid2,.stats-row,.quick-grid,.quick-grid-3,.breakdown-grid,.salary-grid,.salary-grid2,.qr-grid{ grid-template-columns:1fr 1fr !important; }
+  /* Formulaires & layout sidebar → 1 colonne */
+  .form-grid,.form-grid2,.extras-layout{ grid-template-columns:1fr !important; }
+  /* Tableaux → scroll horizontal */
+  table{ display:block !important; width:100% !important; overflow-x:auto !important; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  /* Cartes / champs pleine largeur */
+  .glass-card{ padding:14px !important; }
+  .filter-group,.form-group{ width:100% !important; }
+  .filter-select,.form-input,select,input[type="text"],input[type="number"],input[type="search"],textarea{ width:100% !important; max-width:100% !important; }
+  /* Modals */
+  .modal-box,.modal-content{ width:94vw !important; max-width:94vw !important; }
+}
+@media (max-width: 540px){
+  .stats-grid,.stats-grid-4,.stats-grid-3,.stats-grid2,.stats-row,.quick-grid,.quick-grid-3,.breakdown-grid,.salary-grid,.salary-grid2,.qr-grid{ grid-template-columns:1fr !important; }
+  .page-title{ font-size:20px !important; }
+  .main{ padding:12px 10px 36px !important; }
+}
