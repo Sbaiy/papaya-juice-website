@@ -50,7 +50,7 @@ const AuthAPI = {
   login: async (username, password) => {
     const data = await apiFetch('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password, longLived: true })
     });
     Auth.setToken(data.token);
     Auth.setUser(data.user);

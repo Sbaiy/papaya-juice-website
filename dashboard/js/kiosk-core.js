@@ -747,40 +747,7 @@ setInterval(() => {
 
 // ── SUBMIT ORDER ──
 
-// ── ORDER CONFIRM POPUP ──
-let _pendingPrintCart  = [];
-let _pendingPrintTable = '';
-let _pendingPrintTotal = '0.00';
-let _pendingPrintOrder = null;
-
-function ocpConfirmer() {
-    document.getElementById('orderConfirmPopup').style.display = 'none';
-    _pendingPrintCart = [];
-}
-
-async function ocpImprimer() {
-    document.getElementById('orderConfirmPopup').style.display = 'none';
-    // Imprimer les tickets
-    if (_pendingPrintCart.length) {
-        const kitchenTicket  = generateKitchenTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintOrder);
-        const additionTicket = generateTextTicket(_pendingPrintCart, _pendingPrintTable, _pendingPrintTotal, _pendingPrintOrder);
-        // Fire & forget — tickets partent immédiatement
-        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
-    }
-    // Mettre status en_preparation (visible dans commandes-live + confirmation client)
-    if (_pendingPrintOrder) {
-        try {
-            const token = localStorage.getItem('papaya_token');
-            await fetch(BACKEND_URL + '/api/orders/' + _pendingPrintOrder + '/status', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status: 'preparing' })
-            });
-        } catch(e) { console.warn('Status update failed:', e); }
-    }
-    _pendingPrintCart = [];
-}
+// ── ORDER CONFIRM POPUP — supprimé (code mort: jamais affiché/utilisé) ──
 
 let _submitBusy = false; // FIX double-click guard
 async function submitOrder() {
