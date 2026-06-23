@@ -1306,11 +1306,15 @@ async function submitOrder() {
     }
 
     const note  = document.getElementById('omNote').value.trim();
-    const items = Object.values(cart).map(({ product, qty }) => ({
-        id: product.id, title: product.title,
-        price: parseFloat(product.price), qty, category: product.category || '',
-        extras: product.selectedExtras || []
-    }));
+    const items = Object.values(cart).map(({ product, qty }) => {
+        const _exs = product.selectedExtras || [];
+        const _extrasSum = _exs.reduce((s, e) => s + (parseFloat(e.priceAdd) || 0), 0);
+        return {
+            id: product.id, title: product.title,
+            price: parseFloat(product.price) - _extrasSum, qty, category: product.category || '',
+            extras: _exs
+        };
+    });
 
     const total = cartTotal();
 
