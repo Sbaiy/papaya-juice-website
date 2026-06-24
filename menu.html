@@ -719,6 +719,21 @@ body{ background:
 .add-btn{ width:40px !important; height:40px !important; border-radius:14px !important; background:linear-gradient(135deg,#f5933f,#e2701a) !important; color:#160a02 !important; box-shadow:0 10px 22px -8px rgba(226,112,26,.6) !important; }
 .add-btn:hover{ transform:translateY(-2px) scale(1.04) !important; filter:brightness(1.07) !important; }
 .menu-title{ font-family:'Fraunces',serif !important; }
+/* ── Animation: glow dark-orange ambiant (derrière le contenu) ── */
+@keyframes papayaAmbientGlow {
+  0%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.42}
+  33%{transform:translate3d(7vw,5vh,0) scale(1.32);opacity:.68}
+  66%{transform:translate3d(-5vw,9vh,0) scale(1.12);opacity:.52}
+  100%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.42}
+}
+body::before{
+  content:"";position:fixed;top:50%;left:50%;
+  width:78vw;height:78vw;margin:-39vw 0 0 -39vw;
+  background:radial-gradient(circle,rgba(226,112,26,.18) 0%,rgba(226,112,26,.07) 30%,transparent 62%);
+  pointer-events:none;z-index:-1;
+  animation:papayaAmbientGlow 26s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
 /* ── Badge رقم الطاولة → تحت على اليمين ── */
 .table-banner{ top:auto !important; bottom:28px !important; right:20px !important; left:auto !important; transform:none !important; animation:none !important; }
 @media (max-width:768px){

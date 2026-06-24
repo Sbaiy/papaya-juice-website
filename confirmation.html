@@ -32,6 +32,21 @@ body::before {
   pointer-events: none;
 }
 body > * { position: relative; z-index: 1; }
+/* ── Animation: glow dark-orange ambiant (derrière le contenu, z-index 0) ── */
+@keyframes papayaAmbientGlow {
+  0%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.4}
+  33%{transform:translate3d(7vw,5vh,0) scale(1.32);opacity:.62}
+  66%{transform:translate3d(-5vw,9vh,0) scale(1.12);opacity:.48}
+  100%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.4}
+}
+body::after{
+  content:"";position:fixed;top:50%;left:50%;
+  width:78vw;height:78vw;margin:-39vw 0 0 -39vw;
+  background:radial-gradient(circle,rgba(226,112,26,.16) 0%,rgba(226,112,26,.06) 30%,transparent 62%);
+  pointer-events:none;z-index:0;
+  animation:papayaAmbientGlow 26s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){body::after{animation:none}}
 
 .card{
   background:rgba(255,255,255,0.06); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
