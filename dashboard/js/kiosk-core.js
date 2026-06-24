@@ -1066,6 +1066,13 @@ let _modifAllProducts = null; // gardé pour compatibilité
 function cancelModifMode() {
     _modifMode = null;
     cart = [];
+    // renderCart() كيرجع بكري ملي الـ panier خاوي → خاصنا نرجّعو هادو هنا مباشرة:
+    const sel = document.getElementById('tableSelect');
+    if (sel) sel.value = '';                                  // رجّع الطاولة لـ — Sélectionner —
+    const banner = document.getElementById('modifBanner');
+    if (banner) banner.style.display = 'none';               // خبّي بانر "Ajout #… — Table …"
+    const btnOrder = document.getElementById('btnOrder');
+    if (btnOrder) { btnOrder.textContent = 'Envoyer la commande'; btnOrder.style.background = ''; }
     renderCart();
     // Si le modal historique est ouvert, le garder — sinon rien
 }
