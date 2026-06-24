@@ -397,6 +397,21 @@ button,a,input,[class*="btn"],[class*="nav-item"],.product-card,.qty-btn,.pin-ke
 .btn-reload{ width:38px; height:38px; background:transparent; border:1px solid var(--border); border-radius:11px; color:var(--muted); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; }
 .btn-reload:hover{ border-color:var(--orange); color:var(--orange-light); background:var(--orange-dim); }
 .btn-reload:active{ transform:rotate(180deg); }
+/* ── Animation: glow dark-orange ambiant (derrière le contenu) ── */
+@keyframes papayaAmbientGlow {
+  0%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.4}
+  33%{transform:translate3d(7vw,5vh,0) scale(1.32);opacity:.62}
+  66%{transform:translate3d(-5vw,9vh,0) scale(1.12);opacity:.48}
+  100%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.4}
+}
+body::before{
+  content:"";position:fixed;top:50%;left:50%;
+  width:78vw;height:78vw;margin:-39vw 0 0 -39vw;
+  background:radial-gradient(circle,rgba(226,112,26,.16) 0%,rgba(226,112,26,.06) 30%,transparent 62%);
+  pointer-events:none;z-index:-1;
+  animation:papayaAmbientGlow 26s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}}
 .btn-terrasse.active{ background:var(--orange-dim); border-color:var(--orange); color:var(--orange-light); }
 
 /* PIN pad */
