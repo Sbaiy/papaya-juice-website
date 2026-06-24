@@ -561,7 +561,7 @@ async function _printLocal(content, printerName) {
     const res = await fetch('http://localhost:3001/print/usb', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
-        signal: AbortSignal.timeout(6000)
+        signal: AbortSignal.timeout(1700)
     });
     if (!res.ok) throw new Error('Print erreur ' + res.status);
 }
