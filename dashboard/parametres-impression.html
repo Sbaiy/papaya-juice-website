@@ -27,6 +27,21 @@
   }
   body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--white); }
   body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
+  /* ── Animation: glow dark-orange ambiant (derrière le contenu z-index:1) ── */
+  @keyframes papayaAmbientGlow {
+    0%{transform:translate3d(-12vw,-9vh,0) scale(1);opacity:.6}
+    33%{transform:translate3d(10vw,7vh,0) scale(1.4);opacity:1}
+    66%{transform:translate3d(-7vw,12vh,0) scale(1.15);opacity:.75}
+    100%{transform:translate3d(-12vw,-9vh,0) scale(1);opacity:.6}
+  }
+  body::after{
+    content:"";position:fixed;top:50%;left:50%;
+    width:72vw;height:72vw;margin:-36vw 0 0 -36vw;
+    background:radial-gradient(circle,rgba(249,115,22,.40) 0%,rgba(230,108,22,.20) 32%,transparent 60%);
+    pointer-events:none;z-index:0;
+    animation:papayaAmbientGlow 20s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion:reduce){body::after{animation:none}}
 
   /* TOPBAR */
   .topbar { position: sticky; top: 0; z-index: 100; margin: 14px 18px 0; background: var(--glass); backdrop-filter: var(--blur); border: 1px solid var(--border); border-radius: 999px; display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 8px 14px; }
