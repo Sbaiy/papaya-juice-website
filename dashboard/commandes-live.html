@@ -430,7 +430,6 @@ body::before {
 }
 </style>
 <script src="../api.js"></script>
-  <link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div id="toast-container"></div>
@@ -637,7 +636,10 @@ function checkAlerts(newOrders) {
 async function loadOrders() {
   try {
     const token = localStorage.getItem('papaya_token');
-    const res = await fetch(BACKEND_URL + '/orders', {
+    // ⚡ egress: ne charger que les commandes d'AUJOURD'HUI (l'affichage filtre déjà sur today)
+    //    → payload borné (~commandes du jour) au lieu de tout l'historique
+    const _dayStart = new Date(); _dayStart.setHours(0,0,0,0);
+    const res = await fetch(BACKEND_URL + '/orders?after=' + encodeURIComponent(_dayStart.toISOString()), {
       headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     });
     if (!res.ok) throw new Error('Erreur serveur ' + res.status);
