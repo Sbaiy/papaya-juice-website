@@ -797,7 +797,10 @@ masquerBtn.addEventListener('click', () => {
     : 'Masquer <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>';
 });
 
-function logout() { sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user'); localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user'); location.reload(); }
+async function logout() {
+  try { var t=localStorage.getItem('papaya_token'); if(t) await fetch(API.base+'/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t}}); } catch(e){}
+  sessionStorage.removeItem('papaya_auth'); sessionStorage.removeItem('papaya_user'); localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user'); location.reload();
+}
 
 
 // ── Virtual Keyboard ──

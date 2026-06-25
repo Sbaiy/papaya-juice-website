@@ -21,7 +21,9 @@ const Auth = {
   getUser: () => JSON.parse(localStorage.getItem('papaya_user') || 'null'),
   setUser: (u) => localStorage.setItem('papaya_user', JSON.stringify(u)),
   isLoggedIn: () => !!localStorage.getItem('papaya_token'),
-  logout: () => {
+  logout: async () => {
+    // Enregistrer le pointage de sortie AVANT de supprimer le token
+    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch (e) { /* ne pas bloquer le logout */ }
     localStorage.removeItem('papaya_token');
     localStorage.removeItem('papaya_user');
     sessionStorage.clear();
