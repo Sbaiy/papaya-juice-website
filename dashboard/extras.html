@@ -11,7 +11,7 @@
 <style>
 :root {
   --primary: #c0392b;
-  --dark-bg: #141d16;
+  --dark-bg: #1b2e1e;
   --input-bg: rgba(255,255,255,0.06);
   --border-color: rgba(255,255,255,0.1);
   --green: #27ae60;
@@ -21,9 +21,9 @@
 body {
   margin: 0; padding: 0; min-height: 100vh; font-family: 'Poppins', sans-serif;
   background-color: var(--dark-bg);
-  background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%);
   background-attachment: fixed; color: #eceff1;
 }
+body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
 .page-wrap { max-width: 1280px; margin: 0 auto; padding: 30px 16px; }
 
 /* ── HEADER ── */

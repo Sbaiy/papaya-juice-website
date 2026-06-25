@@ -13,7 +13,7 @@
 <style>
 :root {
     --primary: #c0392b;
-    --dark-bg: #141d16;
+    --dark-bg: #1b2e1e;
     --input-bg: rgba(255, 255, 255, 0.06);
     --border-color: rgba(255, 255, 255, 0.1);
 }
@@ -22,10 +22,10 @@ body {
     margin: 0 !important; padding: 0 !important; min-height: 100vh !important; font-family: 'Poppins', sans-serif; 
     display: flex !important; justify-content: center !important; align-items: flex-start !important; 
     background-color: var(--dark-bg) !important;
-    background-image: radial-gradient(at 50% 0%, #253929 0px, transparent 60%), radial-gradient(at 0% 100%, #0d140f 0px, transparent 50%) !important;
     background-attachment: fixed;
     color: #eceff1;
 }
+body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%), radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%); pointer-events: none; }
 
 .dashboard-section { width: 100% !important; min-height: 100vh !important; box-sizing: border-box; padding: 30px 15px; }
 

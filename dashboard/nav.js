@@ -65,8 +65,6 @@
     radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
     radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
 }
-/* fond unifié : #pnav-bg (z-index:-1) gère la couleur — body transparent pour laisser passer */
-body{ background:transparent !important; }
 @media print{ #pnav-bg, #pnav-root{ display:none !important; } }
 
 /* ─── Bouton flottant « Menu » (verrouillé en haut-gauche) ─── */
