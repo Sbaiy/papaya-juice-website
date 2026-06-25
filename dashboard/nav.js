@@ -21,28 +21,47 @@
     var mainPath = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/dashboard';
     var isMainDash = (mainPath === '/dashboard');  /* page d'accueil : garde sa propre nav, fond seulement */
 
-    /* ── Navigation, groupée pour un rendu « pro » ─────────────────────── */
-    var PINNED = ['/dashboard', 'Tableau de bord', '\u25A6'];
+    /* ── Icônes SVG (style ligne unifié) ──────────────────────────────── */
+    var ICONS = {
+      dash:    '<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
+      live:    '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+      qr:      '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3M20 14v.01M14 17v.01M14 20h3M17 20h.01M20 17v3"/>',
+      products:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+      cats:    '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+      extras:  '<circle cx="12" cy="12" r="9.5"/><path d="M12 8v8M8 12h8"/>',
+      stock:   '<path d="M20 8.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.5"/><path d="M2 4.5h20v4H2z"/><path d="M9.5 12.5h5"/>',
+      recipes: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+      staff:   '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.5"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/>',
+      reports: '<path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx="1"/><rect x="12.5" y="7" width="3" height="10" rx="1"/><rect x="18" y="13" width="3" height="4" rx="1"/>',
+      claims:  '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      closings:'<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      print:   '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+      logout:  '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+      close:   '<path d="M18 6 6 18M6 6l12 12"/>'
+    };
+
+    /* ── Navigation groupée ────────────────────────────────────────────── */
+    var PINNED = ['/dashboard', 'Tableau de bord', 'dash'];
     var GROUPS = [
       ['Opérations', [
-        ['/dashboard/commandes-live',        'Commandes Live', '\uD83D\uDD14'],
-        ['/dashboard/qr-tables',             'QR Tables',      '\uD83D\uDD33']
+        ['/dashboard/commandes-live',        'Commandes Live', 'live'],
+        ['/dashboard/qr-tables',             'QR Tables',      'qr']
       ]],
       ['Catalogue', [
-        ['/dashboard/admin',                 'Produits',       '\uD83E\uDDFE'],
-        ['/dashboard/categories',            'Catégories',     '\uD83D\uDDC2'],
-        ['/dashboard/extras',                'Extras',         '\u2795'],
-        ['/dashboard/stock',                 'Stock',          '\uD83D\uDCE6'],
-        ['/dashboard/recettes',              'Recettes',       '\uD83D\uDCD6']
+        ['/dashboard/admin',                 'Produits',       'products'],
+        ['/dashboard/categories',            'Catégories',     'cats'],
+        ['/dashboard/extras',                'Extras',         'extras'],
+        ['/dashboard/stock',                 'Stock',          'stock'],
+        ['/dashboard/recettes',              'Recettes',       'recipes']
       ]],
       ['Gestion', [
-        ['/dashboard/personnel',             'Personnel',      '\uD83D\uDC65'],
-        ['/dashboard/rapport-commandes',     'Rapports',       '\uD83D\uDCCA'],
-        ['/dashboard/reclamations',          'Réclamations',   '\u26A0'],
-        ['/dashboard/historique-clotures',   'Clôtures',       '\uD83D\uDCC1']
+        ['/dashboard/personnel',             'Personnel',      'staff'],
+        ['/dashboard/rapport-commandes',     'Rapports',       'reports'],
+        ['/dashboard/reclamations',          'Réclamations',   'claims'],
+        ['/dashboard/historique-clotures',   'Clôtures',       'closings']
       ]],
       ['Système', [
-        ['/dashboard/parametres-impression', 'Impression',     '\uD83D\uDDA8']
+        ['/dashboard/parametres-impression', 'Impression',     'print']
       ]]
     ];
 
@@ -134,63 +153,70 @@ body::before{ background:none !important; }
 .pnav-root.open .pnav-backdrop{ opacity:1; visibility:visible; }
 
 .pnav-drawer{
-  position:fixed; top:0; left:0; height:100%; width:290px; max-width:86vw; z-index:1200;
-  display:flex; flex-direction:column; padding:16px 14px 14px;
+  position:fixed; top:0; left:0; height:100%; width:298px; max-width:87vw; z-index:1200;
+  display:flex; flex-direction:column; padding:18px 14px 14px;
   font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;
   color:var(--pnav-ink);
-  background:linear-gradient(180deg, rgba(13,25,18,.985), rgba(8,16,11,.99));
-  -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
-  border-right:1px solid rgba(249,115,22,.16);
-  box-shadow:24px 0 60px rgba(0,0,0,.55);
-  transform:translateX(-104%); transition:transform .34s cubic-bezier(.4,0,.2,1);
+  background:linear-gradient(180deg, rgba(18,33,24,.99) 0%, rgba(10,19,13,.995) 100%);
+  -webkit-backdrop-filter:blur(22px); backdrop-filter:blur(22px);
+  border-right:1px solid rgba(255,255,255,.06);
+  box-shadow:30px 0 70px rgba(0,0,0,.55);
+  transform:translateX(-104%); transition:transform .36s cubic-bezier(.4,0,.2,1);
 }
 .pnav-root.open .pnav-drawer{ transform:none; }
 
-.pnav-head{ display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:4px 6px 14px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,.07); }
-.pnav-brand{ display:flex; align-items:center; gap:11px; text-decoration:none; min-width:0; }
-.pnav-brand img{ width:38px; height:38px; border-radius:11px; object-fit:cover;
-  border:1px solid rgba(249,115,22,.4); box-shadow:0 4px 14px rgba(0,0,0,.4); flex-shrink:0; }
+/* En-tête */
+.pnav-head{ display:flex; align-items:center; gap:12px; padding:2px 4px 16px; margin-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,.06); }
+.pnav-brand{ display:flex; align-items:center; gap:12px; text-decoration:none; min-width:0; flex:1; }
+.pnav-brand img{ width:42px; height:42px; border-radius:12px; object-fit:cover; flex-shrink:0;
+  border:1px solid rgba(226,112,26,.45); box-shadow:0 6px 18px rgba(0,0,0,.45); }
 .pnav-brand-txt{ display:flex; flex-direction:column; min-width:0; }
-.pnav-brand-name{ font-size:15px; font-weight:800; letter-spacing:.01em; color:var(--pnav-ink); line-height:1.15; }
-.pnav-brand-sub{ font-size:11px; font-weight:600; color:var(--pnav-accent); letter-spacing:.04em; text-transform:uppercase; }
-.pnav-close{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex-shrink:0;
-  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:10px;
-  color:var(--pnav-muted); font-size:15px; cursor:pointer; transition:.16s; }
+.pnav-brand-name{ font-size:15.5px; font-weight:800; letter-spacing:-.01em; color:var(--pnav-ink); line-height:1.15; }
+.pnav-brand-sub{ font-size:10px; font-weight:800; color:var(--pnav-accent); letter-spacing:.16em; text-transform:uppercase; margin-top:3px; }
+.pnav-close{ display:grid; place-items:center; width:34px; height:34px; flex-shrink:0;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px;
+  color:var(--pnav-muted); cursor:pointer; transition:.16s; }
+.pnav-close svg{ width:16px; height:16px; }
 .pnav-close:hover{ background:rgba(226,72,52,.16); border-color:rgba(226,72,52,.4); color:#ff9c8c; }
 .pnav-close:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--pnav-accent-ring); }
 
-.pnav-list{ display:flex; flex-direction:column; gap:1px; overflow-y:auto; flex:1; padding:2px; margin:2px 0;
-  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.14) transparent; }
-.pnav-list::-webkit-scrollbar{ width:6px } .pnav-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.14); border-radius:6px }
-.pnav-group-title{ font-size:10.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--pnav-dim); padding:14px 12px 6px; }
+/* Liste */
+.pnav-list{ display:flex; flex-direction:column; gap:2px; overflow-y:auto; flex:1; padding:4px 2px; margin:2px 0;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.13) transparent; }
+.pnav-list::-webkit-scrollbar{ width:6px } .pnav-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.13); border-radius:6px }
+.pnav-group-title{ font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--pnav-dim); padding:16px 12px 7px; }
 
 .pnav-link{ position:relative; display:flex; align-items:center; gap:12px; text-decoration:none;
-  color:var(--pnav-muted); font-weight:600; font-size:14px; padding:10px 12px; border-radius:11px;
-  transition:background .15s, color .15s, padding-left .15s; }
-.pnav-link .i{ font-size:16px; width:22px; text-align:center; line-height:1; filter:grayscale(.25); transition:filter .15s; }
-.pnav-link:hover{ background:rgba(255,255,255,.055); color:var(--pnav-ink); padding-left:15px; }
-.pnav-link:hover .i{ filter:none; }
+  color:var(--pnav-muted); font-weight:600; font-size:14px; padding:6px 10px 6px 6px; border-radius:13px;
+  transition:background .16s, color .16s; }
+.pnav-ic{ width:35px; height:35px; flex-shrink:0; display:grid; place-items:center; border-radius:11px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); color:var(--pnav-muted);
+  transition:background .16s, color .16s, border-color .16s, box-shadow .16s; }
+.pnav-ic svg{ width:18px; height:18px; }
+.pnav-link:hover{ background:rgba(255,255,255,.04); color:var(--pnav-ink); }
+.pnav-link:hover .pnav-ic{ color:var(--pnav-ink); background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.12); }
 .pnav-link:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--pnav-accent-ring); }
-.pnav-link.active{ background:var(--pnav-accent-soft); color:#f6ad6d; font-weight:700;
-  box-shadow:inset 3px 0 0 var(--pnav-accent); }
-.pnav-link.active .i{ filter:none; }
+.pnav-link.active{ background:rgba(226,112,26,.10); color:#f7b06d; font-weight:700; }
+.pnav-link.active .pnav-ic{ background:linear-gradient(180deg,#f5933f,#e2701a); border-color:transparent;
+  color:#1a0e04; box-shadow:0 6px 16px -4px rgba(226,112,26,.6); }
 
-.pnav-foot{ padding-top:10px; margin-top:6px; border-top:1px solid rgba(255,255,255,.07); }
+/* Pied */
+.pnav-foot{ padding-top:12px; margin-top:4px; border-top:1px solid rgba(255,255,255,.06); }
 .pnav-logout{ width:100%; display:flex; align-items:center; justify-content:center; gap:9px;
-  background:rgba(226,72,52,.12); border:1px solid rgba(226,72,52,.30); color:#ff9c8c;
-  font-family:inherit; font-weight:700; font-size:14px; padding:12px; border-radius:11px; cursor:pointer; transition:.16s; }
-.pnav-logout:hover{ background:#e24834; border-color:#e24834; color:#fff; box-shadow:0 8px 22px rgba(226,72,52,.35); }
+  background:rgba(226,72,52,.10); border:1px solid rgba(226,72,52,.28); color:#ff9c8c;
+  font-family:inherit; font-weight:700; font-size:13.5px; padding:12px; border-radius:13px; cursor:pointer; transition:.16s; }
+.pnav-logout svg{ width:17px; height:17px; }
+.pnav-logout:hover{ background:#e24834; border-color:#e24834; color:#fff; box-shadow:0 10px 24px -6px rgba(226,72,52,.5); }
 .pnav-logout:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(226,72,52,.4); }
 
 /* ─── RTL ─── */
 [dir=rtl] .pnav-fab{ left:auto !important; right:calc(14px + env(safe-area-inset-right,0px)) !important; padding:9px 12px 9px 15px; }
 [dir=rtl] .pnav-drawer{ left:auto; right:0; transform:translateX(104%);
-  border-right:0; border-left:1px solid rgba(249,115,22,.16); box-shadow:-24px 0 60px rgba(0,0,0,.55); }
+  border-right:0; border-left:1px solid rgba(255,255,255,.06); box-shadow:-30px 0 70px rgba(0,0,0,.55); }
 [dir=rtl] .pnav-root.open .pnav-drawer{ transform:none; }
-[dir=rtl] .pnav-link.active{ box-shadow:inset -3px 0 0 var(--pnav-accent); }
-[dir=rtl] .pnav-link:hover{ padding-left:12px; padding-right:15px; }
+[dir=rtl] .pnav-link{ padding:6px 6px 6px 10px; }
 
 @media(prefers-reduced-motion:reduce){
   .pnav-fab,.pnav-link,.pnav-drawer,.pnav-backdrop{ transition:none }
@@ -221,9 +247,14 @@ body::before{ background:none !important; }
     if (glowOnly) return;
 
     /* ── Construction du tiroir ── */
+    function svg(key) {
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" '
+           + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[key] || '') + '</svg>';
+    }
     function linkHtml(l) {
       return '<a class="pnav-link' + (isActive(l[0]) ? ' active' : '') + '" href="' + l[0] + '">'
-           + '<span class="i">' + l[2] + '</span><span>' + l[1] + '</span></a>';
+           + '<span class="pnav-ic">' + svg(l[2]) + '</span>'
+           + '<span class="pnav-tx">' + l[1] + '</span></a>';
     }
     var listHtml = linkHtml(PINNED);
     GROUPS.forEach(function (g) {
@@ -254,11 +285,11 @@ body::before{ background:none !important; }
       +       '<span class="pnav-brand-txt"><span class="pnav-brand-name">Papaya Juice</span>'
       +       '<span class="pnav-brand-sub">Tableau de bord</span></span>'
       +     '</a>'
-      +     '<button class="pnav-close" type="button" aria-label="Fermer le menu">\u2715</button>'
+      +     '<button class="pnav-close" type="button" aria-label="Fermer le menu">' + svg('close') + '</button>'
       +   '</div>'
       +   '<nav class="pnav-list">' + listHtml + '</nav>'
       +   '<div class="pnav-foot">'
-      +     '<button class="pnav-logout" type="button" onclick="(function(){' + logoutJs + '})()">\u23CF Déconnexion</button>'
+      +     '<button class="pnav-logout" type="button" onclick="(function(){' + logoutJs + '})()">' + svg('logout') + '<span>Déconnexion</span></button>'
       +   '</div>'
       + '</aside>';
     document.body.appendChild(root);
