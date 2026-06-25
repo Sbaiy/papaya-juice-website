@@ -1,11 +1,13 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Papaya Juice — Navigation unifiée + fond du tableau de bord  (nav.js)
-   Inclure sur chaque page :  <script src="/dashboard/nav.js" defer></script>
+   Papaya Juice — Navigation unifiée + fond animé  (nav.js)
+   Inclure sur CHAQUE page (y compris dashboard.html) :
+     <script src="/dashboard/nav.js" defer></script>
 
-   Ce fichier est LA source unique pour, sur toutes les pages du dashboard :
-     • le FOND  : réplique exacte de dashboard.html (#1b2e1e + halos orange)
+   Source unique pour, sur toutes les pages du dashboard :
+     • le FOND  : vert sombre + halos orange foncé qui dérivent en continu
      • la NAV   : bouton « Menu » (haut-gauche) → tiroir latéral
-   commandes-live : fond seulement (pas de tiroir).
+   • /dashboard (accueil) : fond seulement (garde ses propres onglets)
+   • commandes-live        : fond seulement (pas de tiroir)
 
    Correctif clé : la racine n'utilise plus la classe « topbar » (collision
    avec le .topbar { backdrop-filter } de chaque page qui cassait la position
@@ -16,6 +18,8 @@
     if (document.getElementById('pnav-root') || document.getElementById('pnav-bg')) return;
 
     var glowOnly = /commandes-live/.test(location.pathname);
+    var mainPath = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/dashboard';
+    var isMainDash = (mainPath === '/dashboard');  /* page d'accueil : garde sa propre nav, fond seulement */
 
     /* ── Navigation, groupée pour un rendu « pro » ─────────────────────── */
     var PINNED = ['/dashboard', 'Tableau de bord', '\u25A6'];
@@ -55,17 +59,43 @@
   --pnav-ink:#EAF5EE; --pnav-muted:#9DB3A8; --pnav-dim:#6F8579;
 }
 
-/* ─── Fond UNIFIÉ — réplique exacte du tableau de bord (dashboard.html) ───
-   Couche fixe derrière tout le contenu : couvre le fond propre de la page,
-   puis on neutralise le ::before de la page pour éviter tout doublon/écart. */
+/* ─── Fond UNIFIÉ animé — vert sombre + halos orange foncé en mouvement ───
+   Couche fixe derrière tout le contenu. Deux halos dérivent en continu pour
+   un effet d'ambiance vivant. On neutralise le ::before propre à la page pour
+   garantir un rendu identique partout. */
 #pnav-bg{
-  position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background-color:#1b2e1e;
-  background-image:
-    radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
-    radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
+  position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 0%, #1b2e1e 0%, transparent 58%),
+    #0d1c13;
 }
+#pnav-bg::before, #pnav-bg::after{
+  content:''; position:absolute; border-radius:50%; pointer-events:none; will-change:transform;
+}
+#pnav-bg::before{
+  width:80vw; height:80vw; left:6%; top:-2%;
+  background:radial-gradient(circle, rgba(194,65,12,.24) 0%, rgba(154,52,18,.11) 38%, transparent 62%);
+  animation:pnavDrift1 28s ease-in-out infinite;
+}
+#pnav-bg::after{
+  width:64vw; height:64vw; right:2%; bottom:-6%;
+  background:radial-gradient(circle, rgba(180,83,9,.21) 0%, rgba(124,45,18,.09) 40%, transparent 60%);
+  animation:pnavDrift2 37s ease-in-out infinite;
+}
+@keyframes pnavDrift1{
+  0%  {transform:translate(-12%,-8%) scale(1)}
+  33% {transform:translate(14%,12%)  scale(1.28)}
+  66% {transform:translate(5%,-10%)  scale(1.12)}
+  100%{transform:translate(-12%,-8%) scale(1)}
+}
+@keyframes pnavDrift2{
+  0%  {transform:translate(10%,8%)   scale(1.10)}
+  50% {transform:translate(-14%,-10%) scale(1.40)}
+  100%{transform:translate(10%,8%)   scale(1.10)}
+}
+body::before{ background:none !important; }
 @media print{ #pnav-bg, #pnav-root{ display:none !important; } }
+@media(prefers-reduced-motion:reduce){ #pnav-bg::before, #pnav-bg::after{ animation:none } }
 
 /* ─── Bouton flottant « Menu » (verrouillé en haut-gauche) ─── */
 .pnav-fab{
@@ -171,10 +201,14 @@
     st.textContent = css;
     document.head.appendChild(st);
 
-    /* ── Fond unifié (toujours injecté, même sur commandes-live) ── */
+    /* ── Fond unifié (toujours injecté, sur TOUTES les pages) ── */
     var bg = document.createElement('div');
     bg.id = 'pnav-bg';
     document.body.insertBefore(bg, document.body.firstChild);
+
+    /* Page d'accueil (/dashboard) : elle a sa propre navigation (onglets).
+       On lui applique uniquement le fond, sans toucher à sa barre. */
+    if (isMainDash) return;
 
     /* Retire les barres de navigation propres aux pages (remplacées ici) */
     document.querySelectorAll('body > header, body > nav, .topbar, .navbar')
