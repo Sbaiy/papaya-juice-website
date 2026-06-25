@@ -141,6 +141,7 @@
   .toast.err { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 </style>
+  <script src="/dashboard/nav.js" defer></script>
 </head><style>
   .spin { width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;display:inline-block; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -417,7 +418,13 @@ function toast(msg, type='info') {
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
-function logout() { sessionStorage.clear(); location.href = '/'; }
+async function logout() {
+  var base = location.hostname==='localhost' ? 'http://localhost:3000/api' : 'https://api.papayajuice.xyz/api';
+  var t = localStorage.getItem('papaya_token') || sessionStorage.getItem('papaya_token');
+  try { if(t) await fetch(base+'/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t}}); } catch(e){}
+  localStorage.removeItem('papaya_token'); localStorage.removeItem('papaya_user'); sessionStorage.clear();
+  location.href = '/dashboard';
+}
 </script>
   <script src="/i18n.js"></script>
 </body>

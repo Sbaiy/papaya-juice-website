@@ -153,8 +153,7 @@
     @media (max-width: 700px) { .stats-row { grid-template-columns: 1fr 1fr; } .breakdown-grid { grid-template-columns: 1fr 1fr; } .filter-bar { flex-direction: column; align-items: stretch; } .filter-input, .filter-select { min-width: unset; } .topbar, .nav-tabs { margin-left: 10px; margin-right: 10px; } .page-header { flex-direction: column; } }
     @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } .breakdown-grid { grid-template-columns: 1fr 1fr; } }
   </style>
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="responsive.css">
+  <script src="/dashboard/nav.js" defer></script>
 </head>
 <body>
 
@@ -381,7 +380,10 @@ if (!_token) { window.location.href = '/dashboard'; }
 document.getElementById('userName').textContent = _user?.name || _user?.email?.split('@')[0] || 'Admin';
 document.getElementById('userRole').textContent  = _user?.role || 'Admin';
 
-function logout() {
+async function logout() {
+  var base = location.hostname==='localhost' ? 'http://localhost:3000/api' : 'https://api.papayajuice.xyz/api';
+  var t = localStorage.getItem('papaya_token') || sessionStorage.getItem('papaya_token');
+  try { if(t) await fetch(base+'/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t}}); } catch(e){}
   localStorage.removeItem('papaya_token');
   localStorage.removeItem('papaya_user');
   sessionStorage.clear();
