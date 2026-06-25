@@ -1,11 +1,11 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Papaya Juice — Navigation unifiée + fond animé  (nav.js)
+   Papaya Juice — Navigation unifiée + fond du tableau de bord  (nav.js)
    Inclure sur chaque page :  <script src="/dashboard/nav.js" defer></script>
 
    Ce fichier est LA source unique pour, sur toutes les pages du dashboard :
-     • le FOND  : dégradé profond (façon dashboard) + halo orange animé
+     • le FOND  : réplique exacte de dashboard.html (#1b2e1e + halos orange)
      • la NAV   : bouton « Menu » (haut-gauche) → tiroir latéral
-   commandes-live : fond animé seulement (pas de tiroir).
+   commandes-live : fond seulement (pas de tiroir).
 
    Correctif clé : la racine n'utilise plus la classe « topbar » (collision
    avec le .topbar { backdrop-filter } de chaque page qui cassait la position
@@ -55,27 +55,18 @@
   --pnav-ink:#EAF5EE; --pnav-muted:#9DB3A8; --pnav-dim:#6F8579;
 }
 
-/* ─── Fond unifié (couvre le fond propre de chaque page) ─── */
+/* ─── Fond UNIFIÉ — réplique exacte du tableau de bord (dashboard.html) ───
+   Couche fixe derrière tout le contenu : couvre le fond propre de la page,
+   puis on neutralise le ::before de la page pour éviter tout doublon/écart. */
 #pnav-bg{
-  position:fixed; inset:0; z-index:-2; pointer-events:none;
-  background-color:#15201A;
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-color:#1b2e1e;
   background-image:
-    radial-gradient(ellipse 72% 56% at 50% -8%,  rgba(37,57,41,.95) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 8% 104%,  rgba(13,20,15,.98) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 16% 84%,  rgba(249,115,22,.10) 0%, transparent 66%),
-    radial-gradient(ellipse 46% 36% at 88% 12%,  rgba(249,115,22,.07) 0%, transparent 60%);
+    radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
 }
-@keyframes pnavGlow{
-  0%{transform:translate3d(-12vw,-9vh,0) scale(1);opacity:.50}
-  33%{transform:translate3d(10vw,7vh,0) scale(1.35);opacity:.85}
-  66%{transform:translate3d(-7vw,12vh,0) scale(1.12);opacity:.60}
-  100%{transform:translate3d(-12vw,-9vh,0) scale(1);opacity:.50}
-}
-#pnav-glow{
-  position:fixed; top:50%; left:50%; width:74vw; height:74vw; margin:-37vw 0 0 -37vw;
-  background:radial-gradient(circle, rgba(226,112,26,.20) 0%, rgba(226,112,26,.07) 32%, transparent 60%);
-  pointer-events:none; z-index:-1; animation:pnavGlow 22s ease-in-out infinite; will-change:transform,opacity;
-}
+body::before{ background:none !important; }
+@media print{ #pnav-bg, #pnav-root{ display:none !important; } }
 
 /* ─── Bouton flottant « Menu » (verrouillé en haut-gauche) ─── */
 .pnav-fab{
@@ -173,7 +164,6 @@
 [dir=rtl] .pnav-link:hover{ padding-left:12px; padding-right:15px; }
 
 @media(prefers-reduced-motion:reduce){
-  #pnav-glow{ animation:none }
   .pnav-fab,.pnav-link,.pnav-drawer,.pnav-backdrop{ transition:none }
 }
 `;
@@ -182,18 +172,15 @@
     st.textContent = css;
     document.head.appendChild(st);
 
-    /* ── Fond (toujours injecté, même sur commandes-live) ── */
+    /* ── Fond unifié (toujours injecté, même sur commandes-live) ── */
     var bg = document.createElement('div');
     bg.id = 'pnav-bg';
-    var glow = document.createElement('div');
-    glow.id = 'pnav-glow';
     document.body.insertBefore(bg, document.body.firstChild);
-    document.body.appendChild(glow);
 
     /* Retire les barres de navigation propres aux pages (remplacées ici) */
     document.querySelectorAll('body > header, body > nav, .topbar, .navbar')
       .forEach(function (el) {
-        if (el.id === 'pnav-bg' || el.id === 'pnav-glow') return;
+        if (el.id === 'pnav-bg') return;
         if (el.closest('#pnav-root')) return;
         el.remove();
       });
