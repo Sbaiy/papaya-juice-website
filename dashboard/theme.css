@@ -7,8 +7,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root{
-  --bg:#0a140f; --dark-bg:#0a140f; --page-bg:#0a140f;
-  --panel:#0e1b14; --card:#122017; --card-bg:#122017; --card-hover:#18301f; --cart-bg:#0e1b14; --input-bg:#0c1812;
+  --bg:#1b2e1e; --dark-bg:#1b2e1e; --page-bg:#1b2e1e;
+  --panel:#1e3422; --card:#243d28; --card-bg:#243d28; --card-hover:#2a4830; --cart-bg:#1e3422; --input-bg:#192e1d;
   --orange:#e2701a; --primary:#e2701a; --orange-light:#f5933f; --orange-dim:rgba(226,112,26,.13);
   --green:#34d399; --red:#ef5350; --yellow:#e6b54a; --blue:#4f8cff; --purple:#b070f0;
   --white:#eaf2ec; --text:#eaf2ec; --muted:#8aa295; --gray:#8aa295;
@@ -24,31 +24,11 @@
 body{
   font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-  background:
-    radial-gradient(1100px 600px at 80% -10%, rgba(226,112,26,.07), transparent 60%),
-    radial-gradient(900px 520px at -5% 110%, rgba(52,211,153,.05), transparent 55%),
-    var(--bg) !important;
+  background:#1b2e1e !important;
 }
 
-/* ── Animation: glow dark-orange ambiant qui dérive lentement (derrière le contenu) ── */
-@keyframes papayaAmbientGlow {
-  0%   { transform: translate3d(-12vw, -9vh, 0) scale(1);    opacity:.6; }
-  33%  { transform: translate3d(10vw, 7vh, 0)   scale(1.4);  opacity:1;  }
-  66%  { transform: translate3d(-7vw, 12vh, 0)  scale(1.15); opacity:.75; }
-  100% { transform: translate3d(-12vw, -9vh, 0) scale(1);    opacity:.6; }
-}
-body::before {
-  content:"";
-  position:fixed;
-  top:50%; left:50%;
-  width:72vw; height:72vw;
-  margin:-36vw 0 0 -36vw;
-  background:radial-gradient(circle, rgba(255,120,28,.42) 0%, rgba(230,108,22,.22) 32%, transparent 60%);
-  pointer-events:none;
-  z-index:-1;
-  animation:papayaAmbientGlow 20s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) { body::before { animation:none; } }
+/* ── body::before est géré par nav.js (#pnav-bg) — on le neutralise ici ── */
+body::before { content:none !important; display:none !important; }
 
 
 button,input,select,textarea{ font-family:inherit; }
@@ -111,7 +91,7 @@ tbody tr:hover{ background:rgba(226,112,26,.05); }
 .modal-footer{ border-top:1px solid var(--border); }
 
 .empty-icon{ color:var(--orange-light); }
-.skel-line,.skel,.loading{ background:linear-gradient(90deg,#122017 25%,#18301f 37%,#122017 63%) !important; background-size:400% 100% !important; }
+.skel-line,.skel,.loading{ background:linear-gradient(90deg,#243d28 25%,#2a4830 37%,#243d28 63%) !important; background-size:400% 100% !important; }
 
 *{ scrollbar-width:thin; scrollbar-color:#244033 transparent; }
 *::-webkit-scrollbar{ width:10px; height:10px; }

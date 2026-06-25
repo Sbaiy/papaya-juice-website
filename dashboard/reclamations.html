@@ -190,42 +190,8 @@
   </div>
 </div>
 
-<!-- TOPBAR -->
-<header class="topbar">
-  <div class="nav-brand">
-    <div class="brand-icon"><img src="/logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='🍹'"></div>
-    <span class="brand-name">Papaya Juice</span>
-  </div>
-  <div class="topbar-right">
-    <div class="user-pill">
-      <div style="display:flex;flex-direction:column;">
-        <span class="user-name" id="userName">Admin</span>
-        <span class="user-role" id="userRole">Manager</span>
-      </div>
-    </div>
-  </div>
-</header>
-
-<!-- NAV TABS -->
-<nav class="nav-tabs">
-  <a class="nav-tab" href="/dashboard">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    Tableau de bord
-  </a>
-  <a class="nav-tab" href="/dashboard/commandes-live">
-    <span class="nav-dot"></span>
-    Commandes Live
-  </a>
-  <a class="nav-tab active" href="/dashboard/reclamations">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    Réclamations
-    <span id="unreadBadge" style="display:none;background:rgba(239,68,68,.25);color:#fca5a5;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid rgba(239,68,68,.4);"></span>
-  </a>
-  <a class="nav-tab" href="/dashboard/admin">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
-    Admin
-  </a>
-</nav>
+<!-- unreadBadge: hidden anchor inside main (topbar/nav-tabs are handled by nav.js) -->
+<span id="unreadBadge" style="display:none;position:fixed;top:18px;right:18px;z-index:1050;background:rgba(239,68,68,.25);color:#fca5a5;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid rgba(239,68,68,.4);pointer-events:none;"></span>
 
 <!-- MAIN -->
 <main class="main">
@@ -344,10 +310,12 @@ function updateStats() {
   document.getElementById('statUnread').textContent   = unread;
   document.getElementById('statRead').textContent     = read;
   document.getElementById('statWithPhoto').textContent = withPic;
-  // Update nav badge
+  // Update nav badge (null-safe: element may not exist on all pages)
   const badge = document.getElementById('unreadBadge');
-  if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline'; }
-  else { badge.style.display = 'none'; }
+  if (badge) {
+    if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+  }
   document.getElementById('pageSubtitle').textContent = `${total} réclamation${total !== 1 ? 's' : ''} au total · ${unread} non lue${unread !== 1 ? 's' : ''}`;
 }
 
