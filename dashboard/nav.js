@@ -60,12 +60,11 @@
    puis on neutralise le ::before de la page pour éviter tout doublon/écart. */
 #pnav-bg{
   position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background-color:#1b2e1e;
+  background-color:var(--bg, #0a140f);
   background-image:
     radial-gradient(ellipse 55% 40% at 15% 85%, rgba(249,115,22,.08) 0%, transparent 70%),
     radial-gradient(ellipse 45% 35% at 85% 15%, rgba(249,115,22,.06) 0%, transparent 65%);
 }
-body::before{ background:none !important; }
 @media print{ #pnav-bg, #pnav-root{ display:none !important; } }
 
 /* ─── Bouton flottant « Menu » (verrouillé en haut-gauche) ─── */
