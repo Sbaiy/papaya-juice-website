@@ -376,7 +376,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Unité</label>
-          <select class="form-input" id="inpDesigUnite">
+          <select class="form-input" id="inpDesigUnite" onchange="calcPrixUnitaire()">
             <option value="g">g</option>
             <option value="kg">kg</option>
             <option value="ml">ml</option>
@@ -391,10 +391,23 @@
           <label class="form-label">Stock initial</label>
           <input type="number" class="form-input" id="inpDesigStock" value="0" min="0">
         </div>
-        <div class="form-group">
-          <label class="form-label">Prix achat / unité</label>
-          <input type="number" class="form-input" id="inpDesigPrix" value="0" min="0" step="0.01">
+      </div>
+      <div class="form-group" style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;border:1px solid var(--border);">
+        <label class="form-label" style="color:var(--orange);font-size:11px;letter-spacing:.05em;">PRIX D'ACHAT</label>
+        <div class="form-grid2" style="margin-top:10px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:11px;" id="lblDesigQte">Quantité achetée</label>
+            <input type="number" class="form-input" id="inpDesigQteAchat" value="" min="0" step="any" placeholder="ex: 6" oninput="calcPrixUnitaire()">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:11px;">Prix d'achat total (DH)</label>
+            <input type="number" class="form-input" id="inpDesigPrixTotal" value="" min="0" step="0.01" placeholder="ex: 1000" oninput="calcPrixUnitaire()">
+          </div>
         </div>
+        <div id="prixUnitaireCalc" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(99,179,118,.1);border-radius:8px;color:#63b376;font-size:13px;font-weight:600;"></div>
+        <input type="hidden" id="inpDesigPrix">
+      </div>
+      <div class="form-grid2" style="display:none">
       </div>
       <div class="form-group">
         <label class="form-label">Seuil d'alerte (stock faible)</label>
@@ -688,7 +701,11 @@ function openModal(type) {
     document.getElementById('inpDesigSKU').value = '';
     document.getElementById('inpDesigUnite').value = 'g';
     document.getElementById('inpDesigStock').value = '0';
-    document.getElementById('inpDesigPrix').value = '0';
+    document.getElementById('inpDesigPrix').value = '';
+    document.getElementById('inpDesigQteAchat').value = '';
+    document.getElementById('inpDesigPrixTotal').value = '';
+    document.getElementById('prixUnitaireCalc').style.display = 'none';
+    document.getElementById('prixUnitaireCalc').textContent = '';
     document.getElementById('inpDesigSeuil').value = '10';
     document.getElementById('modalDesigTitle').textContent = 'Nouvelle désignation';
     document.getElementById('btnDesigLabel').textContent = 'Valider';
@@ -734,7 +751,18 @@ function editDesignation(id) {
   document.getElementById('inpDesigSKU').value = d.sku || '';
   document.getElementById('inpDesigUnite').value = d.unite || 'g';
   document.getElementById('inpDesigStock').value = d.stock_actuel ?? 0;
-  document.getElementById('inpDesigPrix').value = d.prix_achat ?? 0;
+  // Fach edit — bano prix unitaire existant f champ total
+  const prixExist = parseFloat(d.prix_achat) || 0;
+  document.getElementById('inpDesigPrix').value = prixExist;
+  document.getElementById('inpDesigQteAchat').value = '';
+  document.getElementById('inpDesigPrixTotal').value = '';
+  if (prixExist > 0) {
+    const unite2 = d.unite || '';
+    document.getElementById('prixUnitaireCalc').textContent = 'Prix unitaire actuel : ' + prixExist.toFixed(4) + ' DH / ' + unite2;
+    document.getElementById('prixUnitaireCalc').style.display = 'block';
+  } else {
+    document.getElementById('prixUnitaireCalc').style.display = 'none';
+  }
   document.getElementById('inpDesigSeuil').value = d.seuil_alerte ?? 10;
   document.getElementById('modalDesigTitle').textContent = 'Modifier désignation';
   document.getElementById('btnDesigLabel').textContent = 'Enregistrer';
@@ -743,6 +771,27 @@ function editDesignation(id) {
 }
 
 // ── Save Désignation ──
+function calcPrixUnitaire() {
+  const qte   = parseFloat(document.getElementById('inpDesigQteAchat').value);
+  const total = parseFloat(document.getElementById('inpDesigPrixTotal').value);
+  const unite = document.getElementById('inpDesigUnite').value;
+  const calcEl = document.getElementById('prixUnitaireCalc');
+  const hiddenEl = document.getElementById('inpDesigPrix');
+
+  // Update label with unit
+  document.getElementById('lblDesigQte').textContent = 'Quantité achetée (' + unite + ')';
+
+  if (qte > 0 && total > 0) {
+    const unitPrice = total / qte;
+    hiddenEl.value = unitPrice.toFixed(4);
+    calcEl.textContent = 'Prix unitaire calculé : ' + unitPrice.toFixed(4) + ' DH / ' + unite;
+    calcEl.style.display = 'block';
+  } else {
+    hiddenEl.value = '';
+    calcEl.style.display = 'none';
+  }
+}
+
 async function saveDesignation() {
   const id    = document.getElementById('editDesigId').value;
   const nom   = document.getElementById('inpDesigNom').value.trim();
@@ -750,6 +799,7 @@ async function saveDesignation() {
   const unite = document.getElementById('inpDesigUnite').value;
   const stock = parseFloat(document.getElementById('inpDesigStock').value) || 0;
   const prix  = parseFloat(document.getElementById('inpDesigPrix').value)  || 0;
+  // prix kaykon m7sab auto men calcPrixUnitaire()
   const seuil = parseInt(document.getElementById('inpDesigSeuil').value)   || 10;
 
   if (!nom) { showToast('Le nom est obligatoire', 'error'); return; }
