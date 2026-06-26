@@ -1393,6 +1393,12 @@ function _nopSavePending() {
 }
 
 function _nopSaveSeen() {
+    // Limit: khli ghir 200 IDs l-lakhrin bach localStorage maytmlach
+    const arr = [..._nopSeenIds];
+    if (arr.length > 300) {
+        const trimmed = arr.slice(arr.length - 300);
+        _nopSeenIds = new Set(trimmed);
+    }
     localStorage.setItem('nop_seen_ids', JSON.stringify([..._nopSeenIds]));
 }
 
@@ -1867,8 +1873,13 @@ function _startSyncPolling() {
                 method: 'HEAD', signal: AbortSignal.timeout(3000)
             });
             if (!res.ok && res.status !== 405) { _syncBusy = false; return; }
-            // Wifi rj3 ✅
-            if (_isOffline) { _isOffline = false; await _resubscribeBroadcast(); }
+            // Wifi rj3 ✅ — mra wa7da ghir (machi kol 5s)
+            if (_isOffline) {
+                _isOffline = false;
+                await _resubscribeBroadcast();
+                // FIX kiosk mode: 'online' event ma kayfiresh → _nopPollOrders mra wa7da
+                await _nopPollOrders();
+            }
             const sent = await _oqFlush();
             // _flushPrintJobs hoqnaha — tickets dyal offline deja khrejou via local print server
             if (sent > 0) _showOnlineBanner(sent);
