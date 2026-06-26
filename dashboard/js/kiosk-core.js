@@ -380,7 +380,7 @@ function renderCart() {
 // Ticket cuisine avec prix
 function generateKitchenTicket(cartItems, table, orderId=null) {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
     const tableDisplay = table === 'emporter' ? 'À Emporter' : table === 'comptoir' ? 'Comptoir' : table === 'terrasse' ? '☀️ Terrasse' : `Table N° ${table.replace('T','')}`;
@@ -438,7 +438,7 @@ function generateKitchenTicket(cartItems, table, orderId=null) {
 function generateTextTicket(cartItems, table, total, orderId=null) {
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
-    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
 
@@ -1066,7 +1066,7 @@ async function _printAdditionTicket(order, newItems) {
 function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric'});
-    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
     const userName = document.getElementById('userName').textContent || 'Kiosk';
     // FIX: ticket_number (1,2,3...) machi ID Supabase (94, 750...)
     const ticketNum = orderId ? String(orderId).padStart(4,'0') : String(now.getTime()).slice(-4);
