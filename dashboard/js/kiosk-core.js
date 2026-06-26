@@ -561,7 +561,7 @@ async function _printLocal(content, printerName) {
     const res = await fetch('http://localhost:3001/print/usb', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
-        signal: AbortSignal.timeout(1700)
+        signal: AbortSignal.timeout(5000)
     });
     if (!res.ok) throw new Error('Print erreur ' + res.status);
 }
@@ -607,141 +607,71 @@ function _printDedupCheck(key) {
     return true;
 }
 
-// ── Wrapper principal — LOCAL D'ABORD (rapide, <0.5s) / PrintNode = SECOURS ──
-//   • Anti-double: dedup 3la محتوى l-ticket → ZERO double (مهما تعيّط مرتين)
-//   • LOCAL FIRST: localhost kayقبل f ميلي ثواني → ticket khroj بسرعة + kيخدم offline
-//   • PrintNode: SECOURS غير ila l-serveur local طاح (cloud ماقدّش يكون <0.5s)
-//   • Dernier recours: queue localStorage (cuisine) ila kolchi طاح
-//   • Non-bloquant: kيتعيّط b fire-and-forget mن submitOrder → UI فوري
+// ── Wrapper principal — LOCAL UNIQUEMENT (localhost:3001) ──
+//   • Anti-double: dedup 3la contenu ticket → ZERO double
+//   • File d'attente localStorage si print-server occupé → retry auto 10s
 async function printViaPrintNode(content, type = 'kitchen') {
-    // 🚫 Anti-double
+    // Anti-double
     const dedupKey = type + ':' + _hashStr(content);
     if (!_printDedupCheck(dedupKey)) {
-        console.warn('🚫 Double-print bloqué (dedup):', dedupKey);
+        console.warn('Double-print bloqué (dedup):', dedupKey);
         return;
     }
 
-    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-
-    // ── CLÔTURE: PrintNode (imprimante dédiée) d'abord → fallback local ──
-    if (type === 'cloture') {
-        const clpId = cfg.cloturePrinter;
-        if (navigator.onLine && cfg.apiKey && clpId) {
-            try { await _printNodeCloud(content, parseInt(clpId), cfg.apiKey, 'cloture'); return; }
-            catch (e) { console.warn('Cloture PrintNode KO → fallback local:', e.message); }
-        }
-        try { await _printClotureLocal(content); } catch (e) { console.warn('Cloture local KO:', e.message); }
-        return;
-    }
-
-    // ════════════════════════════════════════════════════════
-    //  VITESSE: LOCAL D'ABORD (localhost = dispatch en ms → ticket <0.5s)
-    //  PrintNode = SECOURS seulement si le serveur local est KO
-    //  (cloud ne peut JAMAIS faire <0.5s — round-trip internet)
-    // ════════════════════════════════════════════════════════
-    const printerId = type === 'cash' ? cfg.cashPrinter : cfg.kitchenPrinter;
-
-    // 1) LOCAL d'abord — immédiat
+    // LOCAL uniquement
     try {
-        if (type === 'cash') { await _printUSB(content); }
-        else                 { await _printKitchen(content); }
-        return; // ✅ imprimé en local (rapide)
+        if (type === 'cash')    { await _printUSB(content); }
+        else if (type === 'cloture') { await _printClotureLocal(content); }
+        else                    { await _printKitchen(content); }
+        return; // ✅ imprimé
     } catch (eLocal) {
-        console.warn('Local KO → fallback PrintNode:', eLocal.message);
+        console.warn('Print local KO → queue:', eLocal.message);
     }
 
-    // 2) SECOURS PrintNode (online + configuré) — pas <0.5s mais ne perd pas le ticket
-    if (navigator.onLine && cfg.apiKey && printerId) {
-        try {
-            await _printNodeCloud(content, parseInt(printerId), cfg.apiKey, type);
-            return; // ✅ imprimé via PrintNode (secours)
-        } catch (eCloud) {
-            console.warn('PrintNode KO:', eCloud.message);
-        }
-    }
-
-    // 3) Dernier recours — queue localStorage (cuisine) ila kolchi طاح
-    if (type === 'kitchen') {
-        const { base64 } = _encodeEscPos(content);
-        const cfg2 = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-        const queue = JSON.parse(localStorage.getItem('_pq') || '[]');
-        queue.push({ base64, printerName: cfg2.kitchenPrinterName, ts: Date.now() });
-        localStorage.setItem('_pq', JSON.stringify(queue));
-        if (!_syncInterval) _startSyncPolling();
-    }
-}
-
-// ── PrintNode cloud — kayصيفط نفس RAW base64 (ESC/POS) دیال l-local ──
-// RÈGLE: cette fonction RÉSOUT seulement si l-ticket KHRAJ (imprimé/accepté par PrintNode),
-//        et REJETTE seulement si on est SÛR qu'il N'A PAS imprimé (→ fallback local sûr).
-//   • 2xx                → imprimé ✅ resolve
-//   • réponse HTTP erreur → PAS imprimé (clé/imprimante) → reject (err.printed=false)
-//   • Timeout/réseau      → AMBIGU → on VÉRIFIE via idempotency-key f l-titre:
-//        - job trouvé     → il a imprimé → resolve (ZERO double)
-//        - job pas trouvé → reject (err.printed=false) → local
-async function _printNodeCloud(content, printerId, apiKey, type) {
+    // File d'attente localStorage — retry auto kol 10s
     const { base64 } = _encodeEscPos(content);
-    const idem  = 'pap-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-    const label = (type === 'cash' ? 'Addition' : type === 'cloture' ? 'Clôture' : 'Cuisine');
-    const title = 'Papaya ' + label + ' [' + idem + ']';
-    try {
-        const res = await fetch('https://api.printnode.com/printjobs', {
-            method: 'POST',
-            headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':'), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ printerId, title, contentType: 'raw_base64', content: base64, source: 'Kiosk Papaya' }),
-            signal: AbortSignal.timeout(12000)
-        });
-        if (res.ok) return; // ✅ imprimé via PrintNode → NE PAS imprimer en local
-        const e = new Error('PrintNode HTTP ' + res.status);
-        e.printed = false;  // réponse reçue mais erreur → PAS imprimé → local sûr
-        throw e;
-    } catch (e) {
-        if (e.printed === false) throw e; // déjà classé "pas imprimé"
-        // Timeout / réseau → AMBIGU: vérifier si le job est bien passé chez PrintNode
-        const landed = await _printNodeJobExists(apiKey, idem);
-        if (landed) return; // ✅ il a imprimé → ne pas doubler
-        const e2 = new Error('PrintNode injoignable (pas imprimé)');
-        e2.printed = false; // pas passé → fallback local
-        throw e2;
+    const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
+    let printerName, queueKey;
+    if (type === 'cash') {
+        printerName = cfg.usbPrinterName;
+        queueKey = '_pq_cash';
+    } else if (type === 'cloture') {
+        printerName = cfg.cloturePrinterName || cfg.usbPrinterName;
+        queueKey = '_pq_cloture';
+    } else {
+        printerName = cfg.kitchenPrinterName;
+        queueKey = '_pq';
     }
+    const queue = JSON.parse(localStorage.getItem(queueKey) || '[]');
+    queue.push({ base64, printerName, ts: Date.now() });
+    localStorage.setItem(queueKey, JSON.stringify(queue));
+    if (!_syncInterval) _startSyncPolling();
 }
 
-// Vérifie si un job (par sa clé idem dans le titre) existe chez PrintNode
-async function _printNodeJobExists(apiKey, idem) {
-    try {
-        const res = await fetch('https://api.printnode.com/printjobs?dir=desc&limit=20', {
-            headers: { 'Authorization': 'Basic ' + btoa(apiKey + ':') },
-            signal: AbortSignal.timeout(6000)
-        });
-        if (!res.ok) return false;
-        const jobs = await res.json();
-        return Array.isArray(jobs) && jobs.some(j => (j.title || '').includes(idem));
-    } catch (e) {
-        return false; // injoignable → le POST n'a pas pu imprimer non plus → local
-    }
-}
-
-// ── Flush queue cuisine (retry imprimante Windows) ──
+// ── Flush queues cuisine + addition + cloture (retry auto kol 10s) ──
 async function _flushPrintJobs() {
-    const jobs = JSON.parse(localStorage.getItem('_pq') || '[]');
-    if (!jobs.length) return;
-    const remaining = [];
-    for (const job of jobs) {
-        try {
-            const res = await fetch('http://localhost:3001/print/usb', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content_base64: job.base64, printer_name: job.printerName }),
-                signal: AbortSignal.timeout(6000)
-            });
-            if (!res.ok) remaining.push(job);
-        } catch(e) { remaining.push(job); }
+    for (const queueKey of ['_pq', '_pq_cash', '_pq_cloture']) {
+        const jobs = JSON.parse(localStorage.getItem(queueKey) || '[]');
+        if (!jobs.length) continue;
+        const remaining = [];
+        for (const job of jobs) {
+            try {
+                const res = await fetch('http://localhost:3001/print/usb', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content_base64: job.base64, printer_name: job.printerName }),
+                    signal: AbortSignal.timeout(6000)
+                });
+                if (!res.ok) remaining.push(job);
+            } catch(e) { remaining.push(job); }
+        }
+        localStorage.setItem(queueKey, JSON.stringify(remaining));
     }
-    localStorage.setItem('_pq', JSON.stringify(remaining));
 }
 
-// ── FIX: retry automatique dyal tickets cuisine li tع9o (kanت _flushPrintJobs 3emmrها ما t3ytet) ──
+// ── Retry automatique dyal tous les tickets qui ont échoué ──
 setInterval(() => {
-    if (JSON.parse(localStorage.getItem('_pq') || '[]').length) _flushPrintJobs();
+    const has = ['_pq','_pq_cash','_pq_cloture'].some(k => JSON.parse(localStorage.getItem(k)||'[]').length);
+    if (has) _flushPrintJobs();
 }, 10000);
 
 // ── SUBMIT ORDER ──
