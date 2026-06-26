@@ -387,10 +387,7 @@
             <option value="unite">unité</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Stock initial</label>
-          <input type="number" class="form-input" id="inpDesigStock" value="0" min="0">
-        </div>
+        <input type="hidden" id="inpDesigStock" value="0">
       </div>
       <div class="form-group" style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;border:1px solid var(--border);">
         <label class="form-label" style="color:var(--orange);font-size:11px;letter-spacing:.05em;">PRIX D'ACHAT</label>
@@ -700,7 +697,7 @@ function openModal(type) {
     document.getElementById('inpDesigNom').value = '';
     document.getElementById('inpDesigSKU').value = '';
     document.getElementById('inpDesigUnite').value = 'g';
-    document.getElementById('inpDesigStock').value = '0';
+    document.getElementById('inpDesigStock').value = '0'; // kaytseta men qteAchat fach save
     document.getElementById('inpDesigPrix').value = '';
     document.getElementById('inpDesigQteAchat').value = '';
     document.getElementById('inpDesigPrixTotal').value = '';
@@ -797,9 +794,12 @@ async function saveDesignation() {
   const nom   = document.getElementById('inpDesigNom').value.trim();
   const sku   = document.getElementById('inpDesigSKU').value.trim() || null;
   const unite = document.getElementById('inpDesigUnite').value;
+  const qteAchat = parseFloat(document.getElementById('inpDesigQteAchat').value) || 0;
+  const id2 = document.getElementById('editDesigId').value;
+  // Fach jdid: stock initial = quantité achetée. Fach edit: b9a kma huwa
+  document.getElementById('inpDesigStock').value = id2 ? (document.getElementById('inpDesigStock').value || 0) : qteAchat;
   const stock = parseFloat(document.getElementById('inpDesigStock').value) || 0;
   const prix  = parseFloat(document.getElementById('inpDesigPrix').value)  || 0;
-  // prix kaykon m7sab auto men calcPrixUnitaire()
   const seuil = parseInt(document.getElementById('inpDesigSeuil').value)   || 10;
 
   if (!nom) { showToast('Le nom est obligatoire', 'error'); return; }
