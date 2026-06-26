@@ -610,9 +610,9 @@ function _printDedupCheck(key) {
 // ── Wrapper principal — LOCAL UNIQUEMENT (localhost:3001) ──
 //   • Anti-double: dedup 3la contenu ticket → ZERO double
 //   • File d'attente localStorage si print-server occupé → retry auto 10s
-async function printViaPrintNode(content, type = 'kitchen') {
-    // Anti-double
-    const dedupKey = type + ':' + _hashStr(content);
+async function printViaPrintNode(content, type = 'kitchen', orderId = null) {
+    // Anti-double — zid orderId f key bach kol order 3ndu dedup unique
+    const dedupKey = type + ':' + (orderId ? orderId + ':' : '') + _hashStr(content);
     if (!_printDedupCheck(dedupKey)) {
         console.warn('Double-print bloqué (dedup):', dedupKey);
         return;
@@ -778,8 +778,8 @@ async function submitOrder() {
         //    → ticket khroj <0.5s · contenu = panier EXACT (zéro divergence) · zéro double (dedup)
         const kitchenTicket  = generateKitchenTicket(cartSnapshot, tableVal, localId);
         const additionTicket = generateTextTicket(cartSnapshot, tableVal, finalTotal, localId);
-        printViaPrintNode(kitchenTicket, 'kitchen').catch(e => console.warn('Kitchen print:', e));
-        printViaPrintNode(additionTicket, 'cash').catch(e => console.warn('Cash print:', e));
+        printViaPrintNode(kitchenTicket, 'kitchen', localId).catch(e => console.warn('Kitchen print:', e));
+        printViaPrintNode(additionTicket, 'cash', localId).catch(e => console.warn('Cash print:', e));
 
         // UI libérée tout de suite (le caissier peut enchaîner la commande suivante)
         showToast('✅ Commande envoyée !');
