@@ -301,7 +301,7 @@ async function testLocal(role) {
   let selId = role === 'kitchen' ? 'kitchenPrinterName' : role === 'cloture' ? 'cloturePrinterName' : 'usbPrinterName';
   let name = document.getElementById(selId).value;
   if (!name && role === 'cloture') name = document.getElementById('usbPrinterName').value;
-  if (!name) { toast('Sélectionne l'imprimante d'abord', 'err'); return; }
+  if (!name) { toast("Sélectionne l'imprimante d'abord", 'err'); return; }
   try {
     toast('Test…', 'info');
     const ESC = '\x1B', GS = '\x1D';
