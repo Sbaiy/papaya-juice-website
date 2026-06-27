@@ -261,10 +261,13 @@ body::before{ background:none !important; }
       btnSound.style.cssText = 'background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);color:#f97316;font-size:13px;font-weight:600;font-family:Poppins,sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer;';
       btnSound.textContent = soundOn ? '🔇 Son ON' : '🔊 Son OFF';
       btnSound.onclick = function() {
-        if (typeof toggleSound === 'function') {
-          toggleSound();
-          var isOn = typeof soundEnabled !== 'undefined' ? soundEnabled : false;
-          btnSound.textContent = isOn ? '🔇 Son ON' : '🔊 Son OFF';
+        // Toggle directement bla ma n7tajou l-soundBtn dyal topbar l-mhayda
+        if (typeof soundEnabled !== 'undefined') {
+          soundEnabled = !soundEnabled;
+          localStorage.setItem('live_sound_enabled', soundEnabled ? '1' : '0');
+          btnSound.textContent = soundEnabled ? '🔇 Son ON' : '🔊 Son OFF';
+          if (soundEnabled && typeof playBeep === 'function') playBeep();
+          if (!soundEnabled && typeof stopAllAlerts === 'function') stopAllAlerts();
         }
       };
 
@@ -272,7 +275,10 @@ body::before{ background:none !important; }
       var btnReload = document.createElement('button');
       btnReload.style.cssText = 'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px;font-weight:600;font-family:Poppins,sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer;';
       btnReload.textContent = '🔄 Actualiser';
-      btnReload.onclick = function() { if (typeof loadOrders === 'function') loadOrders(); else location.reload(); };
+      btnReload.onclick = function() {
+        if (typeof loadOrders === 'function') loadOrders();
+        else location.reload();
+      };
 
       /* Logout button */
       var btnLogout = document.createElement('button');
