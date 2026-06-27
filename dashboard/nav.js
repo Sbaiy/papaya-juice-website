@@ -244,7 +244,48 @@ body::before{ background:none !important; }
         el.remove();
       });
 
-    if (glowOnly) return;
+    if (glowOnly) {
+      /* ── Commandes Live: mini topbar b les 3 boutons ── */
+      var liveBar = document.createElement('div');
+      liveBar.id = 'pnav-live-bar';
+      liveBar.style.cssText = [
+        'position:fixed', 'top:14px', 'right:18px', 'z-index:200',
+        'display:flex', 'align-items:center', 'gap:10px'
+      ].join(';');
+
+      /* Son button */
+      var soundStored = localStorage.getItem('live_sound_enabled');
+      var soundOn = soundStored === null ? false : soundStored === '1';
+      var btnSound = document.createElement('button');
+      btnSound.id = 'pnav-sound-btn';
+      btnSound.style.cssText = 'background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);color:#f97316;font-size:13px;font-weight:600;font-family:Poppins,sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer;';
+      btnSound.textContent = soundOn ? '🔇 Son ON' : '🔊 Son OFF';
+      btnSound.onclick = function() {
+        if (typeof toggleSound === 'function') {
+          toggleSound();
+          var isOn = typeof soundEnabled !== 'undefined' ? soundEnabled : false;
+          btnSound.textContent = isOn ? '🔇 Son ON' : '🔊 Son OFF';
+        }
+      };
+
+      /* Reload button */
+      var btnReload = document.createElement('button');
+      btnReload.style.cssText = 'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px;font-weight:600;font-family:Poppins,sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer;';
+      btnReload.textContent = '🔄 Actualiser';
+      btnReload.onclick = function() { if (typeof loadOrders === 'function') loadOrders(); else location.reload(); };
+
+      /* Logout button */
+      var btnLogout = document.createElement('button');
+      btnLogout.style.cssText = 'background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-size:13px;font-weight:600;font-family:Poppins,sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer;';
+      btnLogout.textContent = '🚪 Déconnexion';
+      btnLogout.onclick = function() { if (typeof logout === 'function') logout(); };
+
+      liveBar.appendChild(btnSound);
+      liveBar.appendChild(btnReload);
+      liveBar.appendChild(btnLogout);
+      document.body.appendChild(liveBar);
+      return;
+    }
 
     /* ── Construction du tiroir ── */
     function svg(key) {
