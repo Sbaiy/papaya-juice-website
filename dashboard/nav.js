@@ -249,7 +249,7 @@ body::before{ background:none !important; }
       var liveBar = document.createElement('div');
       liveBar.id = 'pnav-live-bar';
       liveBar.style.cssText = [
-        'position:fixed', 'top:14px', 'right:18px', 'z-index:200',
+        'position:fixed', 'top:14px', 'right:120px', 'z-index:200',
         'display:flex', 'align-items:center', 'gap:10px'
       ].join(';');
 
