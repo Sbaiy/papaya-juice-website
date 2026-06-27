@@ -254,19 +254,24 @@ window.addEventListener('DOMContentLoaded', () => {
   scanLocalPrinters();
 });
 
-async function scanLocalPrinters() {
+async function scanLocalPrinters(attempt = 1) {
   const statusEl = document.getElementById('scanStatus');
-  statusEl.textContent = '⏳ Scan…';
+  statusEl.textContent = attempt > 1 ? `⏳ Tentative ${attempt}…` : '⏳ Scan…';
   try {
-    const res = await fetch(PRINT_SERVER + '/printers', { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(PRINT_SERVER + '/printers', { signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error('Erreur ' + res.status);
     const data = await res.json();
     localPrinters = Array.isArray(data.printers) ? data.printers : [];
     statusEl.textContent = `✅ ${localPrinters.length} imprimante(s) trouvée(s)`;
     renderLocalPrinters();
   } catch(e) {
-    statusEl.textContent = '❌ Print server inaccessible';
-    toast('Vérifie que node print-server.js tourne sur ce PC', 'err');
+    if (attempt < 3) {
+      statusEl.textContent = `⏳ Retry ${attempt}/3…`;
+      setTimeout(() => scanLocalPrinters(attempt + 1), 2000);
+    } else {
+      statusEl.textContent = '❌ Print server inaccessible';
+      toast('Vérifie que node print-server.js tourne sur ce PC', 'err');
+    }
   }
 }
 
