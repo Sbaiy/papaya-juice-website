@@ -555,27 +555,30 @@ function _encodeEscPos(content) {
 }
 
 // ── Print local générique — par nom d'imprimante Windows (RAW) ──
-async function _printLocal(content, printerName) {
+async function _printLocal(content, printerName, queueId = null, orderId = null) {
     if (!printerName) throw new Error('Imprimante non configurée');
     const { base64 } = _encodeEscPos(content);
+    const body = { content_base64: base64, printer_name: printerName };
+    if (queueId)  body.queue_id  = queueId;
+    if (orderId)  body.order_id  = String(orderId);
     const res = await fetch('http://localhost:3001/print/usb', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content_base64: base64, printer_name: printerName }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(5000)
     });
     if (!res.ok) throw new Error('Print erreur ' + res.status);
 }
 
 // ── Addition → imprimante Windows configurée ──
-async function _printUSB(content) {
+async function _printUSB(content, orderId = null) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    await _printLocal(content, cfg.usbPrinterName);
+    await _printLocal(content, cfg.usbPrinterName, null, orderId);
 }
 
-// ── Cuisine → imprimante Windows configurée (avant: TCP/LAN par IP) ──
-async function _printKitchen(content) {
+// ── Cuisine → imprimante Windows configurée ──
+async function _printKitchen(content, orderId = null) {
     const cfg = JSON.parse(localStorage.getItem('papaya_print_config') || '{}');
-    await _printLocal(content, cfg.kitchenPrinterName);
+    await _printLocal(content, cfg.kitchenPrinterName, null, orderId);
 }
 
 // ── Clôture (local) → imprimante Clôture dédiée, sinon retombe sur l'Addition ──
@@ -620,9 +623,9 @@ async function printViaPrintNode(content, type = 'kitchen', orderId = null) {
 
     // LOCAL uniquement
     try {
-        if (type === 'cash')    { await _printUSB(content); }
+        if (type === 'cash')         { await _printUSB(content, orderId); }
         else if (type === 'cloture') { await _printClotureLocal(content); }
-        else                    { await _printKitchen(content); }
+        else                         { await _printKitchen(content, orderId); }
         return; // ✅ imprimé
     } catch (eLocal) {
         console.warn('Print local KO → queue:', eLocal.message);
@@ -673,6 +676,49 @@ setInterval(() => {
     const has = ['_pq','_pq_cash','_pq_cloture'].some(k => JSON.parse(localStorage.getItem(k)||'[]').length);
     if (has) _flushPrintJobs();
 }, 10000);
+
+// ── Popup confirmation commande ──
+function _showOrderConfirmPopup(orderNum) {
+    // Sali popup existant ila kayn
+    const old = document.getElementById('_orderConfirmOverlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = '_orderConfirmOverlay';
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:9999',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(4px)'
+    ].join(';');
+
+    overlay.innerHTML = `
+    <div style="background:#1a1a2e;border-radius:24px;padding:40px 32px;text-align:center;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="width:72px;height:72px;background:#22c55e;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 8px;">Commande confirmée !</h2>
+      <p style="color:#94a3b8;font-size:14px;margin:0 0 16px;">Numéro de commande</p>
+      <div style="color:#f97316;font-size:36px;font-weight:800;margin:0 0 20px;">#${orderNum}</div>
+      <p style="color:#64748b;font-size:13px;margin:0 0 24px;">Votre commande sera préparée bientôt</p>
+      <button id="_confirmPopupBtn" style="width:100%;padding:14px;background:#2d2d44;border:none;border-radius:14px;color:#94a3b8;font-size:15px;font-weight:600;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span style="font-size:18px;">+</span> Nouvelle commande maintenant
+      </button>
+    </div>`;
+
+    document.body.appendChild(overlay);
+
+    // Block 1.5s — b3d enabled
+    const btn = document.getElementById('_confirmPopupBtn');
+    setTimeout(() => {
+        btn.style.cursor = 'pointer';
+        btn.style.color = '#fff';
+        btn.style.background = '#374151';
+        btn.onclick = () => overlay.remove();
+    }, 1500);
+
+    // Ferme automatiquement b3d 8s ila caissier ma dossh
+    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 8000);
+}
 
 // ── SUBMIT ORDER ──
 
@@ -782,11 +828,13 @@ async function submitOrder() {
         printViaPrintNode(additionTicket, 'cash', localId).catch(e => console.warn('Cash print:', e));
 
         // UI libérée tout de suite (le caissier peut enchaîner la commande suivante)
-        showToast('✅ Commande envoyée !');
         clearCart();
         btnOrder.textContent = 'Envoyer la commande';
         btnOrder.disabled = false;
         _submitBusy = false;
+
+        // ── Popup confirmation ──
+        _showOrderConfirmPopup(localId);
 
         const orderPayload = {
             table_number: tableVal,
