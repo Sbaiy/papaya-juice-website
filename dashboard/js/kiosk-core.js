@@ -677,47 +677,64 @@ setInterval(() => {
     if (has) _flushPrintJobs();
 }, 10000);
 
-// ── Popup confirmation commande ──
+// ── Popup confirmation commande — f cart sidebar ──
 function _showOrderConfirmPopup(orderNum) {
-    // Sali popup existant ila kayn
     const old = document.getElementById('_orderConfirmOverlay');
     if (old) old.remove();
 
-    const overlay = document.createElement('div');
-    overlay.id = '_orderConfirmOverlay';
-    overlay.style.cssText = [
-        'position:fixed', 'inset:0', 'z-index:9999',
-        'display:flex', 'align-items:center', 'justify-content:center',
-        'background:rgba(0,0,0,0.7)', 'backdrop-filter:blur(4px)'
+    // Cherche l-cart sidebar
+    const cartSidebar = document.querySelector('.cart-sidebar') || document.querySelector('aside');
+    if (!cartSidebar) return;
+
+    const popup = document.createElement('div');
+    popup.id = '_orderConfirmOverlay';
+    popup.style.cssText = [
+        'position:absolute', 'inset:0', 'z-index:100',
+        'display:flex', 'flex-direction:column',
+        'align-items:center', 'justify-content:center',
+        'background:var(--cart-bg, #161b22)',
+        'padding:24px'
     ].join(';');
 
-    overlay.innerHTML = `
-    <div style="background:#1a1a2e;border-radius:24px;padding:40px 32px;text-align:center;max-width:340px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-      <div style="width:72px;height:72px;background:#22c55e;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    popup.innerHTML = `
+      <div style="width:68px;height:68px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <h2 style="color:#fff;font-size:22px;font-weight:700;margin:0 0 8px;">Commande confirmée !</h2>
-      <p style="color:#94a3b8;font-size:14px;margin:0 0 16px;">Numéro de commande</p>
-      <div style="color:#f97316;font-size:36px;font-weight:800;margin:0 0 20px;">#${orderNum}</div>
-      <p style="color:#64748b;font-size:13px;margin:0 0 24px;">Votre commande sera préparée bientôt</p>
-      <button id="_confirmPopupBtn" style="width:100%;padding:14px;background:#2d2d44;border:none;border-radius:14px;color:#94a3b8;font-size:15px;font-weight:600;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:10px;">
-        <span style="font-size:18px;">+</span> Nouvelle commande maintenant
-      </button>
-    </div>`;
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#e6edf3;margin-bottom:6px;text-align:center;">Commande confirmée !</div>
+      <div style="font-size:13px;color:#7d8590;margin-bottom:12px;">Numéro de commande</div>
+      <div style="font-size:42px;font-weight:800;color:var(--orange,#f97316);margin-bottom:12px;">#${orderNum}</div>
+      <div style="font-size:13px;color:#7d8590;margin-bottom:6px;text-align:center;">Votre commande sera préparée bientôt</div>
+      <div style="font-size:12px;color:#4a5568;margin-bottom:28px;">Nouvelle commande dans quelques secondes…</div>
+      <button id="_confirmPopupBtn" style="width:100%;padding:14px 16px;background:#21262d;border:1px solid #30363d;border-radius:12px;color:#4a5568;font-size:14px;font-weight:600;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Syne',sans-serif;">
+        <span style="font-size:18px;line-height:1;">+</span> Nouvelle commande maintenant
+      </button>`;
 
-    document.body.appendChild(overlay);
+    // Position relative sur le parent
+    const prevPosition = cartSidebar.style.position;
+    cartSidebar.style.position = 'relative';
+    cartSidebar.appendChild(popup);
 
-    // Block 1.5s — b3d enabled
-    const btn = document.getElementById('_confirmPopupBtn');
+    // Enabled b3d 1.5s
     setTimeout(() => {
+        const btn = document.getElementById('_confirmPopupBtn');
+        if (!btn) return;
         btn.style.cursor = 'pointer';
-        btn.style.color = '#fff';
-        btn.style.background = '#374151';
-        btn.onclick = () => overlay.remove();
+        btn.style.color = '#e6edf3';
+        btn.style.background = '#21262d';
+        btn.style.borderColor = 'var(--orange,#f97316)';
+        btn.onclick = () => {
+            popup.remove();
+            cartSidebar.style.position = prevPosition;
+        };
     }, 1500);
 
-    // Ferme automatiquement b3d 8s ila caissier ma dossh
-    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 8000);
+    // Auto-ferme b3d 8s
+    setTimeout(() => {
+        if (popup.parentNode) {
+            popup.remove();
+            cartSidebar.style.position = prevPosition;
+        }
+    }, 8000);
 }
 
 // ── SUBMIT ORDER ──
