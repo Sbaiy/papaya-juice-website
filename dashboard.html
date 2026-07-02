@@ -189,14 +189,16 @@
     <div class="login-title">Papaya Juice</div>
     <div class="login-sub">Connectez-vous pour accéder au tableau de bord</div>
     <div class="login-error" id="loginError">Identifiants incorrects</div>
-    <input class="login-field" type="text" id="loginUser" placeholder="Nom d'utilisateur" autocomplete="off">
+    <form onsubmit="doLogin(); return false;" autocomplete="on">
+    <input class="login-field" type="text" id="loginUser" placeholder="Nom d'utilisateur" autocomplete="username" name="username">
     <div class="login-field-wrap">
-      <input class="login-field" type="password" id="loginPass" placeholder="Mot de passe">
+      <input class="login-field" type="password" id="loginPass" placeholder="Mot de passe" autocomplete="current-password" name="password">
       <button type="button" class="toggle-pass" onclick="togglePassword()" id="togglePassBtn" title="Afficher / Masquer le mot de passe">
         <svg id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
     </div>
-    <button class="login-btn" onclick="doLogin()">Se connecter</button>
+    <button type="submit" class="login-btn">Se connecter</button>
+    </form>
   </div>
   <!-- Keyboard toggle button -->
   <button class="kb-toggle-btn" id="kbToggleBtn" onclick="toggleKeyboard()" title="Clavier virtuel">
@@ -640,8 +642,7 @@ async function loadStats() {
       setVal('val-commandes-jour', count, 'card-commandes-jour');
       setVal('val-revenus-jour', revenue.toFixed(2) + ' DH', 'card-revenus-jour');
     }
-    const _monthStart = new Date(); _monthStart.setDate(1); _monthStart.setHours(0,0,0,0);
-    const { data: allOrders, error: e2 } = await db.from('orders').select('total, status').gte('created_at', _monthStart.toISOString());
+    const { data: allOrders, error: e2 } = await db.from('orders').select('total, status');
     if (!e2 && allOrders) {
       const _cancelled2 = new Set(['annule','annulé','cancelled']);
       const totalCount = allOrders.filter(o => !_cancelled2.has(o.status)).length;
