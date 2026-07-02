@@ -326,7 +326,7 @@ if (!localStorage.getItem('papaya_token')) {
       window.location.replace('/dashboard');
       return;
     }
-    if (payload.role && payload.role !== 'owner' && (payload.role || '').toLowerCase() !== 'gerant') {
+    if (payload.role && payload.role !== 'owner' && (payload.role || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') !== 'gerant') {
       alert('⚠️ Accès refusé — cette page est réservée au propriétaire ou gérant.');
       localStorage.removeItem('papaya_token');
       localStorage.removeItem('papaya_user');
