@@ -261,7 +261,7 @@ if (!localStorage.getItem('papaya_token')) {
       return;
     }
     // Pas propriétaire ni gérant
-    if (payload.role && payload.role !== 'owner' && payload.role !== 'gerant') {
+    if (payload.role && payload.role !== 'owner' && (payload.role || '').toLowerCase() !== 'gerant') {
       alert('⚠️ Accès refusé — cette page est réservée au propriétaire ou gérant.\nVeuillez vous connecter avec le compte approprié.');
       localStorage.removeItem('papaya_token');
       localStorage.removeItem('papaya_user');
