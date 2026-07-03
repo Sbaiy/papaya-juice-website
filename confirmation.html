@@ -341,6 +341,25 @@ body{ background:
 
 <script>
 /* ═══════════════════════════
+   SÉCURITÉ — helpers anti-XSS
+   escapeHtml : neutralise tout HTML/JS injecté (titres produits, table…)
+   safeNum    : force une valeur numérique propre (qty, price, total)
+═══════════════════════════ */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function safeNum(v) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/* ═══════════════════════════
    SUPABASE
 ═══════════════════════════ */
 const SUPABASE_URL = "https://rlwshuurruvtnqwgbjkl.supabase.co";
@@ -438,18 +457,52 @@ document.getElementById('confirmedTime').textContent =
   now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 
 const detailsEl = document.getElementById('detailsRows');
-itemsParsed.forEach(item => {
-  const row = document.createElement('div');
-  row.className = 'detail-row';
-  row.innerHTML = `
-    <div>
-      <div class="item-name">${item.title}</div>
-      <div class="item-qty">Quantité: ${item.qty}</div>
-    </div>
-    <div class="item-price">${(item.price * item.qty).toFixed(2)} DH</div>`;
-  detailsEl.appendChild(row);
-});
-document.getElementById('totalDisplay').textContent = total.toFixed(2) + ' DH';
+
+// ── Rendu d'une liste d'articles (échappé + montants numériques sûrs) ──
+function renderItems(list, totalOverride) {
+  detailsEl.innerHTML = '';
+  let sum = 0;
+  (Array.isArray(list) ? list : []).forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    const title = escapeHtml(item.title);
+    const qty   = safeNum(item.qty) || 1;
+    const price = safeNum(item.price);
+    sum += price * qty;
+    const row = document.createElement('div');
+    row.className = 'detail-row';
+    row.innerHTML = `
+      <div>
+        <div class="item-name">${title}</div>
+        <div class="item-qty">Quantité: ${qty}</div>
+      </div>
+      <div class="item-price">${(price * qty).toFixed(2)} DH</div>`;
+    detailsEl.appendChild(row);
+  });
+  const totalToShow = safeNum(totalOverride != null ? totalOverride : sum);
+  document.getElementById('totalDisplay').textContent = totalToShow.toFixed(2) + ' DH';
+}
+
+// 1) Affichage immédiat depuis l'URL (échappé) — pour ne pas laisser la page vide
+renderItems(itemsParsed, total);
+
+// 2) Source de vérité : on relit la vraie commande depuis la base via orderId.
+//    Même si quelqu'un trafique l'URL, les articles affichés viennent du serveur.
+(async () => {
+  if (!orderId) return;
+  try {
+    const { data, error } = await _supabase
+      .from('orders')
+      .select('items, total')
+      .eq('id', parseInt(orderId))
+      .single();
+    if (error || !data) return;
+    let dbItems = data.items;
+    if (typeof dbItems === 'string') { try { dbItems = JSON.parse(dbItems); } catch(e) { dbItems = []; } }
+    if (Array.isArray(dbItems) && dbItems.length) {
+      renderItems(dbItems, data.total);
+    }
+  } catch(e) { /* on garde l'affichage URL en cas d'échec réseau */ }
+})();
 
 /* ═══════════════════════════
    NAVIGATION — Nouvelle commande avec token QR
@@ -686,7 +739,7 @@ async function cancelOrder() {
   const btn = document.getElementById('cancelBtn');
   btn.disabled=true; btn.textContent='⏳';
   try {
-    const res = await fetch(BACKEND_URL + '/api/orders/' + orderId + '/cancel', {
+    const res = await fetch(BACKEND_URL + '/api/orders/' + encodeURIComponent(orderId) + '/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
