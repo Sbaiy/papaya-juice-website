@@ -642,14 +642,36 @@ async function loadStats() {
       setVal('val-commandes-jour', count, 'card-commandes-jour');
       setVal('val-revenus-jour', revenue.toFixed(2) + ' DH', 'card-revenus-jour');
     }
-    const { data: allOrders, error: e2 } = await db.from('orders').select('total, status');
-    if (!e2 && allOrders) {
-      const _cancelled2 = new Set(['annule','annulé','cancelled']);
-      const totalCount = allOrders.filter(o => !_cancelled2.has(o.status)).length;
-      const totalRev = allOrders.filter(o => !_cancelled2.has(o.status)).reduce((s, o) => s + parseFloat(o.total || 0), 0);
-      setVal('val-total-commandes', totalCount, 'card-total-commandes');
-      setVal('val-revenu-total', totalRev.toFixed(2) + ' DH', 'card-revenu-total');
+    // ── Totaux depuis le début, SANS limite Supabase de 1000 lignes ──
+    // Supabase/PostgREST renvoie au maximum 1000 lignes par requête par défaut.
+    // On parcourt donc toutes les pages jusqu'à la dernière, sans plafond global.
+    const allOrders = [];
+    const PAGE_SIZE = 1000;
+    let from = 0;
+
+    while (true) {
+      const { data: batch, error: e2 } = await db
+        .from('orders')
+        .select('total, status')
+        .order('created_at', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (e2) throw e2;
+
+      const rows = batch || [];
+      allOrders.push(...rows);
+
+      if (rows.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
+
+    const _cancelled2 = new Set(['annule','annulé','cancelled']);
+    const validOrders = allOrders.filter(o => !_cancelled2.has(o.status));
+    const totalCount = validOrders.length;
+    const totalRev = validOrders.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+
+    setVal('val-total-commandes', totalCount, 'card-total-commandes');
+    setVal('val-revenu-total', totalRev.toFixed(2) + ' DH', 'card-revenu-total');
     const { data: catData, error: e3 } = await db.from('products').select('category');
     if (!e3 && catData) {
       const distinct = new Set(catData.map(r => r.category).filter(Boolean));
