@@ -335,7 +335,7 @@ async function broadcastMenuUpdate() {
 }
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000'
-  : 'https://papaya-juice-backend-production.up.railway.app';
+  : 'https://api.papayajuice.xyz';
 const getToken = () => localStorage.getItem('papaya_token');
 const apiH = () => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() });
 async function apiCall(method, path, body) {

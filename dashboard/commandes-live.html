@@ -532,7 +532,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const BACKEND_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
-  : 'https://papaya-juice-backend-production.up.railway.app/api';
+  : 'https://api.papayajuice.xyz/api';
 
 // Broadcast channel
 let _liveChannel = db.channel("papaya-broadcast");
