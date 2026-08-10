@@ -1,7 +1,7 @@
 // === Papaya Kiosk · kiosk-core.js ===
 // Coeur du kiosk — produits, panier, tickets, impression, PIN/auth, realtime, offline
 
-const BACKEND_URL = 'https://papaya-juice-backend-production.up.railway.app';
+const BACKEND_URL = 'https://api.papayajuice.xyz';
 const SECRET_PIN  = '1234';
 
 // ── Supabase Realtime (lecture seule — writes via backend) ──
