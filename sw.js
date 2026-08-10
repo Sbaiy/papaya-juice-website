@@ -8,9 +8,9 @@
    ✓ Notifications push
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_STATIC  = 'papaya-static-v6';
-const CACHE_IMAGES  = 'papaya-images-v6';
-const CACHE_FONTS   = 'papaya-fonts-v6';
+const CACHE_STATIC  = 'papaya-static-v7';
+const CACHE_IMAGES  = 'papaya-images-v7';
+const CACHE_FONTS   = 'papaya-fonts-v7';
 
 const STATIC_ASSETS = [
   '/logo.png',
@@ -42,7 +42,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
   // ── 1. API backend → Network-first ──
-  if (url.hostname.includes('railway.app') || url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/')) {
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
     );

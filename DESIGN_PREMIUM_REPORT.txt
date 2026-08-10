@@ -1,0 +1,35 @@
+Papaya Juice — Premium Menu + Confirmation UI
+=================================================
+
+OBJECTIVE
+- Redesign visual/animations only.
+- Existing API/order/cart/extras/Supabase/printing workflow preserved.
+
+DESIGN CHANGES
+- Animated premium dark-green / papaya-orange background.
+- Glass/premium header treatment.
+- Category card micro-interactions.
+- Product card hover/tap/image animations.
+- Full-width animated “Ajouter” button (same existing click handler).
+- Cart FAB / cart sheet polish and smooth motion.
+- Extras selector redesigned as premium bottom sheet on mobile.
+- Existing extras selection logic preserved.
+- Product visual added to extras selector (display only).
+- Confirmation page redesigned with premium cards, animated success,
+  live tracking visuals, responsive two-column desktop layout.
+- Service-worker cache bumped v6 -> v7 so the new design is fetched.
+
+FUNCTIONAL FILES PRESERVED / INCLUDED
+- Existing Cloudflare API host migration.
+- dashboard.html unlimited total-stat pagination fix.
+- dashboard/rapport-commandes.html full article names fix.
+
+FILES VISUALLY MODIFIED
+- menu.html
+- confirmation.html
+- sw.js (cache version only)
+
+BUSINESS LOGIC CHANGES
+- NONE intentionally.
+- No changes to order creation, stock, auth, realtime, QR flow,
+  cart calculations, extras calculations, cancellation, or printing.

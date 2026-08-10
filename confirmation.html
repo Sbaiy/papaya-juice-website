@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Commande confirmée</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Playfair+Display:wght@700&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -237,8 +237,214 @@ body{ background:
   .details-title,.status-title{ font-size:15px !important; }
 }
 </style>
+
+<style id="papaya-premium-confirmation-v1">
+/* ═══════════════════════════════════════════════════════════════
+   PAPAYA PREMIUM CONFIRMATION — DESIGN / MOTION LAYER ONLY
+   Aucun changement statut / Supabase / notifications / annulation.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --primary:#ff8525!important;
+  --orange:#ff8525!important;
+  --green:#32d176!important;
+  --green-light:rgba(50,209,118,.14)!important;
+  --bg:#06120b!important;
+  --glass:rgba(12,39,25,.82)!important;
+  --border:rgba(177,228,195,.12)!important;
+  --muted:rgba(225,239,230,.53)!important;
+  --ease-premium:cubic-bezier(.2,.8,.2,1);
+}
+body{
+  background:
+    radial-gradient(900px 560px at 92% -4%,rgba(255,132,37,.13),transparent 62%),
+    radial-gradient(850px 540px at -2% 104%,rgba(50,209,118,.08),transparent 60%),
+    linear-gradient(150deg,#05110a,#081b11 52%,#06120b)!important;
+  padding:18px 16px 46px!important;
+  overflow-x:hidden;
+}
+body::before{
+  background:
+    radial-gradient(ellipse 58% 42% at 12% 86%,rgba(50,209,118,.07),transparent 70%),
+    radial-gradient(ellipse 48% 36% at 88% 12%,rgba(255,132,37,.08),transparent 68%)!important;
+}
+body::after{
+  width:72vw!important;height:72vw!important;margin:-36vw 0 0 -36vw!important;
+  background:radial-gradient(circle,rgba(255,132,37,.16),rgba(255,132,37,.05) 34%,transparent 65%)!important;
+  filter:blur(10px);
+  animation:confirmAmbient 25s var(--ease-premium) infinite!important;
+}
+@keyframes confirmAmbient{
+  0%,100%{transform:translate3d(-9vw,-7vh,0) scale(1);opacity:.46}
+  38%{transform:translate3d(10vw,6vh,0) scale(1.28);opacity:.72}
+  72%{transform:translate3d(-2vw,11vh,0) scale(1.08);opacity:.53}
+}
+
+/* Visual header */
+.confirmation-brand{
+  width:100%;max-width:980px;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:10px 12px 10px 14px;border-radius:20px;
+  background:linear-gradient(135deg,rgba(13,44,28,.80),rgba(7,27,17,.72));
+  border:1px solid rgba(183,229,199,.11);
+  box-shadow:0 14px 45px rgba(0,0,0,.22);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  animation:fadeUp .42s ease both;
+}
+.confirmation-brand-link{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.confirmation-brand-link img{width:38px;height:38px;border-radius:13px;object-fit:cover;box-shadow:0 8px 18px rgba(0,0,0,.3)}
+.confirmation-brand-link span{font-family:'Fraunces','Playfair Display',serif;font-size:18px;font-weight:600}
+.confirmation-brand-live{
+  display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:#b9d0c1;
+  padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)
+}
+.confirmation-brand-live span{width:8px;height:8px;border-radius:50%;background:#31d276;box-shadow:0 0 0 5px rgba(49,210,118,.10);animation:brandLive 1.8s ease infinite}
+@keyframes brandLive{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.82)}}
+
+/* Shared premium cards */
+.card,.tracking-card{
+  background:linear-gradient(165deg,rgba(13,43,27,.92),rgba(6,27,17,.90))!important;
+  border:1px solid rgba(183,230,200,.105)!important;
+  box-shadow:0 20px 60px rgba(0,0,0,.26)!important;
+  backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;
+  border-radius:24px!important;
+}
+.card{transition:transform .28s var(--ease-premium),border-color .28s,box-shadow .28s}
+.card:hover{transform:translateY(-2px);border-color:rgba(255,133,37,.22)!important;box-shadow:0 26px 66px rgba(0,0,0,.31)!important}
+
+/* Success */
+.success-card{
+  padding:30px 24px 28px!important;overflow:hidden;position:relative;
+}
+.success-card::before{
+  content:"";position:absolute;width:260px;height:260px;border-radius:50%;top:-155px;left:50%;transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(50,209,118,.17),transparent 68%);pointer-events:none
+}
+.check-circle{
+  width:78px!important;height:78px!important;
+  background:linear-gradient(145deg,rgba(50,209,118,.22),rgba(50,209,118,.08))!important;
+  border:1px solid rgba(50,209,118,.34);
+  box-shadow:0 15px 40px rgba(50,209,118,.12),inset 0 1px 0 rgba(255,255,255,.08);
+  animation:successPop .58s cubic-bezier(.18,.86,.28,1.12) both;
+}
+@keyframes successPop{from{opacity:0;transform:scale(.55) rotate(-12deg)}70%{transform:scale(1.08) rotate(2deg)}to{opacity:1;transform:scale(1)}}
+#checkSvg polyline{stroke-dasharray:26;stroke-dashoffset:26;animation:drawCheck .6s .26s ease forwards}
+@keyframes drawCheck{to{stroke-dashoffset:0}}
+.success-card h1{font-family:'Fraunces',serif!important;font-size:clamp(24px,4vw,31px)!important;letter-spacing:-.5px}
+.subtitle{color:#9fb3a7!important;font-size:13px!important}
+.order-num-box{
+  min-width:210px;background:linear-gradient(135deg,rgba(255,133,37,.10),rgba(255,255,255,.035))!important;
+  border:1px solid rgba(255,133,37,.22);border-radius:18px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03)
+}
+.order-num-box .num{font-size:34px!important;color:#ff9a42!important;letter-spacing:1.5px!important}
+
+/* Tracking */
+.tracking-card{padding:22px!important}
+.tracking-title{font-size:16px!important;margin-bottom:22px!important}
+.live-dot{background:#32d176!important;box-shadow:0 0 0 6px rgba(50,209,118,.08)}
+.step{gap:13px!important}
+.step-icon{
+  width:34px!important;height:34px!important;
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)
+}
+.step-icon.done{background:linear-gradient(145deg,#37d67b,#1fa75b)!important}
+.step-icon.active{
+  background:rgba(255,133,37,.12)!important;border:2px solid rgba(255,145,57,.82)!important;
+  animation:pulseOrange 1.6s infinite!important;
+}
+@keyframes pulseOrange{
+  0%{box-shadow:0 0 0 0 rgba(255,133,37,.34)}
+  70%{box-shadow:0 0 0 10px rgba(255,133,37,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,133,37,0)}
+}
+.step.done-line::after{background:#32d176!important}
+.step-body h3{font-size:14px!important}
+.step-body p{color:#8fa598!important}
+.auto-update{color:#91a99a!important;font-weight:600!important}
+.notif-banner{background:rgba(255,133,37,.09)!important;border-color:rgba(255,133,37,.22)!important}
+.notif-banner .nb-btn{background:linear-gradient(135deg,#ff922e,#ef6b15)!important;color:#170b03!important}
+
+/* Details / status */
+.details-title,.status-title{
+  font-family:'Fraunces',serif;font-size:18px!important;font-weight:600!important
+}
+.detail-row{border-bottom-color:rgba(255,255,255,.065)!important;transition:background .18s}
+.detail-row:hover{background:rgba(255,255,255,.018)}
+.item-name{font-weight:600!important}
+.item-qty{color:#81988a!important}
+.total-row{border-top-color:rgba(255,133,37,.18)!important}
+.total-amount{font-size:24px!important;color:#ff9a42!important}
+.status-badge-row{align-items:center!important}
+.status-badge{border-radius:12px!important}
+.status-desc{color:#95aa9e!important}
+
+/* Buttons */
+.track-btns{gap:10px!important}
+.btn-refresh,.btn-cancel,.btn-new,.nb-btn{
+  transition:transform .2s var(--ease-premium),filter .2s,box-shadow .2s!important;
+}
+.btn-refresh{
+  background:linear-gradient(135deg,rgba(255,133,37,.95),rgba(239,105,19,.95))!important;
+  color:#1a0c03!important;box-shadow:0 12px 26px -14px rgba(255,133,37,.72)
+}
+.btn-cancel{background:rgba(239,83,80,.12)!important;color:#ff9f9d!important;border:1px solid rgba(239,83,80,.22)!important}
+.btn-new{
+  background:linear-gradient(135deg,#ff922e,#ef6b15)!important;color:#190c03!important;
+  box-shadow:0 16px 32px -14px rgba(255,133,37,.76)!important;border:1px solid rgba(255,255,255,.07)
+}
+.btn-refresh:active,.btn-cancel:active,.btn-new:active,.nb-btn:active{transform:scale(.975)!important}
+
+/* Desktop composition — visual only, same DOM and ids */
+@media(min-width:820px){
+  body{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    grid-auto-rows:auto;
+    gap:14px!important;
+    align-items:start!important;
+    justify-content:center!important;
+    max-width:1012px;margin:0 auto;
+  }
+  .confirmation-brand{grid-column:1/-1!important;margin-bottom:0!important}
+  .success-card{grid-column:1!important;max-width:none!important;width:100%!important;margin:0!important;min-height:100%}
+  .tracking-card{grid-column:2!important;max-width:none!important;width:100%!important;margin:0!important}
+  body > .card:not(.success-card){max-width:none!important;width:100%!important;margin:0!important}
+  body > .card:not(.success-card):nth-of-type(4){grid-column:1!important}
+  body > .card:not(.success-card):nth-of-type(5){grid-column:2!important}
+  .action-btns{grid-column:1/-1!important;max-width:none!important;width:100%!important;margin-top:0!important}
+}
+@media(max-width:819px){
+  body{display:flex!important}
+  .confirmation-brand{max-width:480px!important}
+}
+@media(max-width:560px){
+  .confirmation-brand{padding:9px 10px!important;border-radius:17px!important}
+  .confirmation-brand-live{font-size:10px!important}
+  .confirmation-brand-link span{font-size:16px}
+  .card,.tracking-card{border-radius:21px!important}
+  .success-card{padding:27px 16px 24px!important}
+  .tracking-card{padding:20px 16px!important}
+  .order-num-box .num{font-size:30px!important}
+}
+
+/* Accessibility / motion */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+
 </head>
 <body>
+
+
+<div class="confirmation-brand">
+  <a href="/menu" class="confirmation-brand-link">
+    <img src="/logo.png" alt="Papaya Juice">
+    <span>Papaya Juice</span>
+  </a>
+  <div class="confirmation-brand-live"><span></span> Suivi en temps réel</div>
+</div>
 
 <!-- SUCCESS -->
 <div class="card success-card">
