@@ -1,0 +1,25 @@
+Papaya Juice frontend migration patch
+=====================================
+Old API host: https://papaya-juice-backend-production.up.railway.app
+New API host: https://api.papayajuice.xyz
+URL replacements: 12
+Service worker cache: v5 -> v6 (forces one-time refresh of cached JS/HTML assets)
+Business logic changed: NO
+Printing logic changed: NO
+Supabase logic changed: NO
+Order/stock logic changed: NO
+
+Changed files:
+- confirmation.html
+- sw.js
+- menu.html
+- dashboard/admin.html
+- dashboard/historique-clotures.html
+- dashboard/kiosk.html
+- dashboard/commandes-live.html
+- dashboard/personnel.html
+- dashboard/stock.html
+- dashboard/extras.html
+- dashboard/categories.html
+- dashboard/js/api.js
+- dashboard/js/kiosk-core.js
