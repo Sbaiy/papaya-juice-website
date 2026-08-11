@@ -84,9 +84,13 @@ body::after{
   backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
   box-shadow:0 18px 55px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.04);
   transition:transform .42s var(--ease),opacity .35s var(--ease);
-  animation:headerIn .55s var(--ease) both
+  animation:headerIn .55s var(--ease)
 }
-.main-header.hide-nav{transform:translateX(-50%) translateY(-120px);opacity:0;pointer-events:none}
+.main-header.hide-nav{
+  transform:translateX(-50%) translateY(-120px)!important;
+  opacity:0!important;
+  pointer-events:none!important
+}
 @keyframes headerIn{from{opacity:0;transform:translateX(-50%) translateY(-30px)}to{opacity:1;transform:translateX(-50%)}}
 .logo-link{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0;flex-shrink:0}
 .logo-link img{width:42px;height:42px;border-radius:14px;object-fit:cover;box-shadow:0 9px 22px rgba(0,0,0,.3)}
