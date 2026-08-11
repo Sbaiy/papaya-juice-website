@@ -203,7 +203,16 @@ body::after{
   color:#fff;font-size:12px;font-weight:700;
   box-shadow:0 12px 30px rgba(0,0,0,.25)
 }
-.table-banner.visible{display:flex;animation:bannerIn .35s var(--ease) both}
+.table-banner.visible{display:flex;animation:bannerIn .35s var(--ease)}
+.table-banner{
+  transition:transform .42s var(--ease),opacity .32s var(--ease)!important;
+  will-change:transform,opacity
+}
+.table-banner.hide-nav{
+  animation:none!important;
+  transform:translateX(-50%) translateY(-125px)!important;
+  opacity:0!important;pointer-events:none!important
+}
 @keyframes bannerIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%)}}
 .tbl-change{display:none}
 .tbl-edit{display:none!important}
@@ -916,11 +925,7 @@ body::after{
 
 <!-- PRODUCTS VIEW -->
 <div id="productsView" style="display:none;">
-    <button class="back-btn" id="backBtn" onclick="showCategoriesView()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        <span id="backBtnLabel">Retour</span>
-    </button>
-    <div class="menu-grid" id="menuGrid">
+<div class="menu-grid" id="menuGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
     </div>
 </div>
@@ -1360,15 +1365,13 @@ function openCart() {
     cartIsOpen = true;
     document.getElementById('cartPanel').classList.add('open');
     document.getElementById('cartOverlay').classList.add('active');
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) backBtn.classList.add('nav-hidden');
+
 }
 function closeCart() {
     cartIsOpen = false;
     document.getElementById('cartPanel').classList.remove('open');
     document.getElementById('cartOverlay').classList.remove('active');
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) backBtn.classList.remove('nav-hidden');
+
 }
 
 document.getElementById('cartFab').addEventListener('click', openCart);
@@ -1610,13 +1613,14 @@ function buildCategoriesGrid() {
 }
 
 function showCategoriesView() {
+    activeCategory = null;
     document.getElementById('categoriesView').style.display = '';
     document.getElementById('productsView').style.display   = 'none';
     document.getElementById('menuMainTitle').innerHTML = 'Our <span style="color:var(--primary)">Menu</span>';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openCategory(catName) {
+function openCategory(catName, pushHistory = true) {
     activeCategory = catName;
     document.getElementById('menuMainTitle').innerHTML = `<span style="color:var(--primary)">${catName}</span>`;
     document.getElementById('categoriesView').style.display = 'none';
@@ -1625,6 +1629,16 @@ function openCategory(catName) {
     const filtered = allProducts.filter(p => p.category === catName);
     displayProducts(filtered);
     attachCardClicks();
+
+    // Mobile/browser Back returns to categories instead of leaving the site.
+    if (pushHistory) {
+        history.pushState(
+            { papayaMenu: true, view: 'category', category: catName },
+            '',
+            window.location.href
+        );
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1726,16 +1740,14 @@ function openExtrasSelModal(product, groups, qty) {
     document.getElementById('eselProductName').textContent = product.title;
     document.getElementById('eselProductPrice').textContent = Number(product.price).toFixed(2) + ' DH';
     renderMenuExtrasBody();
+    lockTopChromeForProduct();
     document.getElementById('extrasSelModal').classList.add('open');
 }
 
 function closeExtrasSelModal() {
     document.getElementById('extrasSelModal').classList.remove('open');
     _eselProduct = null;
-    // Restore header nav
-    if (header) header.classList.remove('hide-nav');
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) backBtn.classList.remove('nav-hidden');
+    unlockTopChromeForProduct();
 }
 
 function renderMenuExtrasBody() {
@@ -1835,9 +1847,7 @@ function openModal(product) {
     overlay.classList.add('active');
     modal.style.display = 'flex';
     requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
-    header.classList.add('hide-nav');
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) backBtn.classList.add('nav-hidden');
+    lockTopChromeForProduct();
     closeDropdown();
 }
 
@@ -1848,13 +1858,15 @@ function updateModalAddBtn() {
     document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
-function closeModal() {
+function closeModal(keepChromeHidden = false) {
     modal.classList.remove('active');
     overlay.classList.remove('active');
     setTimeout(() => { modal.style.display = 'none'; }, 400);
-    header.classList.remove('hide-nav');
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) backBtn.classList.remove('nav-hidden');
+
+    // true is used only during the modal -> extras transition.
+    if (keepChromeHidden !== true) {
+        unlockTopChromeForProduct();
+    }
 }
 
 overlay.addEventListener('click', closeModal);
@@ -1879,7 +1891,7 @@ document.getElementById('modalAddBtn').addEventListener('click', async () => {
     updateModalAddBtn();
     if (groups && groups.length > 0) {
         // Close the product modal first, then open extras modal
-        closeModal();
+        closeModal(true);
         setTimeout(() => openExtrasSelModal(productSnapshot, groups, qtySnapshot), 50);
     } else {
         // No extras: add directly
@@ -1905,17 +1917,54 @@ function attachCardClicks() {
 ════════════════════════ */
 let lastST = 0;
 let _scrollLocked = false;
+let _productChromeLocked = false;
+let _chromeWasVisibleBeforeProduct = true;
+
 const header = document.getElementById('mainHeader');
+const tableBannerEl = document.getElementById('tableBanner');
+
+function setTopChromeHidden(hidden) {
+    if (header) header.classList.toggle('hide-nav', hidden);
+    if (tableBannerEl) tableBannerEl.classList.toggle('hide-nav', hidden);
+    if (hidden) closeDropdown();
+}
+
+function lockTopChromeForProduct() {
+    if (!_productChromeLocked) {
+        _chromeWasVisibleBeforeProduct = !header?.classList.contains('hide-nav');
+    }
+    _productChromeLocked = true;
+    setTopChromeHidden(true);
+}
+
+function unlockTopChromeForProduct() {
+    _productChromeLocked = false;
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Restore exactly the state the customer had before opening the product.
+    if (_chromeWasVisibleBeforeProduct || st < 70) {
+        setTopChromeHidden(false);
+    } else {
+        setTopChromeHidden(true);
+    }
+    lastST = st;
+}
 
 window.addEventListener('scroll', () => {
-    if (cartIsOpen || _scrollLocked) return;
+    if (cartIsOpen || _scrollLocked || _productChromeLocked) return;
+
     const st = window.pageYOffset || document.documentElement.scrollTop;
-    if (st > lastST && st > 100) {
-        header.classList.add('hide-nav');
-        closeDropdown();
-    } else {
-        header.classList.remove('hide-nav');
+    const delta = st - lastST;
+
+    // Scroll down: navbar + table badge leave upward together.
+    if (delta > 4 && st > 90) {
+        setTopChromeHidden(true);
     }
+    // Scroll up: both return with the same smooth animation.
+    else if (delta < -4 || st < 60) {
+        setTopChromeHidden(false);
+    }
+
     lastST = st <= 0 ? 0 : st;
 }, { passive: true });
 
@@ -2073,7 +2122,26 @@ document.addEventListener("visibilitychange", () => {
     // مكنفتحوش — الـ channel كيفتح غير وقت client يبعث أوردر
 });
 
+window.addEventListener('popstate', (event) => {
+    const state = event.state;
+
+    if (state && state.papayaMenu && state.view === 'category' && state.category) {
+        openCategory(state.category, false);
+        return;
+    }
+
+    // The previous in-page history entry is the categories screen.
+    showCategoriesView();
+});
+
 window.onload = () => {
+    // Mark the initial menu screen as the categories history entry.
+    history.replaceState(
+        { papayaMenu: true, view: 'categories' },
+        '',
+        window.location.href
+    );
+
     detectTableFromURL();
     loadMenuAndCategories();
     // مكنفتحوش channel فـ onload — يفتح غير وقت يبعث أوردر
