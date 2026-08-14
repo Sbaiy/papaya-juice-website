@@ -6,6 +6,7 @@
    <link rel="icon" href="logo.icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="papaya-build" content="mobile-nav-v2">
 <title>Tableau de bord - Papaya Juice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,7 +122,7 @@
   .mobile-nav-backdrop,
   .mobile-nav-drawer { display: none; }
 
-  @media (max-width: 600px) {
+  @media (max-width: 860px) {
     body.mobile-nav-open { overflow: hidden; }
 
     .topbar {
@@ -1257,7 +1258,7 @@ if (localStorage.getItem('papaya_token')) {
       if (event.key === 'Escape' && body.classList.contains('mobile-nav-open')) setMobileNav(false);
     });
     window.addEventListener('resize', function () {
-      if (window.innerWidth > 600 && body.classList.contains('mobile-nav-open')) setMobileNav(false);
+      if (window.innerWidth > 860 && body.classList.contains('mobile-nav-open')) setMobileNav(false);
     });
 
     function syncMobileLanguage() {
