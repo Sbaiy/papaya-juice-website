@@ -252,8 +252,8 @@
       min-height: 0;
       overflow-y: auto;
       flex-direction: column;
-      gap: 4px;
-      padding: 12px 0;
+      gap: 2px;
+      padding: 10px 0;
     }
     .mobile-nav-group {
       padding: 10px 10px 4px;
@@ -266,9 +266,9 @@
     .mobile-nav-link {
       display: flex;
       align-items: center;
-      gap: 11px;
-      min-height: 42px;
-      padding: 10px 12px;
+      gap: 10px;
+      min-height: 40px;
+      padding: 5px 8px;
       border: 1px solid transparent;
       border-radius: 12px;
       color: rgba(255,255,255,.78);
@@ -445,7 +445,14 @@
 <script src="api.js"></script>
   <link rel="stylesheet" href="dashboard/theme.css">
   <link rel="stylesheet" href="dashboard/responsive.css">
-  <style id="mobile-navbar-v3-overrides">
+  <style id="unified-navbar-v4-overrides">
+    header.topbar {
+      transition: transform .24s ease, opacity .2s ease !important;
+    }
+    header.topbar.pnav-scroll-hidden {
+      transform: translateY(calc(-100% - 18px)) !important;
+      opacity: .2;
+    }
     @media (max-width: 860px) {
       header.topbar {
         height: 52px !important;
