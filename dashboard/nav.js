@@ -62,9 +62,7 @@
         ['/dashboard/personnel',             'Personnel',      'staff'],
         ['/dashboard/rapport-commandes',     'Rapports',       'reports'],
         ['/dashboard/reclamations',          'Réclamations',   'claims'],
-        ['/dashboard/historique-clotures',   'Clôtures',       'closings']
-      ]],
-      ['Système', [
+        ['/dashboard/historique-clotures',   'Historique clôtures', 'closings'],
         ['/dashboard/parametres-impression', 'Impression',     'print']
       ]]
     ];
@@ -90,6 +88,23 @@
         html += group[1].map(unifiedLinkHtml).join('');
       });
       return html;
+    }
+    function enableSmartNavbar(navbar, isMenuOpen) {
+      if (!navbar) return;
+      var previousY = Math.max(0, window.scrollY || 0);
+      var ticking = false;
+      window.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(function () {
+          var currentY = Math.max(0, window.scrollY || 0);
+          var menuOpen = typeof isMenuOpen === 'function' && isMenuOpen();
+          if (currentY <= 12 || currentY < previousY - 6 || menuOpen) navbar.classList.remove('pnav-scroll-hidden');
+          else if (currentY > previousY + 6) navbar.classList.add('pnav-scroll-hidden');
+          previousY = currentY;
+          ticking = false;
+        });
+      }, { passive: true });
     }
 
     /* ── Styles (entièrement isolés, préfixe pnav-) ────────────────────── */
@@ -175,15 +190,15 @@ body::before{ background:none !important; }
 .pnav-root.open .pnav-backdrop{ opacity:1; visibility:visible; }
 
 .pnav-drawer{
-  position:fixed; top:0; left:0; height:100%; width:298px; max-width:87vw; z-index:1200;
-  display:flex; flex-direction:column; padding:18px 14px 14px;
+  position:fixed; top:0; right:0; left:auto; height:100dvh; width:min(86vw,330px); max-width:330px; z-index:1200;
+  display:flex; flex-direction:column; padding:max(16px,env(safe-area-inset-top,0px)) 14px max(14px,env(safe-area-inset-bottom,0px));
   font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;
   color:var(--pnav-ink);
   background:linear-gradient(180deg, rgba(18,33,24,.99) 0%, rgba(10,19,13,.995) 100%);
   -webkit-backdrop-filter:blur(22px); backdrop-filter:blur(22px);
-  border-right:1px solid rgba(255,255,255,.06);
-  box-shadow:30px 0 70px rgba(0,0,0,.55);
-  transform:translateX(-104%); transition:transform .36s cubic-bezier(.4,0,.2,1);
+  border-left:1px solid rgba(255,255,255,.06);
+  box-shadow:-30px 0 70px rgba(0,0,0,.55);
+  transform:translateX(104%); transition:transform .36s cubic-bezier(.4,0,.2,1);
 }
 .pnav-root.open .pnav-drawer{ transform:none; }
 
@@ -204,19 +219,19 @@ body::before{ background:none !important; }
 .pnav-close:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--pnav-accent-ring); }
 
 /* Liste */
-.pnav-list{ display:flex; flex-direction:column; gap:2px; overflow-y:auto; flex:1; padding:4px 2px; margin:2px 0;
+.pnav-list{ display:flex; flex-direction:column; gap:2px; overflow-y:auto; flex:1; padding:10px 0; margin:0;
   scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.13) transparent; }
 .pnav-list::-webkit-scrollbar{ width:6px } .pnav-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.13); border-radius:6px }
 .pnav-group-title{ font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--pnav-dim); padding:16px 12px 7px; }
+  color:var(--pnav-dim); padding:10px 10px 4px; }
 
-.pnav-link{ position:relative; display:flex; align-items:center; gap:12px; text-decoration:none;
-  color:var(--pnav-muted); font-weight:600; font-size:14px; padding:6px 10px 6px 6px; border-radius:13px;
+.pnav-link{ position:relative; display:flex; align-items:center; gap:10px; text-decoration:none;
+  min-height:40px; color:var(--pnav-muted); font-weight:650; font-size:13px; padding:5px 8px; border-radius:13px;
   transition:background .16s, color .16s; }
-.pnav-ic{ width:35px; height:35px; flex-shrink:0; display:grid; place-items:center; border-radius:11px;
+.pnav-ic{ width:30px; height:30px; flex:0 0 30px; display:grid; place-items:center; border-radius:9px;
   background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06); color:var(--pnav-muted);
   transition:background .16s, color .16s, border-color .16s, box-shadow .16s; }
-.pnav-ic svg{ width:18px; height:18px; }
+.pnav-ic svg{ width:17px; height:17px; }
 .pnav-link:hover{ background:rgba(255,255,255,.04); color:var(--pnav-ink); }
 .pnav-link:hover .pnav-ic{ color:var(--pnav-ink); background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.12); }
 .pnav-link:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--pnav-accent-ring); }
@@ -241,16 +256,27 @@ body::before{ background:none !important; }
 [dir=rtl] .pnav-link{ padding:6px 6px 6px 10px; }
 
 /* Unified pill navbar used by every management page except kiosk/live. */
+body.pnav-unified-page{ padding-top:68px !important; }
+body.pnav-unified-page > .pnav-root{
+  position:fixed !important; inset:0 !important; z-index:1100 !important;
+  width:auto !important; height:auto !important; margin:0 !important; padding:0 !important;
+  pointer-events:none;
+}
+body.pnav-unified-page > .pnav-root > .pnav-unified-topbar,
+body.pnav-unified-page > .pnav-root > .pnav-backdrop,
+body.pnav-unified-page > .pnav-root > .pnav-drawer{ pointer-events:auto; }
 .pnav-unified-topbar{
-  position:sticky; top:8px; z-index:1100;
-  height:52px; min-height:52px; margin:8px 10px 0; padding:6px 8px;
+  position:absolute; top:8px; left:10px; right:10px; z-index:1100;
+  height:52px; min-height:52px; margin:0; padding:6px 8px;
   display:flex; align-items:center; justify-content:flex-start; gap:8px;
   color:var(--pnav-ink);
   background:rgba(10,28,19,.88); border:1px solid rgba(255,255,255,.09); border-radius:999px;
   -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
   box-shadow:0 10px 30px rgba(0,0,0,.22);
   font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;
+  transition:transform .24s ease, opacity .2s ease;
 }
+.pnav-unified-topbar.pnav-scroll-hidden{ transform:translateY(calc(-100% - 16px)); opacity:.2; }
 .pnav-unified-brand{ display:flex; align-items:center; gap:9px; color:var(--pnav-ink); text-decoration:none; flex:0 0 auto; }
 .pnav-unified-brand img{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid rgba(249,115,22,.42); }
 .pnav-unified-brand span{ color:var(--pnav-accent); font-size:14px; font-weight:800; white-space:nowrap; }
@@ -316,7 +342,12 @@ body::before{ background:none !important; }
 
     /* Page d'accueil (/dashboard) : elle a sa propre navigation (onglets).
        On lui applique uniquement le fond, sans toucher à sa barre. */
-    if (isMainDash) return;
+    if (isMainDash) {
+      enableSmartNavbar(document.querySelector('header.topbar'), function () {
+        return document.body.classList.contains('mobile-nav-open');
+      });
+      return;
+    }
 
     /* Management pages: replace the old floating Menu button with one navbar. */
     if (!glowOnly) {
@@ -333,6 +364,7 @@ body::before{ background:none !important; }
         + "try{if(t)fetch(b+'/auth/logout',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','Authorization':'Bearer '+t}});}catch(e){}"
         + "localStorage.removeItem('papaya_token');localStorage.removeItem('papaya_user');sessionStorage.clear();location.href='/dashboard';";
 
+      document.body.classList.add('pnav-unified-page');
       var unifiedRoot = document.createElement('div');
       unifiedRoot.id = 'pnav-root';
       unifiedRoot.className = 'pnav-root';
@@ -375,6 +407,7 @@ body::before{ background:none !important; }
 
       var unifiedToggle = unifiedRoot.querySelector('.pnav-unified-toggle');
       function openUnified() {
+        unifiedRoot.querySelector('.pnav-unified-topbar').classList.remove('pnav-scroll-hidden');
         unifiedRoot.classList.add('open');
         unifiedToggle.setAttribute('aria-expanded', 'true');
       }
@@ -403,6 +436,9 @@ body::before{ background:none !important; }
         });
       });
       syncUnifiedLanguage();
+      enableSmartNavbar(unifiedRoot.querySelector('.pnav-unified-topbar'), function () {
+        return unifiedRoot.classList.contains('open');
+      });
       return;
     }
 
