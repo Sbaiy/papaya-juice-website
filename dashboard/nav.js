@@ -17,8 +17,9 @@
   function init() {
     if (document.getElementById('pnav-root') || document.getElementById('pnav-bg')) return;
 
-    var glowOnly = /commandes-live/.test(location.pathname);
     var mainPath = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/dashboard';
+    if (/^\/dashboard\/kiosk(?:\/|$)/.test(mainPath)) return;
+    var glowOnly = /commandes-live/.test(location.pathname);
     var isMainDash = (mainPath === '/dashboard');  /* page d'accueil : garde sa propre nav, fond seulement */
 
     /* ── Icônes SVG (style ligne unifié) ──────────────────────────────── */
@@ -36,6 +37,9 @@
       claims:  '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
       closings:'<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
       print:   '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+      kiosk:   '<rect x="2.5" y="3.5" width="19" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/>',
+      bell:    '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+      menu:    '<path d="M4 7h16M4 12h16M4 17h16"/>',
       logout:  '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
       close:   '<path d="M18 6 6 18M6 6l12 12"/>'
     };
@@ -68,6 +72,24 @@
     var path = location.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/dashboard';
     function isActive(route) {
       return (path === route) || (route !== '/dashboard' && path.indexOf(route) === 0);
+    }
+
+    function iconSvg(key) {
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" '
+           + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[key] || '') + '</svg>';
+    }
+    function unifiedLinkHtml(link) {
+      return '<a class="pnav-link' + (isActive(link[0]) ? ' active' : '') + '" href="' + link[0] + '">'
+           + '<span class="pnav-ic">' + iconSvg(link[2]) + '</span>'
+           + '<span class="pnav-tx">' + link[1] + '</span></a>';
+    }
+    function unifiedListHtml() {
+      var html = unifiedLinkHtml(PINNED);
+      GROUPS.forEach(function (group) {
+        html += '<div class="pnav-group-title">' + group[0] + '</div>';
+        html += group[1].map(unifiedLinkHtml).join('');
+      });
+      return html;
     }
 
     /* ── Styles (entièrement isolés, préfixe pnav-) ────────────────────── */
@@ -218,6 +240,61 @@ body::before{ background:none !important; }
 [dir=rtl] .pnav-root.open .pnav-drawer{ transform:none; }
 [dir=rtl] .pnav-link{ padding:6px 6px 6px 10px; }
 
+/* Unified pill navbar used by every management page except kiosk/live. */
+.pnav-unified-topbar{
+  position:sticky; top:8px; z-index:1100;
+  height:52px; min-height:52px; margin:8px 10px 0; padding:6px 8px;
+  display:flex; align-items:center; justify-content:flex-start; gap:8px;
+  color:var(--pnav-ink);
+  background:rgba(10,28,19,.88); border:1px solid rgba(255,255,255,.09); border-radius:999px;
+  -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+  box-shadow:0 10px 30px rgba(0,0,0,.22);
+  font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;
+}
+.pnav-unified-brand{ display:flex; align-items:center; gap:9px; color:var(--pnav-ink); text-decoration:none; flex:0 0 auto; }
+.pnav-unified-brand img{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid rgba(249,115,22,.42); }
+.pnav-unified-brand span{ color:var(--pnav-accent); font-size:14px; font-weight:800; white-space:nowrap; }
+.pnav-unified-right{ margin-left:auto; display:flex; align-items:center; justify-content:flex-end; gap:5px; flex:0 0 auto; }
+.pnav-top-btn,.pnav-unified-toggle{
+  width:34px; height:34px; flex:0 0 34px; display:grid; place-items:center;
+  color:var(--pnav-muted); background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.09);
+  border-radius:50%; cursor:pointer; text-decoration:none; transition:.16s;
+}
+.pnav-top-btn:hover,.pnav-unified-toggle:hover{ color:#fff; border-color:var(--pnav-accent-ring); background:var(--pnav-accent-soft); }
+.pnav-top-btn svg,.pnav-unified-toggle svg{ width:17px; height:17px; }
+.pnav-user-pill{
+  min-height:34px; display:flex; align-items:center; padding:5px 11px;
+  border:1px solid rgba(255,255,255,.09); border-radius:999px; background:rgba(255,255,255,.025);
+}
+.pnav-user-name{ color:#fff; font-size:12px; font-weight:800; white-space:nowrap; }
+.pnav-root #papaya-lang{ display:none !important; }
+.pnav-language-label{ margin:0 2px 7px; color:var(--pnav-dim); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.pnav-language-buttons{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:9px; }
+.pnav-language-button{
+  min-height:40px; display:flex; align-items:center; justify-content:center; gap:6px;
+  color:var(--pnav-ink); background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08);
+  border-radius:11px; font-family:inherit; font-size:11px; font-weight:800; line-height:1; cursor:pointer;
+}
+.pnav-language-button img{ width:25px; height:17px; object-fit:cover; border-radius:3px; box-shadow:0 0 0 1px rgba(255,255,255,.16); }
+.pnav-language-button.active{ color:var(--pnav-accent); border-color:rgba(249,115,22,.5); background:rgba(249,115,22,.12); }
+.pnav-kiosk{
+  min-height:42px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;
+  color:var(--pnav-ink); text-decoration:none; font-size:12px; font-weight:750;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); border-radius:11px;
+}
+.pnav-kiosk svg{ width:17px; height:17px; color:#6ee7b7; }
+
+@media(max-width:860px){
+  .pnav-unified-topbar{ height:52px; min-height:52px; padding:6px 8px; gap:5px; }
+  .pnav-unified-brand{ gap:0; }
+  .pnav-unified-brand img{ width:34px; height:34px; }
+  .pnav-unified-brand span{ display:none; }
+  .pnav-unified-right{ gap:4px; }
+  .pnav-top-btn,.pnav-unified-toggle{ width:32px; height:32px; flex-basis:32px; }
+  .pnav-user-pill{ min-height:32px; padding:4px 9px; }
+  .pnav-user-name{ font-size:11px; }
+}
+
 @media(prefers-reduced-motion:reduce){
   .pnav-fab,.pnav-link,.pnav-drawer,.pnav-backdrop{ transition:none }
 }
@@ -232,9 +309,102 @@ body::before{ background:none !important; }
     bg.id = 'pnav-bg';
     document.body.insertBefore(bg, document.body.firstChild);
 
+    /* Dashboard owns the drawer markup; nav.js supplies the shared line icons. */
+    document.querySelectorAll('[data-nav-icon]').forEach(function (slot) {
+      slot.innerHTML = iconSvg(slot.getAttribute('data-nav-icon'));
+    });
+
     /* Page d'accueil (/dashboard) : elle a sa propre navigation (onglets).
        On lui applique uniquement le fond, sans toucher à sa barre. */
     if (isMainDash) return;
+
+    /* Management pages: replace the old floating Menu button with one navbar. */
+    if (!glowOnly) {
+      document.querySelectorAll('body > header, body > nav, .topbar, .navbar')
+        .forEach(function (el) {
+          if (el.id === 'pnav-bg' || el.closest('#pnav-root')) return;
+          el.remove();
+        });
+
+      var unifiedLogoutJs =
+        "if(window.API&&API.Auth&&API.Auth.logout){API.Auth.logout();return;}"
+        + "var b=location.hostname==='localhost'?'http://localhost:3000/api':'https://api.papayajuice.xyz/api';"
+        + "var t=localStorage.getItem('papaya_token');"
+        + "try{if(t)fetch(b+'/auth/logout',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','Authorization':'Bearer '+t}});}catch(e){}"
+        + "localStorage.removeItem('papaya_token');localStorage.removeItem('papaya_user');sessionStorage.clear();location.href='/dashboard';";
+
+      var unifiedRoot = document.createElement('div');
+      unifiedRoot.id = 'pnav-root';
+      unifiedRoot.className = 'pnav-root';
+      unifiedRoot.innerHTML =
+          '<header class="pnav-unified-topbar">'
+        +   '<a class="pnav-unified-brand" href="/dashboard"><img src="/logo.png" alt="Papaya Juice"><span>Papaya Juice</span></a>'
+        +   '<div class="pnav-unified-right">'
+        +     '<a class="pnav-top-btn" href="/dashboard" aria-label="Notifications" title="Notifications">' + iconSvg('bell') + '</a>'
+        +     '<div class="pnav-user-pill"><span class="pnav-user-name">Papaya Owner</span></div>'
+        +     '<button class="pnav-unified-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false">' + iconSvg('menu') + '</button>'
+        +   '</div>'
+        + '</header>'
+        + '<div class="pnav-backdrop"></div>'
+        + '<aside class="pnav-drawer" role="dialog" aria-label="Navigation" aria-modal="true">'
+        +   '<div class="pnav-head">'
+        +     '<a class="pnav-brand" href="/dashboard">'
+        +       '<img src="/logo.png" alt=""><span class="pnav-brand-txt"><span class="pnav-brand-name">Papaya Juice</span>'
+        +       '<span class="pnav-brand-sub">Tableau de bord</span></span>'
+        +     '</a>'
+        +     '<button class="pnav-close" type="button" aria-label="Fermer le menu">' + iconSvg('close') + '</button>'
+        +   '</div>'
+        +   '<nav class="pnav-list">' + unifiedListHtml() + '</nav>'
+        +   '<div class="pnav-foot">'
+        +     '<div class="pnav-language-label">Langues</div>'
+        +     '<div class="pnav-language-buttons" aria-label="Langues">'
+        +       '<button class="pnav-language-button" type="button" data-pnav-lang="ar" title="العربية"><img src="https://flagcdn.com/w40/ma.png" alt="علم المغرب"><span>AR</span></button>'
+        +       '<button class="pnav-language-button" type="button" data-pnav-lang="en" title="English"><img src="https://flagcdn.com/w40/us.png" alt="USA flag"><span>EN</span></button>'
+        +       '<button class="pnav-language-button" type="button" data-pnav-lang="fr" title="Français"><img src="https://flagcdn.com/w40/fr.png" alt="Drapeau français"><span>FR</span></button>'
+        +     '</div>'
+        +     '<a class="pnav-kiosk" href="/dashboard/kiosk">' + iconSvg('kiosk') + '<span>Caisse / Kiosk</span></a>'
+        +     '<button class="pnav-logout" type="button" onclick="(function(){' + unifiedLogoutJs + '})()">' + iconSvg('logout') + '<span>Déconnexion</span></button>'
+        +   '</div>'
+        + '</aside>';
+      document.body.insertBefore(unifiedRoot, bg.nextSibling);
+
+      try {
+        var savedUser = JSON.parse(localStorage.getItem('papaya_user') || 'null');
+        if (savedUser && savedUser.name) unifiedRoot.querySelector('.pnav-user-name').textContent = savedUser.name;
+      } catch (e) {}
+
+      var unifiedToggle = unifiedRoot.querySelector('.pnav-unified-toggle');
+      function openUnified() {
+        unifiedRoot.classList.add('open');
+        unifiedToggle.setAttribute('aria-expanded', 'true');
+      }
+      function closeUnified() {
+        unifiedRoot.classList.remove('open');
+        unifiedToggle.setAttribute('aria-expanded', 'false');
+      }
+      unifiedToggle.addEventListener('click', openUnified);
+      unifiedRoot.querySelector('.pnav-close').addEventListener('click', closeUnified);
+      unifiedRoot.querySelector('.pnav-backdrop').addEventListener('click', closeUnified);
+      unifiedRoot.querySelectorAll('.pnav-link,.pnav-kiosk').forEach(function (link) { link.addEventListener('click', closeUnified); });
+      document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeUnified(); });
+
+      function syncUnifiedLanguage() {
+        var selected = localStorage.getItem('papaya_lang') || 'fr';
+        unifiedRoot.querySelectorAll('[data-pnav-lang]').forEach(function (button) {
+          button.classList.toggle('active', button.getAttribute('data-pnav-lang') === selected);
+        });
+      }
+      unifiedRoot.querySelectorAll('[data-pnav-lang]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          var language = button.getAttribute('data-pnav-lang');
+          if (typeof window.papayaSetLang === 'function') window.papayaSetLang(language);
+          else { localStorage.setItem('papaya_lang', language); location.reload(); }
+          syncUnifiedLanguage();
+        });
+      });
+      syncUnifiedLanguage();
+      return;
+    }
 
     /* Retire les barres de navigation propres aux pages (remplacées ici) */
     document.querySelectorAll('body > header, body > nav, .topbar, .navbar')
