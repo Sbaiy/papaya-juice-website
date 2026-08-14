@@ -6,7 +6,7 @@
    <link rel="icon" href="logo.icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="papaya-build" content="mobile-nav-v2">
+<meta name="papaya-build" content="mobile-nav-v3">
 <title>Tableau de bord - Papaya Juice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -266,6 +266,7 @@
     .mobile-nav-link {
       display: flex;
       align-items: center;
+      gap: 11px;
       min-height: 42px;
       padding: 10px 12px;
       border: 1px solid transparent;
@@ -274,6 +275,17 @@
       font-size: 13px;
       font-weight: 650;
       text-decoration: none;
+    }
+    .mobile-nav-icon {
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 9px;
+      background: rgba(255,255,255,.05);
+      font-size: 15px;
     }
     .mobile-nav-link:hover,
     .mobile-nav-link:focus-visible {
@@ -306,6 +318,20 @@
       font-weight: 700;
       cursor: pointer;
       text-decoration: none;
+    }
+    .mobile-language-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .mobile-language-button img {
+      width: 25px;
+      height: 17px;
+      display: block;
+      object-fit: cover;
+      border-radius: 3px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.18);
     }
     .mobile-language-button.active {
       color: var(--orange);
@@ -396,6 +422,40 @@
 <script src="api.js"></script>
   <link rel="stylesheet" href="dashboard/theme.css">
   <link rel="stylesheet" href="dashboard/responsive.css">
+  <style id="mobile-navbar-v3-overrides">
+    @media (max-width: 860px) {
+      header.topbar {
+        height: 52px !important;
+        min-height: 52px !important;
+        padding: 6px 8px !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+      }
+      header.topbar .nav-brand {
+        order: 1 !important;
+        width: auto !important;
+        margin: 0 !important;
+        justify-content: flex-start !important;
+        flex: 0 0 auto !important;
+      }
+      header.topbar .topbar-center { display: none !important; }
+      header.topbar .topbar-right {
+        order: 2 !important;
+        width: auto !important;
+        margin: 0 0 0 auto !important;
+        flex: 0 0 auto !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 4px !important;
+      }
+      header.topbar > #papaya-lang { display: none !important; }
+    }
+  </style>
   <script src="/dashboard/nav.js" defer></script>
 </head>
 <body>
@@ -493,33 +553,33 @@
   </div>
 
   <nav class="mobile-nav-links">
-    <a class="mobile-nav-link" href="/dashboard">Tableau de bord</a>
+    <a class="mobile-nav-link" href="/dashboard"><span class="mobile-nav-icon" aria-hidden="true">📊</span><span>Tableau de bord</span></a>
     <div class="mobile-nav-group">Opérations</div>
-    <a class="mobile-nav-link" href="/dashboard/commandes-live">Commandes Live</a>
-    <a class="mobile-nav-link" href="/dashboard/qr-tables">QR Tables</a>
+    <a class="mobile-nav-link" href="/dashboard/commandes-live"><span class="mobile-nav-icon" aria-hidden="true">⚡</span><span>Commandes Live</span></a>
+    <a class="mobile-nav-link" href="/dashboard/qr-tables"><span class="mobile-nav-icon" aria-hidden="true">📱</span><span>QR Tables</span></a>
     <div class="mobile-nav-group">Catalogue</div>
-    <a class="mobile-nav-link" href="/dashboard/admin">Produits</a>
-    <a class="mobile-nav-link" href="/dashboard/categories">Catégories</a>
-    <a class="mobile-nav-link" href="/dashboard/extras">Extras</a>
-    <a class="mobile-nav-link" href="/dashboard/stock">Stock</a>
-    <a class="mobile-nav-link" href="/dashboard/recettes">Recettes</a>
+    <a class="mobile-nav-link" href="/dashboard/admin"><span class="mobile-nav-icon" aria-hidden="true">🥤</span><span>Produits</span></a>
+    <a class="mobile-nav-link" href="/dashboard/categories"><span class="mobile-nav-icon" aria-hidden="true">🗂️</span><span>Catégories</span></a>
+    <a class="mobile-nav-link" href="/dashboard/extras"><span class="mobile-nav-icon" aria-hidden="true">➕</span><span>Extras</span></a>
+    <a class="mobile-nav-link" href="/dashboard/stock"><span class="mobile-nav-icon" aria-hidden="true">📦</span><span>Stock</span></a>
+    <a class="mobile-nav-link" href="/dashboard/recettes"><span class="mobile-nav-icon" aria-hidden="true">📋</span><span>Recettes</span></a>
     <div class="mobile-nav-group">Gestion</div>
-    <a class="mobile-nav-link" href="/dashboard/personnel">Personnel</a>
-    <a class="mobile-nav-link" href="/dashboard/rapport-commandes">Rapports</a>
-    <a class="mobile-nav-link" href="/dashboard/reclamations">Réclamations</a>
-    <a class="mobile-nav-link" href="/dashboard/historique-clotures">Historique clôtures</a>
-    <a class="mobile-nav-link" href="/dashboard/parametres-impression">Impression</a>
+    <a class="mobile-nav-link" href="/dashboard/personnel"><span class="mobile-nav-icon" aria-hidden="true">👥</span><span>Personnel</span></a>
+    <a class="mobile-nav-link" href="/dashboard/rapport-commandes"><span class="mobile-nav-icon" aria-hidden="true">📈</span><span>Rapports</span></a>
+    <a class="mobile-nav-link" href="/dashboard/reclamations"><span class="mobile-nav-icon" aria-hidden="true">💬</span><span>Réclamations</span></a>
+    <a class="mobile-nav-link" href="/dashboard/historique-clotures"><span class="mobile-nav-icon" aria-hidden="true">🕘</span><span>Historique clôtures</span></a>
+    <a class="mobile-nav-link" href="/dashboard/parametres-impression"><span class="mobile-nav-icon" aria-hidden="true">🖨️</span><span>Impression</span></a>
   </nav>
 
   <div class="mobile-nav-footer">
     <div class="mobile-language-label">Langues</div>
     <div class="mobile-language-buttons" aria-label="Langues">
-      <button class="mobile-language-button" type="button" data-mobile-lang="fr">FR</button>
-      <button class="mobile-language-button" type="button" data-mobile-lang="en">EN</button>
-      <button class="mobile-language-button" type="button" data-mobile-lang="ar">ع</button>
+      <button class="mobile-language-button" type="button" data-mobile-lang="ar" title="العربية"><img src="https://flagcdn.com/w40/ma.png" alt="علم المغرب"><span>AR</span></button>
+      <button class="mobile-language-button" type="button" data-mobile-lang="en" title="English"><img src="https://flagcdn.com/w40/us.png" alt="USA flag"><span>EN</span></button>
+      <button class="mobile-language-button" type="button" data-mobile-lang="fr" title="Français"><img src="https://flagcdn.com/w40/fr.png" alt="Drapeau français"><span>FR</span></button>
     </div>
-    <a class="mobile-nav-action" href="/dashboard/kiosk">Caisse / Kiosk</a>
-    <button class="mobile-nav-action logout" type="button" id="mobileNavLogout">Déconnexion</button>
+    <a class="mobile-nav-action" href="/dashboard/kiosk"><span aria-hidden="true">🖥️</span><span>Caisse / Kiosk</span></a>
+    <button class="mobile-nav-action logout" type="button" id="mobileNavLogout"><span aria-hidden="true">🚪</span><span>Déconnexion</span></button>
   </div>
 </aside>
 
