@@ -8,9 +8,9 @@
    ✓ Notifications push
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_STATIC  = 'papaya-static-v12';
-const CACHE_IMAGES  = 'papaya-images-v12';
-const CACHE_FONTS   = 'papaya-fonts-v12';
+const CACHE_STATIC  = 'papaya-static-v14';
+const CACHE_IMAGES  = 'papaya-images-v14';
+const CACHE_FONTS   = 'papaya-fonts-v14';
 
 const STATIC_ASSETS = [
   '/logo.png',
