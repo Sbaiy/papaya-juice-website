@@ -355,6 +355,18 @@ body::after{
 .add-btn:active{transform:scale(.96)}
 .add-btn.pop{animation:addPop .32s var(--ease)}
 @keyframes addPop{0%{transform:scale(1)}40%{transform:scale(.93)}72%{transform:scale(1.035)}100%{transform:scale(1)}}
+.fly-to-cart-product{
+  position:fixed;z-index:1600;pointer-events:none;margin:0;
+  object-fit:contain;transform-origin:center center;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,.42));
+  will-change:transform,opacity,filter;
+}
+.fly-to-cart-spark{
+  position:fixed;z-index:1599;width:18px;height:18px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0 18%,#ffad5f 20% 44%,rgba(255,126,25,.2) 60%,transparent 72%);
+  box-shadow:0 0 24px rgba(255,132,31,.9);opacity:0;transform:translate(-50%,-50%) scale(.2)
+}
+@media (prefers-reduced-motion:reduce){.fly-to-cart-product,.fly-to-cart-spark{display:none!important}}
 .add-btn .btn-badge{
   position:absolute;top:-7px;right:-7px;z-index:3;
   width:21px;height:21px;border-radius:50%;
@@ -1400,6 +1412,78 @@ function triggerFabPulse() {
     setTimeout(() => fab.classList.remove('pulse'), 600);
 }
 
+/* Product -> cart fly animation for the quick + Ajouter action.
+   This is visual only; the existing cart functions remain the source of truth. */
+function flyProductToCart(product, sourceEl) {
+    const card = sourceEl?.closest?.('.product-card');
+    const sourceImg = card?.querySelector('.product-img-wrap img') || card?.querySelector('img');
+    const targetEl = document.querySelector('#cartFab .fab-icon') || document.getElementById('cartFab');
+
+    // Respect reduced-motion and keep the action instant if geometry is unavailable.
+    if (!sourceImg || !targetEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        cartAddOne(product);
+        return;
+    }
+
+    const start = sourceImg.getBoundingClientRect();
+    const target = targetEl.getBoundingClientRect();
+    if (!start.width || !start.height || !target.width || !target.height) {
+        cartAddOne(product);
+        return;
+    }
+
+    const flyer = sourceImg.cloneNode(true);
+    flyer.removeAttribute('loading');
+    flyer.className = 'fly-to-cart-product';
+    Object.assign(flyer.style, {
+        left: start.left + 'px',
+        top: start.top + 'px',
+        width: start.width + 'px',
+        height: start.height + 'px',
+        borderRadius: getComputedStyle(sourceImg).borderRadius || '18px'
+    });
+    document.body.appendChild(flyer);
+
+    const startCx = start.left + start.width / 2;
+    const startCy = start.top + start.height / 2;
+    const endCx = target.left + target.width / 2;
+    const endCy = target.top + target.height / 2;
+    const dx = endCx - startCx;
+    const dy = endCy - startCy;
+
+    // A curved-looking path made from staged translate/scale keyframes.
+    const anim = flyer.animate([
+        { offset: 0, transform: 'translate3d(0,0,0) scale(1) rotate(0deg)', opacity: 1, filter: 'drop-shadow(0 14px 18px rgba(0,0,0,.42))' },
+        { offset: .22, transform: `translate3d(${dx*.12}px,${dy*.06-18}px,0) scale(.92) rotate(-2deg)`, opacity: 1 },
+        { offset: .58, transform: `translate3d(${dx*.55}px,${dy*.42-24}px,0) scale(.56) rotate(3deg)`, opacity: .96 },
+        { offset: .86, transform: `translate3d(${dx*.88}px,${dy*.82-8}px,0) scale(.25) rotate(6deg)`, opacity: .78 },
+        { offset: 1, transform: `translate3d(${dx}px,${dy}px,0) scale(.08) rotate(8deg)`, opacity: .08, filter: 'drop-shadow(0 0 4px rgba(255,132,31,.15))' }
+    ], { duration: 720, easing: 'cubic-bezier(.18,.78,.18,1)', fill: 'forwards' });
+
+    anim.onfinish = () => {
+        flyer.remove();
+        cartAddOne(product);
+
+        const end = targetEl.getBoundingClientRect();
+        const spark = document.createElement('span');
+        spark.className = 'fly-to-cart-spark';
+        spark.style.left = (end.left + end.width/2) + 'px';
+        spark.style.top = (end.top + end.height/2) + 'px';
+        document.body.appendChild(spark);
+        const sparkAnim = spark.animate([
+            { opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' },
+            { offset: .35, opacity: 1, transform: 'translate(-50%,-50%) scale(1.35)' },
+            { opacity: 0, transform: 'translate(-50%,-50%) scale(2.1)' }
+        ], { duration: 360, easing: 'ease-out' });
+        sparkAnim.onfinish = () => spark.remove();
+    };
+
+    anim.oncancel = () => {
+        flyer.remove();
+        cartAddOne(product);
+    };
+}
+
 /* ════════════════════════
    CART OPEN / CLOSE
 ════════════════════════ */
@@ -1744,7 +1828,10 @@ function displayProducts(list) {
             e.stopPropagation();
             const btn = e.currentTarget;
             btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
-            openModal(product); // open modal so user can select extras
+
+            // Quick add: one tap goes directly to the cart with the fly-to-cart animation.
+            // Clicking anywhere else on the product card still opens the existing selector modal.
+            flyProductToCart(product, btn);
         });
 
         card.addEventListener('click', () => {
