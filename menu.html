@@ -357,20 +357,28 @@ body::after{
 @keyframes addPop{0%{transform:scale(1)}40%{transform:scale(.93)}72%{transform:scale(1.035)}100%{transform:scale(1)}}
 .fly-to-cart-card{
   position:fixed!important;z-index:1600!important;pointer-events:none!important;margin:0!important;
-  transform-origin:center center!important;will-change:transform,opacity,filter!important;
-  overflow:hidden!important;box-shadow:0 24px 58px rgba(0,0,0,.48)!important;
-  filter:drop-shadow(0 18px 24px rgba(0,0,0,.28));
+  transform-origin:center center!important;will-change:transform,opacity!important;
+  backface-visibility:hidden!important;-webkit-backface-visibility:hidden!important;
+  transform:translateZ(0);contain:layout paint style;overflow:hidden!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.38)!important;
 }
 .fly-to-cart-card,.fly-to-cart-card *{
   animation:none!important;transition:none!important;pointer-events:none!important
 }
-.fly-to-cart-card .add-btn{box-shadow:0 10px 24px -12px rgba(255,132,31,.78)!important}
+.fly-to-cart-card .add-btn{box-shadow:0 10px 24px -12px rgba(255,132,31,.72)!important}
 .fly-to-cart-spark{
-  position:fixed;z-index:1599;width:18px;height:18px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,#fff 0 18%,#ffad5f 20% 44%,rgba(255,126,25,.2) 60%,transparent 72%);
-  box-shadow:0 0 24px rgba(255,132,31,.9);opacity:0;transform:translate(-50%,-50%) scale(.2)
+  position:fixed;z-index:1599;width:16px;height:16px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0 18%,#ffad5f 20% 44%,rgba(255,126,25,.18) 60%,transparent 72%);
+  box-shadow:0 0 18px rgba(255,132,31,.72);opacity:0;transform:translate3d(-50%,-50%,0) scale(.2);
+  will-change:transform,opacity
 }
 @media (prefers-reduced-motion:reduce){.fly-to-cart-card,.fly-to-cart-spark{display:none!important}}
+@media (max-width:700px){
+  .card-overlay,#extrasSelModal,.cart-overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .modal-card,.esel-box,.cart-panel,.cart-fab,.product-card{
+    -webkit-backface-visibility:hidden;backface-visibility:hidden
+  }
+}
 .add-btn .btn-badge{
   position:absolute;top:-7px;right:-7px;z-index:3;
   width:21px;height:21px;border-radius:50%;
@@ -526,12 +534,12 @@ body::after{
   color:#1a0c03;box-shadow:0 18px 46px rgba(0,0,0,.38),0 12px 34px -12px rgba(255,132,31,.92);
   opacity:0;pointer-events:none;cursor:pointer;
   will-change:transform,opacity,filter;
-  transition:opacity .24s ease,transform .42s cubic-bezier(.2,.82,.2,1),box-shadow .25s,filter .2s
+  transition:opacity .20s ease,transform .36s cubic-bezier(.2,.82,.2,1),box-shadow .22s ease
 }
 .cart-fab.visible{opacity:1;pointer-events:auto}
 .cart-fab:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 22px 52px rgba(0,0,0,.4),0 15px 38px -12px rgba(255,132,31,1)}
 .cart-fab:active{transform:translateX(-50%) scale(.97)}
-.cart-fab.morph-open{opacity:0!important;pointer-events:none!important;transform:translateX(-50%) translateY(3px) scale(.84,.9)!important;filter:blur(1.5px)}
+.cart-fab.morph-open{opacity:0!important;pointer-events:none!important;transform:translateX(-50%) translateY(3px) scale(.84,.9)!important}
 .cart-fab.pulse{animation:fabPulse .32s var(--ease)}
 @keyframes fabPulse{0%{transform:translateX(-50%) scale(1)}45%{transform:translateX(-50%) scale(.94)}75%{transform:translateX(-50%) scale(1.04)}100%{transform:translateX(-50%) scale(1)}}
 .fab-icon{
@@ -558,14 +566,13 @@ body::after{
   border:1px solid rgba(255,151,54,.24);border-radius:999px;
   background:linear-gradient(160deg,rgba(16,52,33,.995),rgba(5,24,15,.995));
   box-shadow:0 30px 90px rgba(0,0,0,.62),0 12px 40px -22px rgba(255,135,32,.92);
-  opacity:0;visibility:hidden;pointer-events:none;filter:blur(1.5px);
-  will-change:transform,opacity,border-radius,filter;
+  opacity:0;visibility:hidden;pointer-events:none;
+  will-change:transform,opacity,border-radius;
   transition:
-    transform .52s cubic-bezier(.18,.9,.22,1.08),
+    transform .46s cubic-bezier(.18,.88,.22,1.03),
     opacity .16s ease,
-    border-radius .43s cubic-bezier(.2,.8,.2,1),
-    filter .22s ease,
-    visibility 0s linear .54s
+    border-radius .38s cubic-bezier(.2,.8,.2,1),
+    visibility 0s linear .48s
 }
 .cart-panel::before{
   content:"";position:absolute;z-index:0;left:14%;right:14%;bottom:-48px;height:92px;pointer-events:none;
@@ -573,7 +580,7 @@ body::after{
 }
 .cart-panel.open{
   transform:translateX(-50%) translateY(0) scale(1);
-  border-radius:25px;opacity:1;visibility:visible;pointer-events:auto;filter:none;
+  border-radius:25px;opacity:1;visibility:visible;pointer-events:auto;
   transition-delay:0s
 }
 .cart-panel>.cart-handle,.cart-panel>.cart-header,.cart-panel>.cart-items,.cart-panel>.cart-footer{
@@ -1416,20 +1423,31 @@ function triggerFabPulse() {
     setTimeout(() => fab.classList.remove('pulse'), 600);
 }
 
-/* Full product-card -> cart fly animation.
-   Visual only: the caller decides what gets added after the card reaches the cart. */
+/* Visible surface -> cart fly animation.
+   Quick add uses the grid product card. Details/extras use the surface the customer is actually looking at. */
 function findRenderedProductCard(product) {
     const id = String(product?.id ?? '');
     return Array.from(document.querySelectorAll('.product-card'))
         .find(card => card.dataset.productId === id) || null;
 }
 
-function flyProductCardToCart(product, sourceEl, onArrive) {
-    const sourceCard = sourceEl?.closest?.('.product-card') || findRenderedProductCard(product);
+function resolveFlySource(product, sourceEl) {
+    if (sourceEl) {
+        if (sourceEl.matches?.('.product-card,.modal-card,.esel-box')) return sourceEl;
+        const visibleSurface = sourceEl.closest?.('.modal-card,.esel-box,.product-card');
+        if (visibleSurface) return visibleSurface;
+    }
+    return findRenderedProductCard(product);
+}
+
+function flyProductCardToCart(product, sourceEl, onArrive, options = {}) {
+    const sourceCard = resolveFlySource(product, sourceEl);
     const targetEl = document.querySelector('#cartFab .fab-icon') || document.getElementById('cartFab');
     const finish = typeof onArrive === 'function' ? onArrive : () => {};
+    const onStart = typeof options.onStart === 'function' ? options.onStart : null;
 
     if (!sourceCard || !targetEl || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (onStart) onStart();
         finish();
         return;
     }
@@ -1437,27 +1455,24 @@ function flyProductCardToCart(product, sourceEl, onArrive) {
     const start = sourceCard.getBoundingClientRect();
     const target = targetEl.getBoundingClientRect();
     if (!start.width || !start.height || !target.width || !target.height) {
+        if (onStart) onStart();
         finish();
         return;
     }
 
+    const sourceStyle = getComputedStyle(sourceCard);
     const flyer = sourceCard.cloneNode(true);
     flyer.classList.remove('animate-in');
     flyer.classList.add('fly-to-cart-card');
-    flyer.removeAttribute('style');
     flyer.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-    Object.assign(flyer.style, {
-        left: start.left + 'px',
-        top: start.top + 'px',
-        width: start.width + 'px',
-        height: start.height + 'px',
-        borderRadius: getComputedStyle(sourceCard).borderRadius || '22px'
-    });
+    flyer.style.cssText += `;left:${start.left}px;top:${start.top}px;width:${start.width}px;height:${start.height}px;max-width:none;max-height:none;border-radius:${sourceStyle.borderRadius || '22px'};opacity:1;visibility:visible;`;
+    flyer.style.setProperty('display', sourceStyle.display === 'none' ? 'flex' : sourceStyle.display, 'important');
     document.body.appendChild(flyer);
 
-    // Make it feel like the real card was picked up, not just a duplicate image.
+    // The clone takes over in the same frame, so the real visible card can close without a jump.
     const oldVisibility = sourceCard.style.visibility;
     sourceCard.style.visibility = 'hidden';
+    if (onStart) onStart();
 
     const startCx = start.left + start.width / 2;
     const startCy = start.top + start.height / 2;
@@ -1465,7 +1480,7 @@ function flyProductCardToCart(product, sourceEl, onArrive) {
     const endCy = target.top + target.height / 2;
     const dx = endCx - startCx;
     const dy = endCy - startCy;
-    const endScale = Math.max(.08, Math.min(.20, target.width / Math.max(start.width, 1)));
+    const endScale = Math.max(.075, Math.min(.18, target.width / Math.max(start.width, 1)));
     let completed = false;
 
     const complete = () => {
@@ -1478,25 +1493,25 @@ function flyProductCardToCart(product, sourceEl, onArrive) {
         const end = targetEl.getBoundingClientRect();
         const spark = document.createElement('span');
         spark.className = 'fly-to-cart-spark';
-        spark.style.left = (end.left + end.width/2) + 'px';
-        spark.style.top = (end.top + end.height/2) + 'px';
+        spark.style.left = (end.left + end.width / 2) + 'px';
+        spark.style.top = (end.top + end.height / 2) + 'px';
         document.body.appendChild(spark);
         const sparkAnim = spark.animate([
-            { opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' },
-            { offset: .35, opacity: 1, transform: 'translate(-50%,-50%) scale(1.35)' },
-            { opacity: 0, transform: 'translate(-50%,-50%) scale(2.1)' }
-        ], { duration: 360, easing: 'ease-out' });
+            { opacity: 0, transform: 'translate3d(-50%,-50%,0) scale(.25)' },
+            { offset: .38, opacity: .9, transform: 'translate3d(-50%,-50%,0) scale(1.15)' },
+            { opacity: 0, transform: 'translate3d(-50%,-50%,0) scale(1.85)' }
+        ], { duration: 280, easing: 'cubic-bezier(.2,.75,.2,1)' });
         sparkAnim.onfinish = () => spark.remove();
     };
 
+    // Transform + opacity only = compositor animation, much smoother on mobile than animating blur/filter.
     const anim = flyer.animate([
-        { offset: 0, transform: 'translate3d(0,0,0) scale(1) rotate(0deg)', opacity: 1, filter: 'drop-shadow(0 18px 24px rgba(0,0,0,.34))' },
-        { offset: .16, transform: `translate3d(${dx*.08}px,${dy*.035-13}px,0) scale(.96) rotate(-1deg)`, opacity: 1 },
-        { offset: .42, transform: `translate3d(${dx*.34}px,${dy*.24-20}px,0) scale(.74) rotate(1.5deg)`, opacity: .99 },
-        { offset: .70, transform: `translate3d(${dx*.68}px,${dy*.58-16}px,0) scale(.43) rotate(3deg)`, opacity: .96 },
-        { offset: .90, transform: `translate3d(${dx*.91}px,${dy*.86-5}px,0) scale(${Math.max(endScale*1.55,.18)}) rotate(4deg)`, opacity: .82 },
-        { offset: 1, transform: `translate3d(${dx}px,${dy}px,0) scale(${endScale}) rotate(5deg)`, opacity: .12, filter: 'drop-shadow(0 0 3px rgba(255,132,31,.12))' }
-    ], { duration: 780, easing: 'cubic-bezier(.18,.80,.18,1)', fill: 'forwards' });
+        { offset: 0, transform: 'translate3d(0,0,0) scale(1) rotate(0deg)', opacity: 1 },
+        { offset: .28, transform: `translate3d(${dx*.23}px,${dy*.14-16}px,0) scale(.84) rotate(-.5deg)`, opacity: 1 },
+        { offset: .62, transform: `translate3d(${dx*.61}px,${dy*.50-12}px,0) scale(.49) rotate(1.2deg)`, opacity: .98 },
+        { offset: .86, transform: `translate3d(${dx*.86}px,${dy*.80-4}px,0) scale(${Math.max(endScale*1.8,.20)}) rotate(2deg)`, opacity: .88 },
+        { offset: 1, transform: `translate3d(${dx}px,${dy}px,0) scale(${endScale}) rotate(2.5deg)`, opacity: .10 }
+    ], { duration: 650, easing: 'cubic-bezier(.20,.72,.16,1)', fill: 'forwards' });
 
     anim.onfinish = complete;
     anim.oncancel = complete;
@@ -1998,13 +2013,14 @@ function confirmMenuExtrasAndAdd() {
     const qty = _eselQty;
     const origId = _eselProduct.id;
     const sourceBtn = document.getElementById('eselAddBtn');
-    closeExtrasSelModal();
 
-    // Final add after extras selection gets the same full-card flight.
-    requestAnimationFrame(() => flyProductCardToCart(productSnapshot, sourceBtn, () => {
+    // Fly the extras sheet the customer is currently looking at, then add the configured product.
+    flyProductCardToCart(productSnapshot, sourceBtn, () => {
         delete cart[origId];
         for (let i = 0; i < qty; i++) cartAddOne(productWithExtras);
-    }));
+    }, {
+        onStart: closeExtrasSelModal
+    });
 }
 
 function escMenuHtml(s) {
@@ -2072,13 +2088,19 @@ document.getElementById('modalAddBtn').addEventListener('click', async () => {
         closeModal(true);
         setTimeout(() => openExtrasSelModal(productSnapshot, groups, qtySnapshot), 50);
     } else {
-        // No extras: close details, then fly the FULL product card into the cart before adding.
+        // No extras: the OPEN details card itself flies to the cart (not the grid card behind it).
         const productWithExtras = { ...productSnapshot, selectedExtras: [] };
-        closeModal();
-        setTimeout(() => flyProductCardToCart(productSnapshot, btn, () => {
+        flyProductCardToCart(productSnapshot, modal, () => {
             delete cart[productSnapshot.id];
             for (let i = 0; i < qtySnapshot; i++) cartAddOne(productWithExtras);
-        }), 70);
+        }, {
+            onStart: () => {
+                modal.classList.remove('active');
+                overlay.classList.remove('active');
+                modal.style.display = 'none';
+                unlockTopChromeForProduct();
+            }
+        });
     }
 });
 
