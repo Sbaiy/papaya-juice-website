@@ -99,7 +99,73 @@ function doLogout() {
 }
 
 // ── CLOTURE MODAL ──
-function openClotureModal()  { document.getElementById('clotureModal').style.display = 'flex'; }
+// La clôture dépend des commandes enregistrées sur le backend. On vérifie donc
+// la connexion réelle au backend (navigator.onLine seul peut être trompeur)
+// avant d'autoriser l'ouverture du parcours de clôture.
+let _clotureConnectivityCheckBusy = false;
+
+function _showClotureOfflineError() {
+    _isOffline = true;
+    _showOfflineBanner();
+    showToast('📵 Kiosk hors ligne — clôture impossible. Attendez le retour du Wi-Fi.');
+}
+
+async function _checkClotureConnectivity() {
+    if (navigator.onLine === false) {
+        _showClotureOfflineError();
+        return false;
+    }
+
+    try {
+        const token = localStorage.getItem('papaya_token');
+        const res = await fetch(BACKEND_URL + '/api/orders?limit=1', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+            cache: 'no-store',
+            signal: AbortSignal.timeout(5000)
+        });
+
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                showToast('🔒 Session expirée — reconnectez-vous avant la clôture.');
+                return false;
+            }
+            _showClotureOfflineError();
+            return false;
+        }
+
+        // Le réseau est revenu mais des commandes peuvent encore être dans la
+        // file offline. Les synchroniser avant la clôture évite tout double
+        // comptage entre la DB et la queue locale.
+        if (_oqLoad().length > 0) {
+            const sent = await _oqFlush();
+            if (_oqLoad().length > 0) {
+                _isOffline = true;
+                _showOfflineBanner();
+                showToast('🔄 Connexion rétablie — synchronisation en cours. Réessayez la clôture dans un instant.');
+                return false;
+            }
+            if (sent > 0) _showOnlineBanner(sent);
+        }
+
+        _isOffline = false;
+        return true;
+    } catch(e) {
+        _showClotureOfflineError();
+        return false;
+    }
+}
+
+async function openClotureModal() {
+    if (_clotureConnectivityCheckBusy) return;
+    _clotureConnectivityCheckBusy = true;
+    try {
+        if (await _checkClotureConnectivity()) {
+            document.getElementById('clotureModal').style.display = 'flex';
+        }
+    } finally {
+        _clotureConnectivityCheckBusy = false;
+    }
+}
 function closeClotureModal() { document.getElementById('clotureModal').style.display = 'none'; }
 
 // ── PRODUCTS ──
@@ -1298,37 +1364,53 @@ async function reprintOrder(encodedOrder) {
 // ── CLOTURE ──
 async function validerCloture() {
     try {
+        // Re-vérifier après le PIN: le Wi-Fi peut se couper entre l'ouverture
+        // du modal et la confirmation. En cas d'échec, aucun ticket/reset/logout.
+        if (!await _checkClotureConnectivity()) return;
+
         let totalJournee=0, nbrCommandes=0, clotureOrders=[];
-        try {
-            const token = localStorage.getItem('papaya_token');
-            // ── Fetch TOUTES les commandes sans limite ──
-            const res = await fetch(BACKEND_URL+'/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
-            const allOrders = res.ok ? (await res.json().then(r => Array.isArray(r) ? r : (r.data || []))) : [];
-
-            // ── Ajouter les commandes offline en attente de sync ──
-            const offlineQueue = _oqLoad();
-            const offlineFake = offlineQueue.map((item, i) => ({
-                id: 'offline-' + i,
-                table_number: item.payload.table_number,
-                items: item.payload.items,
-                total: item.payload.total,
-                status: 'pending',
-                created_at: new Date(item.ts || Date.now()).toISOString(),
-                source: 'kiosk-offline'
-            }));
-            const allOrdersWithOffline = [...allOrders, ...offlineFake];
-
-            if (allOrdersWithOffline.length > 0) {
-                const loginTime = localStorage.getItem('papaya_kiosk_login_time');
-                const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
-                // Compter TOUT sauf les annulées (en_attente inclus)
-                clotureOrders = loginTime
-                    ? allOrdersWithOffline.filter(o => new Date(o.created_at) >= new Date(loginTime) && !STATUS_CANCELLED.has(o.status))
-                    : allOrdersWithOffline.filter(o => !STATUS_CANCELLED.has(o.status));
-                nbrCommandes = clotureOrders.length;
-                totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
+        const token = localStorage.getItem('papaya_token');
+        // ── Fetch TOUTES les commandes sans limite ──
+        // IMPORTANT: ne jamais continuer avec [] si le backend est inaccessible,
+        // sinon une fausse clôture à 0 DH serait imprimée.
+        const res = await fetch(BACKEND_URL+'/api/orders', {
+            headers: { 'Authorization': 'Bearer ' + token },
+            cache: 'no-store',
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+                throw new Error('SESSION_EXPIRED');
             }
-        } catch(e) {}
+            throw new Error('CLOTURE_BACKEND_UNAVAILABLE');
+        }
+        const allOrders = await res.json().then(r => Array.isArray(r) ? r : (r.data || []));
+
+        // À ce stade le backend est joignable. La queue offline peut être incluse
+        // si une synchronisation est encore en cours, sans autoriser une clôture
+        // lorsque le kiosk est réellement hors ligne.
+        const offlineQueue = _oqLoad();
+        const offlineFake = offlineQueue.map((item, i) => ({
+            id: 'offline-' + i,
+            table_number: item.payload.table_number,
+            items: item.payload.items,
+            total: item.payload.total,
+            status: 'pending',
+            created_at: new Date(item.ts || Date.now()).toISOString(),
+            source: 'kiosk-offline'
+        }));
+        const allOrdersWithOffline = [...allOrders, ...offlineFake];
+
+        if (allOrdersWithOffline.length > 0) {
+            const loginTime = localStorage.getItem('papaya_kiosk_login_time');
+            const STATUS_CANCELLED = new Set(['cancelled', 'annulé', 'annule', 'canceled']);
+            // Compter TOUT sauf les annulées (en_attente inclus)
+            clotureOrders = loginTime
+                ? allOrdersWithOffline.filter(o => new Date(o.created_at) >= new Date(loginTime) && !STATUS_CANCELLED.has(o.status))
+                : allOrdersWithOffline.filter(o => !STATUS_CANCELLED.has(o.status));
+            nbrCommandes = clotureOrders.length;
+            totalJournee = clotureOrders.reduce((s,o) => s+parseFloat(o.total||0), 0);
+        }
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR');
         const timeStr = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -1413,23 +1495,26 @@ async function validerCloture() {
         ticketZ += sep;
 
         // ── Enregistrer la clôture en DB d'abord pour obtenir l'ID réel ──
-        let realClotureId = null;
-        try {
-            const token = localStorage.getItem('papaya_token');
-            const saveRes = await fetch(BACKEND_URL + '/api/clotures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2), items_snapshot: categoryMap })
-            });
-            if (saveRes.ok) {
-                const saved = await saveRes.json();
-                realClotureId = saved.id != null ? saved.id : null;
+        // L'enregistrement est obligatoire: si le réseau tombe ici, on arrête
+        // avant impression/reset/logout et le serveur pourra réessayer.
+        const saveRes = await fetch(BACKEND_URL + '/api/clotures', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ caissier: userName, nbr_commandes: nbrCommandes, total: grandTotal.toFixed(2), items_snapshot: categoryMap }),
+            cache: 'no-store',
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!saveRes.ok) {
+            if (saveRes.status === 401 || saveRes.status === 403) {
+                throw new Error('SESSION_EXPIRED');
             }
-        } catch(e) { console.warn('Cloture non sauvegardée:', e); }
+            throw new Error('CLOTURE_BACKEND_UNAVAILABLE');
+        }
+        const saved = await saveRes.json();
+        if (saved.id == null) throw new Error('CLOTURE_BACKEND_UNAVAILABLE');
+        const realClotureId = saved.id;
 
-        // Remplacer le placeholder par l'ID réel (fallback: timestamp si échec réseau)
-        const fallbackId = Math.floor(Date.now() / 1000) % 10000;
-        ticketZ = ticketZ.replace('__CLOTURE_ID__', realClotureId !== null ? realClotureId : fallbackId);
+        ticketZ = ticketZ.replace('__CLOTURE_ID__', realClotureId);
 
         await printViaPrintNode(ticketZ, 'cloture');
         localStorage.setItem('papaya_cloture_time', new Date().toISOString());
@@ -1439,7 +1524,15 @@ async function validerCloture() {
         localStorage.setItem('papaya_order_counter', '0');
         showToast('✅ Clôture réussie ! Déconnexion...');
         setTimeout(() => { if(typeof API!=='undefined') API.Auth.logout(); else { sessionStorage.clear(); location.href='/dashboard'; } }, 2000);
-    } catch(err) { showToast('❌ Erreur clôture: '+err.message); }
+    } catch(err) {
+        if (err.message === 'SESSION_EXPIRED') {
+            showToast('🔒 Session expirée — reconnectez-vous avant la clôture.');
+        } else if (err.message === 'CLOTURE_BACKEND_UNAVAILABLE' || err.name === 'TimeoutError' || err.name === 'AbortError' || navigator.onLine === false) {
+            _showClotureOfflineError();
+        } else {
+            showToast('❌ Erreur clôture: '+err.message);
+        }
+    }
 }
 
 // ════════════════════════════════════════
