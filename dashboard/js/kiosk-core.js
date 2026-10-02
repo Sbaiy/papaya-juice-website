@@ -1076,6 +1076,12 @@ function histFilterStatus(btn, status) {
     renderHistOrders();
 }
 
+function _histEscapeText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+}
+
 function renderHistOrders() {
     const filtered = histCurrentFilter ? histAllOrders.filter(o => o.status===histCurrentFilter) : histAllOrders;
     const list = document.getElementById('hist-list');
@@ -1086,39 +1092,51 @@ function renderHistOrders() {
         const st = HIST_STATUS_LABELS[o.status] || {label:o.status, icon:'❓'};
         const stClass = getStatusClass(o.status);
         const rawItems = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-        const items = rawItems.map(i=>`${i.qty}x ${i.title}`).join(', ');
+        const items = _histEscapeText(rawItems.map(i=>`${i.qty}x ${i.title || i.name || ''}`).join(', '));
         const time = o.created_at ? new Date(o.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
-        const payment = o.payment_method ? `<span style="font-size:11px;color:var(--muted);">${o.payment_method}</span>` : '';
+        const payment = o.payment_method ? `<span style="font-size:11px;color:var(--muted);">${_histEscapeText(o.payment_method)}</span>` : '';
         // FIX: yachri ticket_number (counter local 1,2,3...) idha mawjoud, wla ID backend
         const idShort = o.ticket_number
             ? String(o.ticket_number).padStart(4,'0')
             : String(o.id||'');
-        const orderJson = encodeURIComponent(JSON.stringify(o));
         const caissierName = o.caissier || o.serveur || o.created_by || '';
-        const caissierBadge = caissierName ? `<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;">👤 ${caissierName}</span>` : '';
+        const caissierBadge = caissierName ? `<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;">👤 ${_histEscapeText(caissierName)}</span>` : '';
         const offlineBadge = o._offline ? `<span style="font-size:11px;font-weight:700;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.4);color:#fb923c;border-radius:20px;padding:2px 8px;">📵 Non sync</span>` : '';
         return `<div class="hist-order">
-          <div style="flex:1;min-width:0;">
+          <div style="flex:1;min-width:0;overflow-wrap:anywhere;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;">
-              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;">#${idShort}</span>
-              <span class="hist-status ${stClass}">${st.icon} ${st.label}</span>${caissierBadge}${offlineBadge}${payment}
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;">#${_histEscapeText(idShort)}</span>
+              <span class="hist-status ${stClass}">${st.icon} ${_histEscapeText(st.label)}</span>${caissierBadge}${offlineBadge}${payment}
             </div>
-            <div style="font-size:11px;color:var(--muted);">${time?`<span>${time}</span>`:''} ${o.table_number?`&nbsp;·&nbsp; <b style="color:var(--text)">${o.table_number==='terrasse'?'☀️ Terrasse':'Table '+o.table_number}</b>`:''} ${items?`&nbsp;·&nbsp; ${items}`:''}</div>
+            <div style="font-size:11px;color:var(--muted);">${time?`<span>${time}</span>`:''} ${o.table_number?`&nbsp;·&nbsp; <b style="color:var(--text)">${o.table_number==='terrasse'?'☀️ Terrasse':'Table '+_histEscapeText(o.table_number)}</b>`:''} ${items?`&nbsp;·&nbsp; ${items}`:''}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;margin-right:8px;">
             <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--orange);">${parseFloat(o.total||0).toFixed(2)}</div>
             <div style="font-size:10px;color:var(--muted);">DH</div>
           </div>
-${o.status === 'preparing' ? `<button onclick="updateOrderStatusFromKiosk('${o.id}', 'ready')"
+${o.status === 'preparing' ? `<button type="button" data-hist-action="ready"
             style="padding:6px 14px;border-radius:8px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">✅ Prêt</button>` : ''}
-${o.status === 'ready' ? `<button onclick="updateOrderStatusFromKiosk('${o.id}', 'done')"
+${o.status === 'ready' ? `<button type="button" data-hist-action="done"
             style="padding:6px 14px;border-radius:8px;background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif;">🏁 Terminer</button>` : ''}
-${(o.status !== 'cancelled' && o.status !== 'annule' && o.status !== 'annulé') ? `<button onclick="openModifierModal('${orderJson}')" title="Ajouter des articles"
+${(o.status !== 'cancelled' && o.status !== 'annule' && o.status !== 'annulé') ? `<button type="button" data-hist-action="add" title="Ajouter des articles"
             style="width:36px;height:36px;border-radius:8px;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.3);color:#fb923c;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px;">➕</button>` : ''}
-${o.status === 'done' || o.status === 'termine' ? `<button onclick="printAdditionOrder('${orderJson}')" title="Imprimer addition"
+${o.status === 'done' || o.status === 'termine' ? `<button type="button" data-hist-action="print" title="Imprimer addition"
             style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px;">🧾</button>` : ''}
         </div>`;
     }).join('');
+    // Garder les commandes en mémoire : encodeURIComponent ne protège pas les
+    // apostrophes dans un onclick, et les grosses commandes dupliquaient le JSON.
+    list.querySelectorAll('.hist-order').forEach((row, index) => {
+        const order = filtered[index];
+        row.querySelectorAll('[data-hist-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.dataset.histAction;
+                if (action === 'add') return openModifierModal(order);
+                if (action === 'print') return printAdditionOrder(order);
+                return updateOrderStatusFromKiosk(order.id, action);
+            });
+        });
+    });
 }
 
 // ── MODIFIER COMMANDE ──
@@ -1139,7 +1157,7 @@ function cancelModifMode() {
 }
 
 async function openModifierModal(encodedOrder) {
-    const o = JSON.parse(decodeURIComponent(encodedOrder));
+    const o = typeof encodedOrder === 'string' ? JSON.parse(decodeURIComponent(encodedOrder)) : encodedOrder;
     const idShort = o.ticket_number
         ? String(o.ticket_number).padStart(4,'0')
         : String(o.id||'');
@@ -1284,8 +1302,8 @@ function generateAdditionTicket(cartItems, table, total, orderId, newItems) {
 
 // Imprimer addition complète depuis historique (tous les articles)
 async function printAdditionOrder(encodedOrder) {
-    const o = JSON.parse(decodeURIComponent(encodedOrder));
     try {
+        const o = typeof encodedOrder === 'string' ? JSON.parse(decodeURIComponent(encodedOrder)) : encodedOrder;
         const idShort = o.ticket_number ? String(o.ticket_number).padStart(4,'0') : String(o.id||'');
         const now = new Date().toLocaleString('fr-FR');
         const W = 48;
