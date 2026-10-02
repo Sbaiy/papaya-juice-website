@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/api.js"></script>
+<script src="papaya-extras.js"></script>
 
 
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&display=swap" rel="stylesheet">
@@ -901,18 +902,23 @@ body::after{
 
 </style>
 
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="papaya-jungle.css">
+<script src="papaya-menu-design.js" defer></script>
 </head>
-<body>
+<body class="pj-menu">
+<div id="extrasLoadError" class="pj-extras-error" role="alert" hidden><span>Impossible de charger les extras. Aucun produit ajouté. Réessayez avec le bouton d’ajout.</span><button type="button" onclick="this.parentElement.hidden=true" aria-label="Fermer le message des extras">×</button></div>
 
 <!-- ── EXTRAS SELECTION MODAL ── -->
 <div id="extrasSelModal" onclick="if(event.target===this)closeExtrasSelModal()">
   <div class="esel-box">
-    <div class="esel-header">
+    <div class="esel-header"><button class="pj-esel-close" onclick="closeExtrasSelModal()" aria-label="Fermer les extras">×</button>
       <div class="esel-product-title" id="eselProductName"></div>
       <div class="esel-product-price" id="eselProductPrice"></div>
     </div>
     <div class="esel-body" id="eselBody"></div>
     <div class="esel-footer">
+      <div class="esel-quantity"><span>Quantité</span><div class="qty-controls"><button class="qty-btn" id="eselQtyMinus" onclick="changeMenuExtrasQuantity(-1)" aria-label="Diminuer la quantité">−</button><output id="eselQtyDisplay">1</output><button class="qty-btn" onclick="changeMenuExtrasQuantity(1)" aria-label="Augmenter la quantité">+</button></div></div>
       <div class="esel-total">Total: <span id="eselTotal">0.00 DH</span></div>
       <button class="esel-add-btn" id="eselAddBtn" onclick="confirmMenuExtrasAndAdd()">Ajouter au panier</button>
     </div>
@@ -937,12 +943,18 @@ body::after{
 <header class="main-header" id="mainHeader">
     <a href="/" class="logo-link">
         <img src="/logo.png" alt="Papaya Juice">
-        <span>Papaya Juice</span>
+        <span>Papaya<small>JUICE &amp; GOOD MOOD</small></span>
     </a>
     <div class="cat-bar" id="catBar"></div>
-    <button class="hamburger-btn" id="hamburgerBtn" onclick="openDrawer()">
-        <span></span><span></span><span></span>
-    </button>
+    <div class="pj-header-actions">
+<div class="table-banner" id="tableBanner">
+    <span class="tbl-icon">🪑</span>
+    <span id="tableBannerText">Table <strong id="tableBannerNum"></strong></span>
+    <span class="tbl-change" onclick="changeTable()">Changer</span>
+</div>
+      <button class="pj-icon-button" onclick="openReclamation()" aria-label="Réclamation" title="Réclamation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v4m0 2v1"/></svg></button>
+    </div>
+
 </header>
 
 <!-- DRAWER -->
@@ -974,21 +986,23 @@ body::after{
 <h1 class="menu-title" id="menuMainTitle">Our <span style="color:var(--primary)">Menu</span></h1>
 
 <!-- Table Banner — shown when table detected from URL -->
-<div class="table-banner" id="tableBanner">
-    <span class="tbl-icon">🪑</span>
-    <span id="tableBannerText">Table <strong id="tableBannerNum"></strong></span>
-    <span class="tbl-change" onclick="changeTable()">Changer</span>
-</div>
+
 
 <!-- CATEGORIES VIEW -->
 <div id="categoriesView">
+    <section class="pj-hero" aria-labelledby="pjHeroTitle">
+      <div class="pj-hero-copy"><span class="pj-eyebrow">VOTRE PAUSE AU VERT</span><h1 id="pjHeroTitle">La nature<br>dans votre <em>verre.</em></h1><p>Des envies fruitées.<br>Et des petits moments à savourer.</p><button class="pj-hero-cta" id="pjDiscover">Découvrir le menu <span aria-hidden="true">↗</span></button></div>
+      <div class="pj-hero-visual pj-logo-scene"><div class="pj-orbit" aria-hidden="true"></div><div class="pj-logo-coin"><img src="/logo.png" alt="Papaya Juice"><span class="pj-logo-gloss" aria-hidden="true"></span></div></div>
+    </section>
+    <div class="pj-section-heading"><div><span class="pj-eyebrow">UNE ENVIE, UN UNIVERS</span><h2>À vous de choisir.</h2></div><span id="pjCategoryCount"></span></div>
+
     <div class="cats-grid" id="catsGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading…</div>
     </div>
 </div>
 
 <!-- PRODUCTS VIEW -->
-<div id="productsView" style="display:none;">
+<div id="productsView" style="display:none;"><button class="pj-back" onclick="showCategoriesView()">← Toutes les catégories</button>
 <div class="menu-grid" id="menuGrid">
         <div style="grid-column:1/-1;text-align:center;padding:60px;color:#7a9980;font-size:15px;">Loading menu…</div>
     </div>
@@ -1005,8 +1019,8 @@ body::after{
 <div class="cart-panel" id="cartPanel">
     <div class="cart-handle" id="cartHandle"></div>
     <div class="cart-header">
-        <h2>Mon <span>Panier</span></h2>
-        <button class="cart-clear-btn" id="cartClearBtn">Vider</button>
+        <h2>Le panier <span>du bonheur.</span></h2>
+        <button class="cart-clear-btn" id="cartClearBtn">Vider</button><button class="pj-cart-close" onclick="closeCart()" aria-label="Fermer le panier">×</button>
     </div>
     <div class="cart-items" id="cartItems"></div>
     <div class="cart-footer">
@@ -1345,18 +1359,20 @@ let cart           = {};
 let cartIsOpen     = false;
 
 function cartAddOne(product) {
-    if (cart[product.id]) cart[product.id].qty++;
-    else cart[product.id] = { product, qty: 1 };
+    const key = PapayaExtras.cartKey(product);
+    if (cart[key]) cart[key].qty++;
+    else cart[key] = { product, qty: 1 };
     updateCartUI();
     updateAddBtnBadge(product.id);
     triggerFabPulse();
 }
 function cartRemoveOne(productId) {
     if (!cart[productId]) return;
+    const originalId = cart[productId].product.id;
     cart[productId].qty--;
     if (cart[productId].qty <= 0) delete cart[productId];
     updateCartUI();
-    updateAddBtnBadge(productId);
+    updateAddBtnBadge(originalId);
 }
 function cartClear() {
     cart = {};
@@ -1364,6 +1380,7 @@ function cartClear() {
     document.querySelectorAll('.add-btn .btn-badge').forEach(b => { b.textContent = ''; b.classList.remove('show'); });
 }
 function cartTotal()      { return Object.values(cart).reduce((s, { product, qty }) => s + parseFloat(product.price) * qty, 0); }
+function cartProductQuantity(productId) { return Object.values(cart).filter(row => String(row.product.id) === String(productId)).reduce((sum,row) => sum + row.qty, 0); }
 function cartItemsCount() { return Object.values(cart).reduce((s, { qty }) => s + qty, 0); }
 
 /* ════════════════════════
@@ -1374,7 +1391,7 @@ function updateCartUI() {
     const total = cartTotal();
     const fab   = document.getElementById('cartFab');
     document.getElementById('fabCount').textContent = count;
-    document.getElementById('fabTotal').textContent = total.toFixed(0) + ' DH';
+    document.getElementById('fabTotal').textContent = total.toFixed(2) + ' DH';
     if (count > 0) fab.classList.add('visible');
     else { fab.classList.remove('visible'); closeCart(); }
 
@@ -1387,11 +1404,11 @@ function updateCartUI() {
         items.forEach(({ product, qty }) => {
             const row = document.createElement('div');
             row.className = 'cart-item';
-            const lineTotal = (parseFloat(product.price) * qty).toFixed(0);
+            const lineTotal = (parseFloat(product.price) * qty).toFixed(2);
             row.innerHTML = `
                 <img src="${product.image ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_limit/') : ''}" alt="${product.title}">
                 <div class="cart-item-info">
-                    <h4>${product.title}</h4>
+                    <h4>${product.title}</h4>${renderMenuExtrasSummary(product.selectedExtras)}
                     <div class="item-price">${lineTotal} DH</div>
                 </div>
                 <div class="qty-controls">
@@ -1399,12 +1416,12 @@ function updateCartUI() {
                     <span class="qty-display">${qty}</span>
                     <button class="qty-btn plus" data-id="${product.id}">+</button>
                 </div>`;
-            row.querySelector('.minus').addEventListener('click', e => { e.stopPropagation(); cartRemoveOne(product.id); });
+            row.querySelector('.minus').addEventListener('click', e => { e.stopPropagation(); cartRemoveOne(PapayaExtras.cartKey(product)); });
             row.querySelector('.plus').addEventListener('click',  e => { e.stopPropagation(); cartAddOne(product); });
             itemsEl.appendChild(row);
         });
     }
-    document.getElementById('cartTotal').textContent    = total.toFixed(0) + ' DH';
+    document.getElementById('cartTotal').textContent    = total.toFixed(2) + ' DH';
     document.getElementById('cartItemCount').textContent = count + ' article(s)';
 }
 
@@ -1412,7 +1429,7 @@ function updateAddBtnBadge(productId) {
     const btn = document.querySelector(`.add-btn[data-id="${productId}"]`);
     if (!btn) return;
     const badge = btn.querySelector('.btn-badge');
-    const qty   = cart[productId] ? cart[productId].qty : 0;
+    const qty   = cartProductQuantity(productId);
     badge.textContent = qty || '';
     qty > 0 ? badge.classList.add('show') : badge.classList.remove('show');
 }
@@ -1566,13 +1583,13 @@ function openOrderModal() {
     const summaryEl = document.getElementById('omSummary');
     const items     = Object.values(cart);
     let html = items.map(({ product, qty }) => {
-        const lineTotal = (parseFloat(product.price) * qty).toFixed(0);
+        const lineTotal = (parseFloat(product.price) * qty).toFixed(2);
         return `<div class="om-item">
-            <div class="om-item-name"><span>${qty}x</span>${product.title}</div>
+            <div class="om-item-name"><span>${qty}x</span><div>${product.title}${renderMenuExtrasSummary(product.selectedExtras)}</div></div>
             <div class="om-item-price">${lineTotal} DH</div>
         </div>`;
     }).join('');
-    html += `<div class="om-total"><span>Total</span><span>${cartTotal().toFixed(0)} DH</span></div>`;
+    html += `<div class="om-total"><span>Total</span><span>${cartTotal().toFixed(2)} DH</span></div>`;
     summaryEl.innerHTML = html;
 
     updateOrderModalTableDisplay();
@@ -1602,7 +1619,7 @@ async function submitOrder() {
         const _extrasSum = _exs.reduce((s, e) => s + (parseFloat(e.priceAdd) || 0), 0);
         return {
             id: product.id, title: product.title,
-            price: parseFloat(product.price) - _extrasSum, qty, category: product.category || '',
+            price: product.basePrice ?? (parseFloat(product.price) - _extrasSum), qty, category: product.category || '',
             extras: _exs
         };
     });
@@ -1628,7 +1645,9 @@ async function submitOrder() {
         const data = await res.json();
 
         // Broadcast للـ commandes-live + kiosk بدون egress
-        await _broadcastOrder('new_order', { ...data, items: JSON.stringify(items), total: data.total, status: 'paiement', table_number: tableNum || null, source: 'menu' });
+        const confirmedItems = Array.isArray(data.items) ? data.items : items;
+        const confirmedTotal = Number.isFinite(Number(data.total)) ? Number(data.total) : total;
+        await _broadcastOrder('new_order', { ...data, items: JSON.stringify(confirmedItems), total: data.total, status: 'paiement', table_number: tableNum || null, source: 'menu' });
 
         closeOrderModal();
         closeCart();
@@ -1641,8 +1660,8 @@ async function submitOrder() {
         const qp = new URLSearchParams({
             id:    dbId,
             table: tableNum || '',
-            total: total.toFixed(2),
-            items: JSON.stringify(items),
+            total: confirmedTotal.toFixed(2),
+            items: JSON.stringify(confirmedItems),
             t:     _rawToken,
             source: 'menu',
             ticket_number: data && data.ticket_number ? data.ticket_number : ''
@@ -1803,7 +1822,7 @@ function openCategory(catName, pushHistory = true) {
 
     const filtered = allProducts.filter(p => p.category === catName);
     displayProducts(filtered);
-    attachCardClicks();
+
 
     // Mobile/browser Back returns to categories instead of leaving the site.
     if (pushHistory) {
@@ -1846,15 +1865,15 @@ function displayProducts(list) {
             </div>
             <div class="card-bottom-row">
                 <p class="product-price">${product.price} DH</p>
-                <button class="add-btn" data-id="${product.id}" title="Ajouter au panier">
+                <button class="add-btn" data-id="${product.id}" title="Ajouter au panier" aria-label="Ajouter ce produit">
                     +
                     <span class="btn-badge"></span>
                 </button>
             </div>`;
 
-        if (cart[product.id]) {
+        if (cartProductQuantity(product.id)) {
             const badge = card.querySelector('.btn-badge');
-            badge.textContent = cart[product.id].qty;
+            badge.textContent = cartProductQuantity(product.id);
             badge.classList.add('show');
         }
 
@@ -1869,6 +1888,8 @@ function displayProducts(list) {
             btn.disabled = true;
             const groups = await loadModalExtras(product.id);
             btn.disabled = false;
+            document.getElementById('extrasLoadError').hidden = groups !== null;
+            if (groups === null) return;
             if (groups && groups.length > 0) {
                 openExtrasSelModal(product, groups, 1);
                 return;
@@ -1907,20 +1928,21 @@ let _eselQty = 1;
 async function loadModalExtras(productId) {
     // fetch extras from supabase
     try {
-        const { data: links } = await _supabase
+        const { data: links, error } = await _supabase
             .from('product_extras')
             .select('group_id, extras_groups(*, extras_options(*))')
             .eq('product_id', productId);
-        if (!links || links.length === 0) return [];
+        if (error || !Array.isArray(links) || links.some(link => !link.extras_groups)) throw new Error("Extras indisponibles");
+        if (links.length === 0) return [];
         const groups = links.map(l => l.extras_groups).filter(Boolean);
         return groups;
-    } catch(e) { console.error('extras error', e); return []; }
+    } catch(e) { console.error('extras error', e); return null; }
 }
 
 function openExtrasSelModal(product, groups, qty) {
     _eselProduct = product;
     _eselQty = qty || 1;
-    _eselGroups = groups.filter(g => (g.extras_options || []).length > 0);
+    _eselGroups = groups;
     _eselSelections = {};
     _eselGroups.forEach(g => { _eselSelections[g.id] = {}; });
 
@@ -1939,84 +1961,84 @@ function closeExtrasSelModal() {
 
 function renderMenuExtrasBody() {
     const body = document.getElementById('eselBody');
+    const focused = document.activeElement;
+    const restoreGroup = focused?.dataset.extraGroup;
+    const restoreOption = focused?.dataset.extraOption;
+    const restoreDelta = focused?.dataset.extraDelta;
     body.innerHTML = _eselGroups.map(g => {
-        const options = (g.extras_options || []).filter(o => o.is_available !== false);
+        const options = PapayaExtras.options(g), max = PapayaExtras.limit(g);
         const groupSel = _eselSelections[g.id] || {};
+        const selectedCount = PapayaExtras.selected(g, _eselSelections).length;
         const optHtml = options.map(opt => {
-            const isSelected = (groupSel[opt.id] || 0) > 0;
-            const priceLabel = parseFloat(opt.price_add) > 0 ? `+${parseFloat(opt.price_add).toFixed(2)} DH` : 'Free';
-            const priceClass = parseFloat(opt.price_add) > 0 ? '' : ' free';
-            return `<div class="esel-option${isSelected?' selected':''}" onclick="toggleMenuExtra(${g.id},${opt.id})">
-                <div class="esel-radio"></div>
+            const qty = groupSel[opt.id] || 0, isSelected = qty > 0;
+            const price = PapayaExtras.amount(opt.price_add);
+            const disabled = !isSelected && max > 1 && selectedCount >= max;
+            return `<div class="esel-option-row"><label class="esel-option${isSelected?' selected':''}${disabled?' at-limit':''}">
+                <input type="checkbox" data-extra-group="${escMenuHtml(g.id)}" data-extra-option="${escMenuHtml(opt.id)}" ${isSelected?'checked':''} ${disabled?'disabled':''}>
                 <span class="esel-opt-name">${escMenuHtml(opt.name)}</span>
-                <span class="esel-opt-price${priceClass}">${priceLabel}</span>
-            </div>`;
+                <span class="esel-opt-price${price===0?' free':''}">${price===0?'Inclus':'+'+price.toFixed(2)+' DH'}</span>
+            </label>${g.allow_multiple && isSelected ? `<div class="esel-repeat"><span>Quantité de cet extra</span><button type="button" data-extra-group="${escMenuHtml(g.id)}" data-extra-option="${escMenuHtml(opt.id)}" data-extra-delta="-1" aria-label="Retirer une dose de ${escMenuHtml(opt.name)}">−</button><output>${qty}</output><button type="button" data-extra-group="${escMenuHtml(g.id)}" data-extra-option="${escMenuHtml(opt.id)}" data-extra-delta="1" aria-label="Ajouter une dose de ${escMenuHtml(opt.name)}">+</button></div>`:''}</div>`;
         }).join('');
-        return `<div class="esel-group">
-            <div class="esel-group-title">
-                ${escMenuHtml(g.name)}
-                ${g.is_mandatory ? `<span class="esel-req-badge">Required</span>` : `<span class="esel-opt-badge">Optional</span>`}
-            </div>
-            ${optHtml}
-        </div>`;
+        return `<fieldset class="esel-group"><legend class="esel-group-title">${escMenuHtml(g.name)}<span class="${g.is_mandatory?'esel-req-badge':'esel-opt-badge'}">${g.is_mandatory?'Obligatoire':'Facultatif'}</span></legend><p class="esel-max-hint">${max===1?'1 choix':'Jusqu’à '+max+' choix'}${g.allow_multiple?' · doses ajustables':''}</p>${optHtml||'<p class="esel-max-hint">Aucune option disponible.</p>'}</fieldset>`;
     }).join('');
     updateMenuExtrasTotal();
+    if(restoreGroup) Array.from(body.querySelectorAll('[data-extra-group]')).find(el=>el.dataset.extraGroup===restoreGroup&&el.dataset.extraOption===restoreOption&&el.dataset.extraDelta===restoreDelta)?.focus({preventScroll:true});
 }
 
 function toggleMenuExtra(groupId, optionId) {
+    const group = _eselGroups.find(g=>String(g.id)===String(groupId));
+    if(!group || !PapayaExtras.options(group).some(o=>String(o.id)===String(optionId))) return;
     const groupSel = _eselSelections[groupId] = _eselSelections[groupId] || {};
-    if (groupSel[optionId]) { delete groupSel[optionId]; }
+    if (groupSel[optionId]) delete groupSel[optionId];
     else {
-        // radio style: clear others in group first
-        Object.keys(groupSel).forEach(k => delete groupSel[k]);
-        groupSel[optionId] = 1;
+        const max=PapayaExtras.limit(group);
+        if(max===1) Object.keys(groupSel).forEach(k=>delete groupSel[k]);
+        else if(PapayaExtras.selected(group,_eselSelections).length>=max) return;
+        groupSel[optionId]=1;
     }
     renderMenuExtrasBody();
 }
 
+document.getElementById('eselBody').addEventListener('change',event=>{
+    const input=event.target;
+    if(input.matches('input[data-extra-group]')) toggleMenuExtra(input.dataset.extraGroup,input.dataset.extraOption);
+});
+document.getElementById('eselBody').addEventListener('click',event=>{
+    const button=event.target.closest('[data-extra-delta]');if(!button)return;
+    const group=_eselGroups.find(g=>String(g.id)===button.dataset.extraGroup);
+    if(!group?.allow_multiple)return;
+    const selected=_eselSelections[group.id],id=button.dataset.extraOption;
+    if(!selected[id])return;
+    selected[id]+=Number(button.dataset.extraDelta);
+    if(selected[id]<=0)delete selected[id];
+    renderMenuExtrasBody();
+});
+
 function updateMenuExtrasTotal() {
     if (!_eselProduct) return;
-    let extrasTotal = 0;
-    _eselGroups.forEach(g => {
-        const groupSel = _eselSelections[g.id] || {};
-        (g.extras_options || []).forEach(opt => {
-            if (groupSel[opt.id]) extrasTotal += parseFloat(opt.price_add || 0);
-        });
-    });
-    const total = (parseFloat(_eselProduct.price) + extrasTotal) * _eselQty;
-    document.getElementById('eselTotal').textContent = total.toFixed(2) + ' DH';
-
-    const allSatisfied = _eselGroups.every(g => {
-        if (!g.is_mandatory) return true;
-        const groupSel = _eselSelections[g.id] || {};
-        return Object.keys(groupSel).length > 0;
-    });
-    const btn = document.getElementById('eselAddBtn');
-    btn.disabled = !allSatisfied;
-    btn.textContent = allSatisfied ? 'Ajouter au panier' : 'Please select required options';
+    const selectedExtras=PapayaExtras.summary(_eselGroups,_eselSelections);
+    const total=PapayaExtras.lineTotal(_eselProduct.price,selectedExtras,_eselQty);
+    document.getElementById('eselTotal').textContent=total.toFixed(2)+' DH';
+    document.getElementById('eselQtyDisplay').textContent=_eselQty;
+    document.getElementById('eselQtyMinus').disabled=_eselQty<=1;
+    const allSatisfied=PapayaExtras.valid(_eselGroups,_eselSelections);
+    const btn=document.getElementById('eselAddBtn');
+    btn.disabled=!allSatisfied;
+    btn.textContent=allSatisfied?'Ajouter au panier':'Choisissez les options obligatoires';
 }
+function changeMenuExtrasQuantity(delta){_eselQty=Math.max(1,_eselQty+delta);updateMenuExtrasTotal();}
 
 function confirmMenuExtrasAndAdd() {
     if (!_eselProduct) return;
-    const selectedExtras = [];
-    _eselGroups.forEach(g => {
-        const groupSel = _eselSelections[g.id] || {};
-        (g.extras_options || []).forEach(opt => {
-            if (groupSel[opt.id]) {
-                selectedExtras.push({ groupName: g.name, optionName: opt.name, priceAdd: parseFloat(opt.price_add || 0) });
-            }
-        });
-    });
-    const extrasTotal = selectedExtras.reduce((s, e) => s + e.priceAdd, 0);
-    const productWithExtras = { ..._eselProduct, price: parseFloat(_eselProduct.price) + extrasTotal, selectedExtras };
+    if(!PapayaExtras.valid(_eselGroups,_eselSelections)) return;
+    const selectedExtras=PapayaExtras.summary(_eselGroups,_eselSelections);
+    const productWithExtras={..._eselProduct,price:PapayaExtras.lineTotal(_eselProduct.price,selectedExtras),basePrice:PapayaExtras.amount(_eselProduct.price),selectedExtras};
     const productSnapshot = { ..._eselProduct };
     const qty = _eselQty;
-    const origId = _eselProduct.id;
     const sourceBtn = document.getElementById('eselAddBtn');
 
     // Fly the extras sheet the customer is currently looking at, then add the configured product.
     flyProductCardToCart(productSnapshot, sourceBtn, () => {
-        delete cart[origId];
         for (let i = 0; i < qty; i++) cartAddOne(productWithExtras);
     }, {
         onStart: closeExtrasSelModal
@@ -2024,7 +2046,12 @@ function confirmMenuExtrasAndAdd() {
 }
 
 function escMenuHtml(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function renderMenuExtrasSummary(extras){
+    if(!Array.isArray(extras)||!extras.length)return '';
+    return '<ul class="pj-extras-summary">'+extras.map(e=>'<li>'+escMenuHtml(e.optionName)+' · +'+PapayaExtras.amount(e.priceAdd).toFixed(2)+' DH</li>').join('')+'</ul>';
 }
 
 function getExtrasTotal() { return 0; }
@@ -2048,7 +2075,7 @@ function openModal(product) {
 function updateModalAddBtn() {
     const base = parseFloat(modalCurrentProduct?.price || 0);
     const extrasAdd = typeof getExtrasTotal === 'function' ? getExtrasTotal() : 0;
-    const total = ((base + extrasAdd) * modalQty).toFixed(0);
+    const total = ((base + extrasAdd) * modalQty).toFixed(2);
     document.getElementById('modalAddBtn').innerHTML = `🛒 Ajouter (${modalQty}) — ${total} DH`;
 }
 
@@ -2083,6 +2110,8 @@ document.getElementById('modalAddBtn').addEventListener('click', async () => {
     const groups = await loadModalExtras(productSnapshot.id);
     btn.disabled = false;
     updateModalAddBtn();
+    document.getElementById('extrasLoadError').hidden = groups !== null;
+    if (groups === null) return;
     if (groups && groups.length > 0) {
         // Close the product modal first, then open extras modal
         closeModal(true);
@@ -2103,16 +2132,6 @@ document.getElementById('modalAddBtn').addEventListener('click', async () => {
         });
     }
 });
-
-function attachCardClicks() {
-    document.querySelectorAll('.product-card').forEach((card) => {
-        card.addEventListener('click', () => {
-            const title   = card.querySelector('h3').textContent;
-            const product = allProducts.find(p => p.title === title) || {};
-            openModal(product);
-        });
-    });
-}
 
 /* ════════════════════════
    SCROLL
